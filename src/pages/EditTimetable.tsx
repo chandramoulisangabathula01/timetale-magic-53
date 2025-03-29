@@ -7,6 +7,7 @@ import { getTimetableById } from '@/utils/timetableUtils';
 import { Timetable } from '@/utils/types';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button'; // Add Button import
 import { AlertCircle } from 'lucide-react';
 
 const EditTimetable = () => {
