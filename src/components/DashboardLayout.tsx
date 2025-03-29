@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { LogOut } from 'lucide-react';
@@ -9,7 +9,11 @@ import AdminDashboard from './AdminDashboard';
 import FacultyDashboard from './FacultyDashboard';
 import StudentDashboard from './StudentDashboard';
 
-const DashboardLayout: React.FC = () => {
+interface DashboardLayoutProps {
+  children: ReactNode;
+}
+
+const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const navigate = useNavigate();
   const { userRole, username, logout } = useAuth();
   
@@ -47,6 +51,7 @@ const DashboardLayout: React.FC = () => {
         {userRole === 'admin' && <AdminDashboard />}
         {userRole === 'faculty' && <FacultyDashboard />}
         {userRole === 'student' && <StudentDashboard />}
+        {children}
       </main>
       
       {/* Footer */}
