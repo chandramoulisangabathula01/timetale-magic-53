@@ -18,12 +18,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { CheckCircle, BookOpen, FlaskConical, Coffee } from "lucide-react";
 
 interface ManualSchedulingGridProps {
   subjectTeacherPairs: SubjectTeacherPair[];
@@ -48,18 +44,13 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
 }) => {
   const { toast } = useToast();
   const [timetableData, setTimetableData] = useState<Record<string, any>>({});
+  const [viewMode, setViewMode] = useState<'subject' | 'teacher'>('subject');
   
-  // Determine which days to use
-  const getDaysForTimetable = (): Day[] => {
-    if (dayOptions.useCustomDays) {
-      return dayOptions.selectedDays;
-    } else if (dayOptions.fourContinuousDays) {
-      return ['Monday', 'Tuesday', 'Wednesday', 'Thursday'];
-    }
-    return ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  };
+  // Get all days including Friday and Saturday
+  const allDays: Day[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   
-  const days: Day[] = getDaysForTimetable();
+  // Use all days regardless of options for the redesigned grid
+  const days: Day[] = allDays;
   
   // Regular time slots (excluding breaks and lunch)
   const timeSlots: TimeSlot[] = [
@@ -194,92 +185,135 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
       description: "Your manual timetable has been saved",
     });
   };
+
+  const getSubjectDisplay = (subject: SubjectTeacherPair) => {
+    return viewMode === 'subject' ? 
+      `${subject.subjectName}${subject.isLab ? ' (Lab)' : ''}` : 
+      `${subject.teacherName}`;
+  };
+
+  const getSlotBackgroundColor = (subjectId: string | null) => {
+    if (!subjectId) return "bg-white";
+    
+    const subject = subjectTeacherPairs.find(pair => pair.id === subjectId);
+    if (!subject) return "bg-white";
+    
+    if (subject.isLab) return "bg-blue-50";
+    return "bg-green-50";
+  };
+  
+  const getCellIcon = (slot: any) => {
+    if (slot.isBreak) return <Coffee className="h-4 w-4 mr-1 text-amber-500" />;
+    if (slot.isLunch) return <Coffee className="h-4 w-4 mr-1 text-amber-500" />;
+    
+    const subject = subjectTeacherPairs.find(pair => pair.id === slot.subjectId);
+    if (!subject) return null;
+    
+    return subject.isLab ? 
+      <FlaskConical className="h-4 w-4 mr-1 text-blue-500" /> : 
+      <BookOpen className="h-4 w-4 mr-1 text-green-500" />;
+  };
   
   return (
     <div className="space-y-4">
-      <p className="text-sm text-muted-foreground mb-4">
-        Select subjects from the dropdown menu in each time slot to create your manual schedule.
-      </p>
+      <div className="flex justify-between items-center">
+        <p className="text-sm text-muted-foreground">
+          Select subjects from the dropdown menu in each time slot to create your manual schedule.
+        </p>
+        
+        <ToggleGroup type="single" value={viewMode} onValueChange={(value) => value && setViewMode(value as 'subject' | 'teacher')}>
+          <ToggleGroupItem value="subject" aria-label="Toggle subject view">Subject</ToggleGroupItem>
+          <ToggleGroupItem value="teacher" aria-label="Toggle teacher view">Teacher</ToggleGroupItem>
+        </ToggleGroup>
+      </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <h3 className="font-medium mb-3">Timetable</h3>
-            <div className="overflow-x-auto">
-              <div className="min-w-[600px]">
-                <div className="grid grid-cols-[80px_repeat(6,1fr)] gap-1">
-                  {/* Header row */}
-                  <div className="font-medium p-2 text-center">Time / Day</div>
-                  {days.map(day => (
-                    <div key={day} className="font-medium p-2 text-center">{day}</div>
-                  ))}
-                  
-                  {/* Time slots */}
-                  {timeSlots.map(timeSlot => (
-                    <React.Fragment key={timeSlot}>
-                      <div className="p-2 text-xs text-center border bg-gray-50">{timeSlot}</div>
-                      {days.map(day => {
-                        const slotId = `${day}-${timeSlot}`;
-                        const slot = timetableData.slots ? timetableData.slots[slotId] : null;
-                        
-                        if (!slot) return <div key={slotId} className="p-2 border"></div>;
-                        
-                        if (slot.isBreak) {
-                          return (
-                            <div key={slotId} className="p-2 border bg-gray-100 text-center text-xs">
-                              Break
-                            </div>
-                          );
-                        }
-                        
-                        if (slot.isLunch) {
-                          return (
-                            <div key={slotId} className="p-2 border bg-gray-100 text-center text-xs">
-                              Lunch
-                            </div>
-                          );
-                        }
-                        
-                        const selectedSubject = subjectTeacherPairs.find(pair => pair.id === slot.subjectId);
-                        
+      <Card className="shadow-md">
+        <CardContent className="p-4">
+          <h3 className="font-medium mb-3 text-lg text-center">Timetable Schedule</h3>
+          <div className="overflow-x-auto">
+            <div className="min-w-[900px]">
+              <div className="grid grid-cols-[100px_repeat(6,1fr)] gap-1 border-b-2 border-gray-200">
+                {/* Header row */}
+                <div className="font-medium p-2 text-center bg-gray-100 rounded-tl-md">Time / Day</div>
+                {days.map(day => (
+                  <div key={day} className="font-medium p-2 text-center bg-gray-100">
+                    {day}
+                  </div>
+                ))}
+                
+                {/* Time slots */}
+                {timeSlots.map(timeSlot => (
+                  <React.Fragment key={timeSlot}>
+                    <div className="p-2 text-xs text-center border bg-gray-50 font-medium">
+                      {timeSlot}
+                    </div>
+                    
+                    {days.map(day => {
+                      const slotId = `${day}-${timeSlot}`;
+                      const slot = timetableData.slots ? timetableData.slots[slotId] : null;
+                      
+                      if (!slot) return <div key={slotId} className="p-2 border"></div>;
+                      
+                      if (slot.isBreak || slot.isLunch) {
                         return (
-                          <div key={slotId} className="p-2 border">
-                            <Select
-                              value={slot.subjectId || ""}
-                              onValueChange={(value) => handleSubjectChange(slotId, value || null)}
-                            >
-                              <SelectTrigger className="h-8 text-xs">
-                                <SelectValue placeholder="Select subject" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="">None</SelectItem>
-                                {subjectTeacherPairs.map((subject) => (
-                                  <SelectItem key={subject.id} value={subject.id}>
-                                    {subject.subjectName} - {subject.teacherName}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            {selectedSubject && (
-                              <div className="mt-1 text-xs">
+                          <div key={slotId} className="p-2 border bg-amber-50 text-center text-xs flex items-center justify-center">
+                            <Coffee className="h-4 w-4 mr-1 text-amber-500" />
+                            <span className="font-medium">{slot.isBreak ? 'Break' : 'Lunch'}</span>
+                          </div>
+                        );
+                      }
+                      
+                      const selectedSubject = subjectTeacherPairs.find(pair => pair.id === slot.subjectId);
+                      const bgColor = getSlotBackgroundColor(slot.subjectId);
+                      
+                      return (
+                        <div key={slotId} className={`p-2 border ${bgColor} hover:bg-gray-50 transition-colors duration-200`}>
+                          <Select
+                            value={slot.subjectId || ""}
+                            onValueChange={(value) => handleSubjectChange(slotId, value || null)}
+                          >
+                            <SelectTrigger className="h-8 text-xs w-full">
+                              <SelectValue placeholder="Select subject" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="">None (Free Period)</SelectItem>
+                              {subjectTeacherPairs.map((subject) => (
+                                <SelectItem key={subject.id} value={subject.id}>
+                                  {getSubjectDisplay(subject)}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          
+                          {selectedSubject && (
+                            <div className="mt-1 text-xs flex items-center">
+                              {getCellIcon(slot)}
+                              <div>
                                 <div className="font-medium">{selectedSubject.subjectName}</div>
                                 <div className="text-muted-foreground">{selectedSubject.teacherName}</div>
                               </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </React.Fragment>
-                  ))}
-                </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </React.Fragment>
+                ))}
               </div>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </CardContent>
+      </Card>
       
-      <div className="flex justify-end mt-4">
-        <Button onClick={handleSaveTimetable}>Save Manual Timetable</Button>
+      <div className="flex justify-end mt-6">
+        <Button 
+          onClick={handleSaveTimetable} 
+          className="px-6"
+          size="lg"
+        >
+          <CheckCircle className="h-5 w-5 mr-2" />
+          Save Timetable
+        </Button>
       </div>
     </div>
   );

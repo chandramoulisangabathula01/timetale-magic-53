@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { FileDown, Search, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { filterTimetables, getTimetables } from '@/utils/timetableUtils';
-import { Timetable } from '@/utils/types';
+import { Timetable, YearType, BranchType } from '@/utils/types';
 import TimetableView from './TimetableView';
 
 const StudentDashboard: React.FC = () => {
@@ -18,8 +18,8 @@ const StudentDashboard: React.FC = () => {
       setLoading(true);
       // Force a fresh fetch of timetables from localStorage
       const filteredTimetables = filterTimetables(
-        studentFilters.year,
-        studentFilters.branch,
+        studentFilters.year as YearType, // Add type casting here
+        studentFilters.branch as BranchType, // Add type casting here
         studentFilters.semester
       );
 
