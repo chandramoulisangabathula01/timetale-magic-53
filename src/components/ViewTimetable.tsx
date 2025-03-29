@@ -32,38 +32,93 @@ const ViewTimetable: React.FC = () => {
       return;
     }
     
-    // Add necessary styles
+    // Add necessary styles for a clean print layout
     printWindow.document.write(`
       <html>
         <head>
           <title>Timetable - ${timetable?.formData.year} ${timetable?.formData.branch}</title>
           <style>
-            body { font-family: Arial, sans-serif; padding: 20px; }
-            .timetable-container { width: 100%; margin-bottom: 20px; }
-            .timetable-header { text-align: center; margin-bottom: 20px; }
-            .timetable-grid { display: grid; grid-template-columns: 80px repeat(6, 1fr); border-collapse: collapse; width: 100%; }
-            .timetable-cell, .timetable-header, .timetable-time {
+            @page {
+              size: landscape;
+              margin: 1cm;
+            }
+            body {
+              font-family: Arial, sans-serif;
+              padding: 20px;
+              margin: 0;
+            }
+            .print-header {
+              text-align: center;
+              margin-bottom: 20px;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 20px;
+            }
+            th, td {
               border: 1px solid #ddd;
               padding: 8px;
               text-align: center;
             }
-            .break-slot, .lunch-slot { background-color: #f5f5f5; }
-            .free-slot { background-color: #e6f7ff; }
-            .lab-slot { background-color: #e6ffe6; }
-            .subject-list { margin-top: 20px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+            th {
+              background-color: #f2f2f2;
+              font-weight: bold;
+            }
+            .break-slot, .lunch-slot {
+              background-color: #f5f5f5;
+              font-style: italic;
+            }
+            .free-slot {
+              background-color: #e6f7ff;
+            }
+            .lab-slot {
+              background-color: #e6ffe6;
+              font-weight: 500;
+            }
+            .subject-list {
+              margin-top: 20px;
+              display: grid;
+              grid-template-columns: repeat(3, 1fr);
+              gap: 10px;
+            }
+            .subject-item {
+              margin-bottom: 5px;
+            }
+            .print-button {
+              display: block;
+              margin: 20px auto;
+              padding: 8px 16px;
+              background-color: #4f46e5;
+              color: white;
+              border: none;
+              border-radius: 4px;
+              cursor: pointer;
+            }
             @media print {
-              body { margin: 0; padding: 10px; }
-              .no-print { display: none; }
+              .print-button {
+                display: none;
+              }
             }
           </style>
         </head>
         <body>
-          ${content.innerHTML}
-          <div class="no-print" style="margin-top: 20px; text-align: center;">
-            <button onclick="window.print(); setTimeout(() => window.close(), 500);">
-              Print Timetable
-            </button>
+          <div class="print-header">
+            <h2 style="margin-bottom: 5px;">College of Engineering</h2>
+            <h3 style="margin-top: 0; margin-bottom: 5px;">
+              ${timetable?.formData.courseName} - ${timetable?.formData.year} - ${timetable?.formData.branch} - Semester ${timetable?.formData.semester}
+            </h3>
+            <p style="margin-top: 0; margin-bottom: 5px; font-size: 14px; color: #666;">
+              Academic Year: ${timetable?.formData.academicYear} | Room: ${timetable?.formData.roomNumber}
+            </p>
+            <p style="margin-top: 0; font-size: 14px;">
+              Class Incharge: <span style="font-weight: bold;">${timetable?.formData.classInchargeName}</span> | Contact: ${timetable?.formData.mobileNumber}
+            </p>
           </div>
+          ${content.innerHTML}
+          <button class="print-button" onclick="window.print(); setTimeout(() => window.close(), 500);">
+            Print Timetable
+          </button>
         </body>
       </html>
     `);
@@ -154,6 +209,7 @@ const ViewTimetable: React.FC = () => {
         
         <TimetableView 
           timetable={timetable} 
+          printMode={true}
         />
       </div>
     </div>

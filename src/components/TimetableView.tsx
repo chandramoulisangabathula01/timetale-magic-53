@@ -1,12 +1,22 @@
+
 import React from 'react';
 import { Timetable, Day, TimeSlot } from '@/utils/types';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface TimetableViewProps {
   timetable: Timetable;
   facultyFilter?: string;
+  printMode?: boolean;
 }
 
-const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter }) => {
+const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter, printMode = false }) => {
   const days: Day[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   
   // Regular time slots (excluding breaks and lunch)
@@ -100,30 +110,33 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter 
   };
   
   return (
-    <div>
+    <div className={printMode ? "print-timetable" : ""}>
       <div className="overflow-x-auto timetable-container">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr>
-              <th className="border p-2 bg-gray-50">Time / Day</th>
+        <Table className="w-full border-collapse">
+          <TableHeader>
+            <TableRow>
+              <TableHead className="border p-2 bg-gray-50 font-bold">Time / Day</TableHead>
               {days.map(day => (
-                <th key={day} className="border p-2 bg-gray-50">{day}</th>
+                <TableHead key={day} className="border p-2 bg-gray-50 font-bold">{day}</TableHead>
               ))}
-            </tr>
-          </thead>
-          <tbody>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {timeSlots.map(timeSlot => (
-              <tr key={timeSlot}>
-                <td className="border p-2 text-xs bg-gray-50">{timeSlot}</td>
+              <TableRow key={timeSlot}>
+                <TableCell className="border p-2 text-xs bg-gray-50 font-medium">{timeSlot}</TableCell>
                 {days.map(day => (
-                  <td key={`${day}-${timeSlot}`} className={`border p-2 ${getCellClass(day, timeSlot)}`}>
+                  <TableCell 
+                    key={`${day}-${timeSlot}`} 
+                    className={`border p-2 ${getCellClass(day, timeSlot)}`}
+                  >
                     {getCellContent(day, timeSlot)}
-                  </td>
+                  </TableCell>
                 ))}
-              </tr>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
       
       {/* Subject and Teacher List */}
