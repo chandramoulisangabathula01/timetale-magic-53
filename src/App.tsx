@@ -13,30 +13,48 @@ import ViewTimetablePage from "./pages/ViewTimetablePage";
 import NotFound from "./pages/NotFound";
 import ManageSubjects from "./pages/ManageSubjects";
 import ManageFaculty from "./pages/ManageFaculty";
+import { useEffect } from "react";
+import { setupSupabaseDatabase } from "./utils/setupSupabase";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1
+    }
+  }
+});
 
-const App = () => (
-  <BrowserRouter>
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/create-timetable" element={<CreateTimetable />} />
-            <Route path="/edit-timetable/:id" element={<EditTimetable />} />
-            <Route path="/view-timetable/:id" element={<ViewTimetablePage />} />
-            <Route path="/manage-subjects" element={<ManageSubjects />} />
-            <Route path="/manage-faculty" element={<ManageFaculty />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </TooltipProvider>
-      </AuthProvider>
-    </QueryClientProvider>
-  </BrowserRouter>
-);
+const App = () => {
+  useEffect(() => {
+    // Check and setup Supabase tables
+    setupSupabaseDatabase().then((result) => {
+      console.log('Supabase setup complete:', result);
+    });
+  }, []);
+
+  return (
+    <BrowserRouter>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/create-timetable" element={<CreateTimetable />} />
+              <Route path="/edit-timetable/:id" element={<EditTimetable />} />
+              <Route path="/view-timetable/:id" element={<ViewTimetablePage />} />
+              <Route path="/manage-subjects" element={<ManageSubjects />} />
+              <Route path="/manage-faculty" element={<ManageFaculty />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </TooltipProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </BrowserRouter>
+  );
+};
 
 export default App;

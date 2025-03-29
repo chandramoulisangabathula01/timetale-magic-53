@@ -7,15 +7,17 @@ import { getTimetableById } from '@/utils/timetableUtils';
 import { Timetable } from '@/utils/types';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button'; // Add Button import
+import { Button } from '@/components/ui/button';
 import { AlertCircle } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const EditTimetable = () => {
-  const { isAuthenticated, userRole } = useAuth();
+  const { isAuthenticated, userRole, userId } = useAuth();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const [timetable, setTimetable] = useState<Timetable | undefined>(undefined);
+  const [timetable, setTimetable] = useState<Timetable | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const { toast } = useToast();
   
   useEffect(() => {
     if (!isAuthenticated) {
@@ -28,19 +30,38 @@ const EditTimetable = () => {
       return;
     }
     
-    setIsLoading(true);
-    
-    if (id) {
-      const existingTimetable = getTimetableById(id);
-      if (existingTimetable) {
-        setTimetable(existingTimetable);
-      } else {
-        navigate('/dashboard');
+    async function fetchTimetable() {
+      setIsLoading(true);
+      
+      if (id) {
+        try {
+          const existingTimetable = await getTimetableById(id);
+          if (existingTimetable) {
+            setTimetable(existingTimetable);
+          } else {
+            toast({
+              title: "Timetable not found",
+              description: "The requested timetable does not exist",
+              variant: "destructive"
+            });
+            navigate('/dashboard');
+          }
+        } catch (error) {
+          console.error('Error fetching timetable:', error);
+          toast({
+            title: "Error loading timetable",
+            description: "There was a problem loading the timetable",
+            variant: "destructive"
+          });
+          navigate('/dashboard');
+        }
       }
+      
+      setIsLoading(false);
     }
     
-    setIsLoading(false);
-  }, [isAuthenticated, userRole, navigate, id]);
+    fetchTimetable();
+  }, [isAuthenticated, userRole, navigate, id, toast]);
   
   if (isLoading) {
     return (

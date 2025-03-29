@@ -12,6 +12,7 @@ import {
   TimeSlot,
   FreeHourType
 } from './types';
+import { supabase } from '@/lib/supabase';
 
 // Faculty list for selection in the login form
 export const FACULTY_LIST = [
@@ -27,56 +28,87 @@ export const FACULTY_LIST = [
   "Prof. Martinez"
 ];
 
-const TIMETABLES_STORAGE_KEY = 'timetables';
-
-// Get all timetables from localStorage
-export const getTimetables = (): Timetable[] => {
-  const timetablesString = localStorage.getItem(TIMETABLES_STORAGE_KEY);
-  if (!timetablesString) return [];
-  return JSON.parse(timetablesString);
-};
-
-// Save a timetable to localStorage
-export const saveTimetable = (timetable: Timetable): void => {
-  const timetables = getTimetables();
-  const existingIndex = timetables.findIndex(t => t.id === timetable.id);
+// Get all timetables from Supabase
+export const getTimetables = async (): Promise<Timetable[]> => {
+  const { data, error } = await supabase
+    .from('timetables')
+    .select('*');
   
-  // Make sure timetable has updatedAt field
-  const updatedTimetable = {
-    ...timetable,
-    updatedAt: new Date().toISOString()
-  };
-  
-  if (existingIndex !== -1) {
-    // Update existing timetable
-    timetables[existingIndex] = updatedTimetable;
-  } else {
-    // Add new timetable
-    timetables.push(updatedTimetable);
+  if (error) {
+    console.error('Error fetching timetables:', error);
+    return [];
   }
   
-  localStorage.setItem(TIMETABLES_STORAGE_KEY, JSON.stringify(timetables));
+  return data as unknown as Timetable[];
+};
+
+// Save a timetable to Supabase
+export const saveTimetable = async (timetable: Timetable, userId: string): Promise<void> => {
+  const updatedTimetable = {
+    ...timetable,
+    updated_at: new Date().toISOString(),
+    user_id: userId
+  };
+  
+  const { error } = await supabase
+    .from('timetables')
+    .upsert({
+      id: timetable.id,
+      form_data: timetable.formData,
+      entries: timetable.entries,
+      created_at: timetable.createdAt,
+      updated_at: updatedTimetable.updated_at,
+      user_id: userId
+    });
+  
+  if (error) {
+    console.error('Error saving timetable:', error);
+    throw error;
+  }
 };
 
 // Get a timetable by ID
-export const getTimetableById = (id: string): Timetable | null => {
-  const timetables = getTimetables();
-  return timetables.find(t => t.id === id) || null;
+export const getTimetableById = async (id: string): Promise<Timetable | null> => {
+  const { data, error } = await supabase
+    .from('timetables')
+    .select('*')
+    .eq('id', id)
+    .single();
+  
+  if (error) {
+    console.error('Error fetching timetable by ID:', error);
+    return null;
+  }
+  
+  return data as unknown as Timetable;
 };
 
 // Delete a timetable by ID
-export const deleteTimetable = (id: string): void => {
-  const timetables = getTimetables();
-  const updatedTimetables = timetables.filter(t => t.id !== id);
-  localStorage.setItem(TIMETABLES_STORAGE_KEY, JSON.stringify(updatedTimetables));
+export const deleteTimetable = async (id: string): Promise<void> => {
+  const { error } = await supabase
+    .from('timetables')
+    .delete()
+    .eq('id', id);
+  
+  if (error) {
+    console.error('Error deleting timetable:', error);
+    throw error;
+  }
 };
 
 // Get timetables for a specific faculty member
-export const getTimetablesForFaculty = (facultyName: string): Timetable[] => {
-  const timetables = getTimetables();
+export const getTimetablesForFaculty = async (facultyName: string): Promise<Timetable[]> => {
+  const { data, error } = await supabase
+    .from('timetables')
+    .select('*');
   
-  // Find timetables where this faculty teaches at least one subject
-  return timetables.filter(timetable => {
+  if (error) {
+    console.error('Error fetching timetables for faculty:', error);
+    return [];
+  }
+  
+  // Filter timetables where this faculty teaches at least one subject
+  return (data as unknown as Timetable[]).filter(timetable => {
     const hasSubjectAssigned = timetable.formData.subjectTeacherPairs.some(pair => 
       pair.teacherName === facultyName
     );
@@ -86,14 +118,21 @@ export const getTimetablesForFaculty = (facultyName: string): Timetable[] => {
 };
 
 // Filter timetables by year, branch, and semester
-export const filterTimetables = (
+export const filterTimetables = async (
   year: YearType,
   branch: BranchType,
   semester: SemesterType
-): Timetable[] => {
-  const timetables = getTimetables();
+): Promise<Timetable[]> => {
+  const { data, error } = await supabase
+    .from('timetables')
+    .select('*');
   
-  return timetables.filter(timetable => 
+  if (error) {
+    console.error('Error filtering timetables:', error);
+    return [];
+  }
+  
+  return (data as unknown as Timetable[]).filter(timetable => 
     timetable.formData.year === year && 
     timetable.formData.branch === branch &&
     timetable.formData.semester === semester
