@@ -11,11 +11,12 @@ import { useToast } from "@/hooks/use-toast";
 import Logo from '@/components/Logo';
 import { useAuth } from '@/contexts/AuthContext';
 import { FACULTY_LIST } from '@/utils/timetableUtils';
+import { UserRole } from '@/utils/types';
 
 const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { loginAdmin, loginFaculty, loginStudent } = useAuth();
+  const { login, loading } = useAuth();
   
   // Admin login state
   const [adminUsername, setAdminUsername] = useState('');
@@ -29,7 +30,7 @@ const Login = () => {
   const [studentBranch, setStudentBranch] = useState('');
   const [studentSemester, setStudentSemester] = useState('');
   
-  const handleAdminLogin = (e: React.FormEvent) => {
+  const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!adminUsername || !adminPassword) {
@@ -41,24 +42,19 @@ const Login = () => {
       return;
     }
     
-    const success = loginAdmin(adminUsername, adminPassword);
-    
-    if (success) {
-      toast({
-        title: "Login successful",
-        description: "Welcome back, admin!",
-      });
+    try {
+      await login(adminUsername, adminPassword, 'admin');
       navigate('/dashboard');
-    } else {
+    } catch (error) {
       toast({
         title: "Login failed",
-        description: "Invalid username or password",
+        description: error instanceof Error ? error.message : "Invalid username or password",
         variant: "destructive",
       });
     }
   };
   
-  const handleFacultyLogin = (e: React.FormEvent) => {
+  const handleFacultyLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!selectedFaculty) {
@@ -70,18 +66,24 @@ const Login = () => {
       return;
     }
     
-    const success = loginFaculty(selectedFaculty);
-    
-    if (success) {
+    try {
+      // Using the faculty name as email and a default password for faculty
+      await login(`${selectedFaculty.toLowerCase().replace(/\s+/g, '.')}@faculty.edu`, 'faculty123', 'faculty');
       toast({
         title: "Login successful",
         description: `Welcome, ${selectedFaculty}!`,
       });
       navigate('/dashboard');
+    } catch (error) {
+      toast({
+        title: "Login failed",
+        description: error instanceof Error ? error.message : "Failed to login",
+        variant: "destructive",
+      });
     }
   };
   
-  const handleStudentLogin = (e: React.FormEvent) => {
+  const handleStudentLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!studentYear || !studentBranch || !studentSemester) {
@@ -93,14 +95,22 @@ const Login = () => {
       return;
     }
     
-    const success = loginStudent(studentYear, studentBranch, studentSemester);
-    
-    if (success) {
+    try {
+      // Creating a student email based on their details
+      const studentEmail = `student.${studentYear.replace(/\s+/g, '')}.${studentBranch.replace(/\s+/g, '')}.${studentSemester}@student.edu`;
+      await login(studentEmail, 'student123', 'student');
+      
       toast({
         title: "Login successful",
         description: "Redirecting to your timetable...",
       });
       navigate('/dashboard');
+    } catch (error) {
+      toast({
+        title: "Login failed",
+        description: error instanceof Error ? error.message : "Failed to login",
+        variant: "destructive",
+      });
     }
   };
   
@@ -153,7 +163,9 @@ const Login = () => {
                 </div>
               </CardContent>
               <CardFooter>
-                <Button type="submit" className="w-full">Login as Admin</Button>
+                <Button type="submit" disabled={loading} className="w-full">
+                  {loading ? 'Logging in...' : 'Login as Admin'}
+                </Button>
               </CardFooter>
             </form>
           </TabsContent>
@@ -178,7 +190,9 @@ const Login = () => {
                 </div>
               </CardContent>
               <CardFooter>
-                <Button type="submit" className="w-full">View My Timetable</Button>
+                <Button type="submit" disabled={loading} className="w-full">
+                  {loading ? 'Logging in...' : 'View My Timetable'}
+                </Button>
               </CardFooter>
             </form>
           </TabsContent>
@@ -232,7 +246,9 @@ const Login = () => {
                 </div>
               </CardContent>
               <CardFooter>
-                <Button type="submit" className="w-full">View Timetable</Button>
+                <Button type="submit" disabled={loading} className="w-full">
+                  {loading ? 'Logging in...' : 'View Timetable'}
+                </Button>
               </CardFooter>
             </form>
           </TabsContent>
