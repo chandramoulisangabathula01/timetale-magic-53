@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,6 +10,8 @@ import CreateTimetable from "./pages/CreateTimetable";
 import EditTimetable from "./pages/EditTimetable";
 import ViewTimetablePage from "./pages/ViewTimetablePage";
 import NotFound from "./pages/NotFound";
+import ManageSubjects from "./pages/ManageSubjects";
+import ManageFaculty from "./pages/ManageFaculty";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +28,8 @@ const App = () => (
             <Route path="/create-timetable" element={<CreateTimetable />} />
             <Route path="/edit-timetable/:id" element={<EditTimetable />} />
             <Route path="/view-timetable/:id" element={<ViewTimetablePage />} />
+            <Route path="/manage-subjects" element={<ManageSubjects />} />
+            <Route path="/manage-faculty" element={<ManageFaculty />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

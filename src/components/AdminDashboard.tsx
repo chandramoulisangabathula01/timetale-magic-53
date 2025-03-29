@@ -1,10 +1,9 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertCircle, Calendar, FileEdit, FilePlus, Info, Trash2 } from 'lucide-react';
+import { AlertCircle, Calendar, FileEdit, FilePlus, Info, Trash2, BookOpen, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getTimetables, deleteTimetable } from '@/utils/timetableUtils';
 import {
@@ -54,12 +53,22 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-        <Button onClick={handleCreateNew} className="flex items-center gap-2">
-          <FilePlus className="h-4 w-4" />
-          Create New Timetable
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={() => navigate('/manage-subjects')} variant="outline" className="flex items-center gap-2">
+            <BookOpen className="h-4 w-4" />
+            Manage Subjects
+          </Button>
+          <Button onClick={() => navigate('/manage-faculty')} variant="outline" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            Manage Faculty
+          </Button>
+          <Button onClick={handleCreateNew} className="flex items-center gap-2">
+            <FilePlus className="h-4 w-4" />
+            Create New Timetable
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="timetables">
@@ -191,6 +200,13 @@ const AdminDashboard: React.FC = () => {
                 <h3 className="font-medium">Creating a Timetable</h3>
                 <p className="text-sm text-muted-foreground">
                   Click on "Create New Timetable" to start the creation process. You'll need to provide academic details, subject and faculty information, and scheduling preferences.
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <h3 className="font-medium">Managing Subjects and Faculty</h3>
+                <p className="text-sm text-muted-foreground">
+                  Use the "Manage Subjects" and "Manage Faculty" sections to create, edit, and organize your subjects and teachers before creating timetables.
                 </p>
               </div>
               

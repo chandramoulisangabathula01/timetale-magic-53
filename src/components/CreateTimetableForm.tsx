@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,6 +32,8 @@ import {
   Timetable
 } from '@/utils/types';
 import { generateTimetable, saveTimetable, countNonLabSubjectsForTeacher } from '@/utils/timetableUtils';
+import { getFaculty } from '@/utils/facultyUtils';
+import { getFilteredSubjects } from '@/utils/subjectsUtils';
 
 interface CreateTimetableFormProps {
   existingTimetable?: Timetable;
@@ -42,7 +44,6 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
   const { toast } = useToast();
   const isEditMode = !!existingTimetable;
   
-  // Form data state
   const [formData, setFormData] = useState<TimetableFormData>(
     existingTimetable?.formData || {
       year: '1st Year' as YearType,
@@ -67,27 +68,35 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
     }
   );
   
-  // New subject-teacher pair state
+  const [availableSubjects, setAvailableSubjects] = useState([]);
+  const [availableFaculty, setAvailableFaculty] = useState([]);
+  
   const [newSubject, setNewSubject] = useState('');
   const [newTeacher, setNewTeacher] = useState('');
   const [isLabSubject, setIsLabSubject] = useState(false);
   const [batchNumber, setBatchNumber] = useState('');
   
-  // New free hour state
   const [newFreeHourType, setNewFreeHourType] = useState<FreeHourType>('Library');
   const [customFreeHourType, setCustomFreeHourType] = useState('');
   const [mergeFreeSlots, setMergeFreeSlots] = useState(false);
   
-  // Form validation errors
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [currentStep, setCurrentStep] = useState(0);
   
-  // Handle input change for academic details
+  useEffect(() => {
+    setAvailableFaculty(getFaculty());
+  }, []);
+
+  useEffect(() => {
+    if (formData.year && formData.branch) {
+      setAvailableSubjects(getFilteredSubjects(formData.year, formData.branch));
+    }
+  }, [formData.year, formData.branch]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     
-    // Clear error when user types
     if (errors[name]) {
       setErrors(prev => {
         const newErrors = { ...prev };
@@ -96,12 +105,10 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
       });
     }
   };
-  
-  // Handle select change
+
   const handleSelectChange = (name: string, value: string) => {
     setFormData(prev => ({ ...prev, [name]: value }));
     
-    // Clear error when user selects
     if (errors[name]) {
       setErrors(prev => {
         const newErrors = { ...prev };
@@ -110,8 +117,7 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
       });
     }
   };
-  
-  // Add a new subject-teacher pair
+
   const handleAddSubjectTeacherPair = () => {
     if (!newSubject.trim() || !newTeacher.trim()) {
       toast({
@@ -122,7 +128,6 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
       return;
     }
     
-    // Check if teacher is already assigned to 3 non-lab subjects
     if (!isLabSubject && countNonLabSubjectsForTeacher(newTeacher, formData.subjectTeacherPairs) >= 3) {
       toast({
         title: "Teacher limit reached",
@@ -132,7 +137,6 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
       return;
     }
     
-    // Validate batch number for lab subjects
     if (isLabSubject && !batchNumber.trim()) {
       toast({
         title: "Missing batch number",
@@ -155,24 +159,20 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
       subjectTeacherPairs: [...prev.subjectTeacherPairs, newPair]
     }));
     
-    // Reset inputs
     setNewSubject('');
     setNewTeacher('');
     setIsLabSubject(false);
     setBatchNumber('');
   };
-  
-  // Remove a subject-teacher pair
+
   const handleRemoveSubjectTeacherPair = (id: string) => {
     setFormData(prev => ({
       ...prev,
       subjectTeacherPairs: prev.subjectTeacherPairs.filter(pair => pair.id !== id)
     }));
   };
-  
-  // Add a new free hour type
+
   const handleAddFreeHour = () => {
-    // Validate custom type if "Others" is selected
     if (newFreeHourType === 'Others' && !customFreeHourType.trim()) {
       toast({
         title: "Missing information",
@@ -193,36 +193,30 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
       freeHours: [...prev.freeHours, newFreeHour]
     }));
     
-    // Reset inputs
     setNewFreeHourType('Library');
     setCustomFreeHourType('');
     setMergeFreeSlots(false);
   };
-  
-  // Remove a free hour type
+
   const handleRemoveFreeHour = (index: number) => {
     setFormData(prev => ({
       ...prev,
       freeHours: prev.freeHours.filter((_, i) => i !== index)
     }));
   };
-  
-  // Handle day option changes
+
   const handleDayOptionChange = (option: 'fourContinuousDays' | 'useCustomDays', value: boolean) => {
     setFormData(prev => ({
       ...prev,
       dayOptions: {
         ...prev.dayOptions,
         [option]: value,
-        // If selecting four continuous days, disable custom days
         ...(option === 'fourContinuousDays' && value ? { useCustomDays: false } : {}),
-        // If selecting custom days, disable four continuous days
         ...(option === 'useCustomDays' && value ? { fourContinuousDays: false } : {})
       }
     }));
   };
-  
-  // Toggle a day in the custom days selection
+
   const toggleCustomDay = (day: Day) => {
     setFormData(prev => {
       const isSelected = prev.dayOptions.selectedDays.includes(day);
@@ -237,13 +231,11 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
       };
     });
   };
-  
-  // Validate the current step
+
   const validateCurrentStep = (): boolean => {
     const newErrors: Record<string, string> = {};
     
     if (currentStep === 0) {
-      // Validate academic details
       if (!formData.year) newErrors.year = "Year is required";
       if (!formData.semester) newErrors.semester = "Semester is required";
       if (!formData.branch) newErrors.branch = "Branch is required";
@@ -261,18 +253,15 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
       if (!formData.date) newErrors.date = "Date is required";
     }
     else if (currentStep === 1) {
-      // Validate subject-teacher pairs
       if (formData.subjectTeacherPairs.length === 0) {
         newErrors.subjectTeacherPairs = "At least one subject-teacher pair is required";
       }
     }
     else if (currentStep === 2) {
-      // Validate free hours
       if (formData.freeHours.length === 0) {
         newErrors.freeHours = "At least one free hour type is required";
       }
       
-      // Validate day options for 4th year
       if (formData.year === '4th Year' && formData.dayOptions.useCustomDays && formData.dayOptions.selectedDays.length === 0) {
         newErrors.selectedDays = "Please select at least one day";
       }
@@ -281,36 +270,30 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-  
-  // Move to next step
+
   const handleNextStep = () => {
     if (validateCurrentStep()) {
       setCurrentStep(prev => prev + 1);
     }
   };
-  
-  // Move to previous step
+
   const handlePrevStep = () => {
     setCurrentStep(prev => prev - 1);
   };
-  
-  // Generate timetable and save
+
   const handleGenerateTimetable = () => {
     if (!validateCurrentStep()) {
       return;
     }
     
     try {
-      // Generate the timetable
       const newTimetable = generateTimetable(formData);
       
-      // If in edit mode, preserve the original ID
       if (isEditMode && existingTimetable) {
         newTimetable.id = existingTimetable.id;
         newTimetable.createdAt = existingTimetable.createdAt;
       }
       
-      // Save the timetable
       saveTimetable(newTimetable);
       
       toast({
@@ -320,7 +303,6 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
           : "The timetable has been successfully generated",
       });
       
-      // Navigate to view the new timetable
       navigate(`/view-timetable/${newTimetable.id}`);
     } catch (error) {
       console.error("Error generating timetable:", error);
@@ -331,7 +313,7 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
       });
     }
   };
-  
+
   return (
     <div className="space-y-6">
       <div>
@@ -553,23 +535,63 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
                   
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                     <div className="space-y-2">
-                      <Label htmlFor="newSubject">Subject Name</Label>
-                      <Input
-                        id="newSubject"
-                        placeholder="e.g., Mathematics or Physics lab"
+                      <Label htmlFor="newSubject">Subject</Label>
+                      <Select
                         value={newSubject}
-                        onChange={(e) => setNewSubject(e.target.value)}
-                      />
+                        onValueChange={setNewSubject}
+                      >
+                        <SelectTrigger id="newSubject">
+                          <SelectValue placeholder="Select Subject" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableSubjects.length === 0 ? (
+                            <SelectItem value="no-subjects" disabled>
+                              No subjects available - create subjects first
+                            </SelectItem>
+                          ) : (
+                            availableSubjects.map(subject => (
+                              <SelectItem key={subject.id} value={subject.name}>
+                                {subject.name} {subject.isLab && "(Lab)"}
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                      {availableSubjects.length === 0 && (
+                        <p className="text-xs text-destructive">
+                          Please add subjects in Manage Subjects page first
+                        </p>
+                      )}
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="newTeacher">Teacher Name</Label>
-                      <Input
-                        id="newTeacher"
-                        placeholder="e.g., Dr. Vanisree"
+                      <Label htmlFor="newTeacher">Teacher</Label>
+                      <Select
                         value={newTeacher}
-                        onChange={(e) => setNewTeacher(e.target.value)}
-                      />
+                        onValueChange={setNewTeacher}
+                      >
+                        <SelectTrigger id="newTeacher">
+                          <SelectValue placeholder="Select Teacher" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableFaculty.length === 0 ? (
+                            <SelectItem value="no-faculty" disabled>
+                              No faculty available - create faculty first
+                            </SelectItem>
+                          ) : (
+                            availableFaculty.map(faculty => (
+                              <SelectItem key={faculty.id} value={faculty.name}>
+                                {faculty.name} ({faculty.shortName})
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                      {availableFaculty.length === 0 && (
+                        <p className="text-xs text-destructive">
+                          Please add faculty in Manage Faculty page first
+                        </p>
+                      )}
                     </div>
                     
                     <div className="space-y-4">
@@ -757,7 +779,7 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
                     )}
                   </div>
                   
-                  <Separator />
+                  <Separator className="my-4" />
                   
                   <div>
                     <h3 className="font-medium mb-3">Day Options</h3>
@@ -821,6 +843,57 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
                       </p>
                     )}
                   </div>
+                  
+                  <Separator />
+                  
+                  <div>
+                    <h3 className="font-medium mb-3">Scheduling Mode</h3>
+                    <div className="space-y-2">
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button 
+                          type="button"
+                          variant={schedulingMode === 'auto' ? 'default' : 'outline'}
+                          className="justify-start" 
+                          onClick={() => setSchedulingMode('auto')}
+                        >
+                          <div className="flex flex-col items-start">
+                            <span className="font-medium">Auto Scheduling</span>
+                            <span className="text-xs text-muted-foreground">System will automatically generate the timetable</span>
+                          </div>
+                        </Button>
+                        <Button 
+                          type="button"
+                          variant={schedulingMode === 'manual' ? 'default' : 'outline'}
+                          className="justify-start" 
+                          onClick={() => setSchedulingMode('manual')}
+                        >
+                          <div className="flex flex-col items-start">
+                            <span className="font-medium">Manual Scheduling</span>
+                            <span className="text-xs text-muted-foreground">Manually place subjects in specific time slots</span>
+                          </div>
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {schedulingMode === 'manual' && (
+                    <div className="mt-4">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Manual Scheduling</CardTitle>
+                          <CardDescription>
+                            This feature will be available in the next update
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-sm text-muted-foreground">
+                            The manual scheduling interface will allow you to drag and drop subjects 
+                            into specific time slots. Stay tuned for this feature in an upcoming release.
+                          </p>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
