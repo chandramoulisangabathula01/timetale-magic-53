@@ -7,8 +7,25 @@ import {
   SubjectTeacherPair,
   YearType,
   BranchType,
-  SemesterType
+  SemesterType,
+  Day,
+  TimeSlot,
+  FreeHourType
 } from './types';
+
+// Faculty list for selection in the login form
+export const FACULTY_LIST = [
+  "Dr. Smith",
+  "Prof. Johnson",
+  "Dr. Williams",
+  "Prof. Brown",
+  "Dr. Jones",
+  "Prof. Garcia",
+  "Dr. Miller",
+  "Prof. Davis",
+  "Dr. Rodriguez",
+  "Prof. Martinez"
+];
 
 const TIMETABLES_STORAGE_KEY = 'timetables';
 
@@ -24,12 +41,18 @@ export const saveTimetable = (timetable: Timetable): void => {
   const timetables = getTimetables();
   const existingIndex = timetables.findIndex(t => t.id === timetable.id);
   
+  // Make sure timetable has updatedAt field
+  const updatedTimetable = {
+    ...timetable,
+    updatedAt: new Date().toISOString()
+  };
+  
   if (existingIndex !== -1) {
     // Update existing timetable
-    timetables[existingIndex] = timetable;
+    timetables[existingIndex] = updatedTimetable;
   } else {
     // Add new timetable
-    timetables.push(timetable);
+    timetables.push(updatedTimetable);
   }
   
   localStorage.setItem(TIMETABLES_STORAGE_KEY, JSON.stringify(timetables));
@@ -93,10 +116,10 @@ export const generateTimetable = (formData: TimetableFormData): Timetable => {
   const days = formData.dayOptions.useCustomDays
     ? formData.dayOptions.selectedDays
     : formData.dayOptions.fourContinuousDays
-      ? ['Monday', 'Tuesday', 'Wednesday', 'Thursday']
-      : ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      ? ['Monday', 'Tuesday', 'Wednesday', 'Thursday'] as Day[]
+      : ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as Day[];
   
-  const timeSlots = [
+  const timeSlots: TimeSlot[] = [
     '9:30-10:20', 
     '10:20-11:10', 
     '11:10-11:20', // Break
@@ -224,7 +247,7 @@ export const generateTimetable = (formData: TimetableFormData): Timetable => {
       // Choose a free hour type
       const freeHour = formData.freeHours[Math.floor(Math.random() * formData.freeHours.length)];
       const freeType = freeHour.type === 'Others' && freeHour.customType 
-        ? freeHour.customType 
+        ? freeHour.customType as FreeHourType 
         : freeHour.type;
       
       timetableEntries[index] = {
@@ -239,7 +262,8 @@ export const generateTimetable = (formData: TimetableFormData): Timetable => {
     id: uuidv4(),
     formData,
     entries: timetableEntries,
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   };
 };
 
@@ -250,7 +274,7 @@ const findConsecutiveSlots = (entries: TimetableEntry[]): TimetableEntry[] => {
   );
   
   // Try to find consecutive slots on the same day
-  for (const day of ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']) {
+  for (const day of ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as Day[]) {
     const slotsForDay = availableSlots.filter(slot => slot.day === day);
     
     // Find consecutive time slots
