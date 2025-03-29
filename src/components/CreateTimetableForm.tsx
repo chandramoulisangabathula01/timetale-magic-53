@@ -44,6 +44,9 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
   const { toast } = useToast();
   const isEditMode = !!existingTimetable;
   
+  // Add the missing schedulingMode state
+  const [schedulingMode, setSchedulingMode] = useState<'auto' | 'manual'>('auto');
+  
   const [formData, setFormData] = useState<TimetableFormData>(
     existingTimetable?.formData || {
       year: '1st Year' as YearType,
@@ -314,6 +317,7 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
     }
   };
 
+  
   return (
     <div className="space-y-6">
       <div>
