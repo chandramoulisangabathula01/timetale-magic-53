@@ -90,10 +90,11 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter 
     
     if (!entry) return "";
     
-    if (entry.isBreak) return "break-slot";
-    if (entry.isLunch) return "lunch-slot";
-    if (entry.isFree) return "free-slot";
-    if (entry.isLab) return "lab-slot";
+    if (entry.isBreak) return "bg-gray-100 break-slot";
+    if (entry.isLunch) return "bg-gray-100 lunch-slot";
+    if (entry.isFree) return "bg-blue-50 free-slot";
+    if (entry.isLab) return "bg-green-50 lab-slot";
+    if (entry.subjectName) return "bg-white";
     
     return "";
   };
@@ -101,25 +102,28 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter 
   return (
     <div>
       <div className="overflow-x-auto timetable-container">
-        <div className="timetable-grid">
-          {/* Header row */}
-          <div className="timetable-header">Time / Day</div>
-          {days.map(day => (
-            <div key={day} className="timetable-header">{day}</div>
-          ))}
-          
-          {/* Time slots and entries */}
-          {timeSlots.map(timeSlot => (
-            <React.Fragment key={timeSlot}>
-              <div className="timetable-time">{timeSlot}</div>
+        <table className="w-full border-collapse">
+          <thead>
+            <tr>
+              <th className="border p-2 bg-gray-50">Time / Day</th>
               {days.map(day => (
-                <div key={`${day}-${timeSlot}`} className={`timetable-cell ${getCellClass(day, timeSlot)}`}>
-                  {getCellContent(day, timeSlot)}
-                </div>
+                <th key={day} className="border p-2 bg-gray-50">{day}</th>
               ))}
-            </React.Fragment>
-          ))}
-        </div>
+            </tr>
+          </thead>
+          <tbody>
+            {timeSlots.map(timeSlot => (
+              <tr key={timeSlot}>
+                <td className="border p-2 text-xs bg-gray-50">{timeSlot}</td>
+                {days.map(day => (
+                  <td key={`${day}-${timeSlot}`} className={`border p-2 ${getCellClass(day, timeSlot)}`}>
+                    {getCellContent(day, timeSlot)}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
       
       {/* Subject and Teacher List */}

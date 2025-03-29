@@ -1,4 +1,3 @@
-
 import { v4 as uuidv4 } from 'uuid';
 import { 
   Day, 
@@ -138,13 +137,28 @@ export const generateTimetable = (formData: TimetableFormData): Timetable => {
   // Schedule regular subjects (allocate 4 periods per week)
   const regularSubjects = formData.subjectTeacherPairs.filter(pair => !pair.isLab);
   
+  // Ensure all days have subjects scheduled
   regularSubjects.forEach(subject => {
     let periodsScheduled = 0;
+    const maxPeriodsPerSubject = 4;
+    const maxPeriodsPerDay = 2;
     
-    // Try to distribute 4 periods across different days
-    while (periodsScheduled < 4) {
+    // Track scheduled periods per day
+    const periodsPerDay: Record<Day, number> = {} as Record<Day, number>;
+    selectedDays.forEach(day => {
+      periodsPerDay[day] = 0;
+    });
+    
+    // Try to distribute periods evenly across different days
+    while (periodsScheduled < maxPeriodsPerSubject) {
+      let scheduledThisRound = false;
+      
+      // First, try to schedule at least one period per day
       for (const day of selectedDays) {
-        if (periodsScheduled >= 4) break;
+        if (periodsScheduled >= maxPeriodsPerSubject) break;
+        
+        // Skip if this day already has the maximum periods for this subject
+        if (periodsPerDay[day] >= maxPeriodsPerDay) continue;
         
         // Find an available time slot
         const availableSlots = entries.filter(entry => 
@@ -156,64 +170,46 @@ export const generateTimetable = (formData: TimetableFormData): Timetable => {
         );
         
         for (const entry of availableSlots) {
-          if (periodsScheduled >= 4) break;
-          
           if (!isTeacherBooked(subject.teacherName, day, entry.timeSlot as TimeSlot, entries)) {
             // Schedule the subject
             entry.subjectName = subject.subjectName;
             entry.teacherName = subject.teacherName;
             
             periodsScheduled++;
-            
-            // Don't schedule more than 2 periods of the same subject on the same day
-            if (entries.filter(e => 
-              e.day === day && 
-              e.subjectName === subject.subjectName
-            ).length >= 2) {
-              break;
-            }
+            periodsPerDay[day]++;
+            scheduledThisRound = true;
+            break;
           }
         }
       }
       
-      // If we can't schedule any more periods, break to avoid infinite loop
-      if (periodsScheduled < 4) {
-        console.warn(`Could only schedule ${periodsScheduled} periods for ${subject.subjectName}`);
+      // If we couldn't schedule any more periods this round, break to avoid infinite loop
+      if (!scheduledThisRound) {
         break;
       }
     }
-  });
-
-  // Schedule free hours, prioritizing Saturday
-  const saturdayEntries = entries.filter(entry => 
-    entry.day === 'Saturday' && 
-    !entry.isBreak && 
-    !entry.isLunch && 
-    !entry.subjectName
-  );
-  
-  saturdayEntries.forEach(entry => {
-    if (!entry.subjectName && !entry.isFree) {
-      const freeHour = formData.freeHours[0] || { type: 'Library' };
-      entry.isFree = true;
-      entry.freeType = freeHour.type;
+    
+    if (periodsScheduled < maxPeriodsPerSubject) {
+      console.warn(`Could only schedule ${periodsScheduled} periods for ${subject.subjectName}`);
     }
   });
 
-  // Fill remaining slots with free hours
-  const remainingEmptySlots = entries.filter(entry => 
+  // Schedule free hours based on configured free hour types
+  const availableSlots = entries.filter(entry => 
     !entry.isBreak && 
     !entry.isLunch && 
     !entry.subjectName && 
     !entry.isFree
   );
   
-  remainingEmptySlots.forEach((entry, index) => {
+  availableSlots.forEach((entry, index) => {
     const freeHourIndex = index % formData.freeHours.length;
     const freeHour = formData.freeHours[freeHourIndex] || { type: 'Library' };
     
     entry.isFree = true;
-    entry.freeType = freeHour.type;
+    entry.freeType = freeHour.type === 'Others' && freeHour.customType 
+      ? freeHour.customType as FreeHourType
+      : freeHour.type;
   });
 
   return {

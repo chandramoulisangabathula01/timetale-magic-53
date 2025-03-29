@@ -40,12 +40,10 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
   
   // Determine which days to use
   const getDaysForTimetable = (): Day[] => {
-    if (year === '4th Year') {
-      if (dayOptions.fourContinuousDays) {
-        return ['Monday', 'Tuesday', 'Wednesday', 'Thursday'];
-      } else if (dayOptions.useCustomDays) {
-        return dayOptions.selectedDays;
-      }
+    if (dayOptions.useCustomDays) {
+      return dayOptions.selectedDays;
+    } else if (dayOptions.fourContinuousDays) {
+      return ['Monday', 'Tuesday', 'Wednesday', 'Thursday'];
     }
     return ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   };
@@ -150,13 +148,19 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
       return;
     }
     
-    // Handling different types of drags
-    if (source.droppableId === 'subjects-list' && destination.droppableId !== 'subjects-list') {
+    // Handle different types of drags
+    if (source.droppableId === 'subjects-list') {
       // Moving from subjects list to a time slot
       const slot = timetableData.slots[destination.droppableId];
       
+      // Check if slot exists (crucial fix)
+      if (!slot) {
+        console.error("Destination slot doesn't exist:", destination.droppableId);
+        return;
+      }
+      
       // Check if slot already has a subject
-      if (slot.subjectIds.length > 0) {
+      if (slot.subjectIds && slot.subjectIds.length > 0) {
         toast({
           title: "Slot already filled",
           description: "This time slot already has a subject assigned",
@@ -192,29 +196,47 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
       // Moving back to subjects list (removing from slot)
       if (source.droppableId !== 'subjects-list') {
         const slot = timetableData.slots[source.droppableId];
-        const newSlot = {
-          ...slot,
-          subjectIds: []
-        };
-        
-        setTimetableData({
-          ...timetableData,
-          slots: {
-            ...timetableData.slots,
-            [source.droppableId]: newSlot
-          }
-        });
+        if (slot) {
+          const newSlot = {
+            ...slot,
+            subjectIds: []
+          };
+          
+          setTimetableData({
+            ...timetableData,
+            slots: {
+              ...timetableData.slots,
+              [source.droppableId]: newSlot
+            }
+          });
+        }
       }
     } else {
       // Moving from one slot to another
       const sourceSlot = timetableData.slots[source.droppableId];
       const destSlot = timetableData.slots[destination.droppableId];
       
+      // Validate slots exist (crucial fix)
+      if (!sourceSlot || !destSlot) {
+        console.error("Source or destination slot doesn't exist");
+        return;
+      }
+      
       // Check if destination slot already has a subject
-      if (destSlot.subjectIds.length > 0) {
+      if (destSlot.subjectIds && destSlot.subjectIds.length > 0) {
         toast({
           title: "Slot already filled",
           description: "The destination slot already has a subject assigned",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Check if destination is a break or lunch slot
+      if (destSlot.isBreak || destSlot.isLunch) {
+        toast({
+          title: "Invalid slot",
+          description: "Cannot assign subjects to break or lunch slots",
           variant: "destructive",
         });
         return;
@@ -228,7 +250,7 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
       
       const newDestSlot = {
         ...destSlot,
-        subjectIds: [draggableId]
+        subjectIds: sourceSlot.subjectIds
       };
       
       setTimetableData({
@@ -262,23 +284,25 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
           timeSlot,
           isLunch: true
         });
-      } else if (subjectIds.length > 0) {
+      } else if (subjectIds && subjectIds.length > 0) {
         const subjectId = subjectIds[0];
         const subject = timetableData.subjects[subjectId];
         
-        entries.push({
-          day,
-          timeSlot,
-          subjectName: subject.subjectName,
-          teacherName: subject.teacherName,
-          isLab: subject.isLab,
-          batchNumber: subject.batchNumber
-        });
+        if (subject) {
+          entries.push({
+            day,
+            timeSlot,
+            subjectName: subject.subjectName,
+            teacherName: subject.teacherName,
+            isLab: subject.isLab,
+            batchNumber: subject.batchNumber
+          });
+        }
       } else {
-        // Empty slot, add as free period
-        const freeType = freeHours.length > 0 ? 
+        // Empty slot, add as free period using the configured free hours
+        const freeType = freeHours && freeHours.length > 0 ? 
           (freeHours[0].type === 'Others' && freeHours[0].customType ? 
-            freeHours[0].customType : freeHours[0].type) : 'Free';
+            freeHours[0].customType : freeHours[0].type) : 'Library';
           
         entries.push({
           day,
@@ -310,7 +334,7 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
             <Card>
               <CardContent className="p-4">
                 <h3 className="font-medium mb-3">Subjects</h3>
-                <Droppable droppableId="subjects-list">
+                <Droppable droppableId="subjects-list" type="SUBJECT">
                   {(provided) => (
                     <div
                       {...provided.droppableProps}
@@ -326,7 +350,7 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
                                 ref={provided.innerRef}
                                 {...provided.draggableProps}
                                 {...provided.dragHandleProps}
-                                className="bg-white border rounded p-2 shadow-sm"
+                                className="bg-white border rounded p-2 shadow-sm cursor-move"
                               >
                                 <div className="font-medium text-sm">{subject.subjectName}</div>
                                 <div className="text-xs text-muted-foreground">
@@ -386,25 +410,21 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
                             }
                             
                             return (
-                              <Droppable key={slotId} droppableId={slotId}>
+                              <Droppable key={slotId} droppableId={slotId} type="SUBJECT">
                                 {(provided) => (
                                   <div
                                     ref={provided.innerRef}
                                     {...provided.droppableProps}
                                     className="p-1 border min-h-[50px]"
                                   >
-                                    {slot.subjectIds.length > 0 && (
+                                    {slot.subjectIds && slot.subjectIds.length > 0 && timetableData.subjects[slot.subjectIds[0]] && (
                                       <div className="bg-blue-50 p-1 rounded text-xs h-full">
-                                        {timetableData.subjects[slot.subjectIds[0]] && (
-                                          <>
-                                            <div className="font-medium">
-                                              {timetableData.subjects[slot.subjectIds[0]].subjectName}
-                                            </div>
-                                            <div className="text-[10px] text-muted-foreground">
-                                              {timetableData.subjects[slot.subjectIds[0]].teacherName}
-                                            </div>
-                                          </>
-                                        )}
+                                        <div className="font-medium">
+                                          {timetableData.subjects[slot.subjectIds[0]].subjectName}
+                                        </div>
+                                        <div className="text-[10px] text-muted-foreground">
+                                          {timetableData.subjects[slot.subjectIds[0]].teacherName}
+                                        </div>
                                       </div>
                                     )}
                                     {provided.placeholder}

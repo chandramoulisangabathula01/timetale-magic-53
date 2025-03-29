@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Calendar, FileDown, ArrowLeft, Pencil } from 'lucide-react';
@@ -13,12 +13,69 @@ const ViewTimetable: React.FC = () => {
   const { toast } = useToast();
   const { id } = useParams<{ id: string }>();
   const { userRole } = useAuth();
+  const printRef = useRef<HTMLDivElement>(null);
   
   const timetable = id ? getTimetableById(id) : null;
   
   const handleDownloadPDF = () => {
-    // This is a placeholder - in a real app, this would trigger PDF generation
-    window.print();
+    const content = printRef.current;
+    if (!content) return;
+    
+    // Create a new window for printing only the timetable
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      toast({
+        title: "Error",
+        description: "Could not open print window. Please check your popup settings.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Add necessary styles
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Timetable - ${timetable?.formData.year} ${timetable?.formData.branch}</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; }
+            .timetable-container { width: 100%; margin-bottom: 20px; }
+            .timetable-header { text-align: center; margin-bottom: 20px; }
+            .timetable-grid { display: grid; grid-template-columns: 80px repeat(6, 1fr); border-collapse: collapse; width: 100%; }
+            .timetable-cell, .timetable-header, .timetable-time {
+              border: 1px solid #ddd;
+              padding: 8px;
+              text-align: center;
+            }
+            .break-slot, .lunch-slot { background-color: #f5f5f5; }
+            .free-slot { background-color: #e6f7ff; }
+            .lab-slot { background-color: #e6ffe6; }
+            .subject-list { margin-top: 20px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+            @media print {
+              body { margin: 0; padding: 10px; }
+              .no-print { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          ${content.innerHTML}
+          <div class="no-print" style="margin-top: 20px; text-align: center;">
+            <button onclick="window.print(); setTimeout(() => window.close(), 500);">
+              Print Timetable
+            </button>
+          </div>
+        </body>
+      </html>
+    `);
+    
+    printWindow.document.close();
+    
+    // Automatically trigger print after content is loaded
+    printWindow.onload = () => {
+      setTimeout(() => {
+        printWindow.focus();
+      }, 100);
+    };
   };
   
   const handleBack = () => {
@@ -52,7 +109,7 @@ const ViewTimetable: React.FC = () => {
             variant="outline" 
             size="sm" 
             onClick={handleBack}
-            className="flex items-center gap-1"
+            className="flex items-center gap-1 print:hidden"
           >
             <ArrowLeft className="h-4 w-4" />
             Back
@@ -60,7 +117,7 @@ const ViewTimetable: React.FC = () => {
           <h1 className="text-2xl font-bold">View Timetable</h1>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 print:hidden">
           {userRole === 'admin' && (
             <Button 
               variant="outline" 
@@ -81,7 +138,7 @@ const ViewTimetable: React.FC = () => {
         </div>
       </div>
       
-      <div className="border rounded-lg p-6 print:border-none">
+      <div className="border rounded-lg p-6 print:border-none" ref={printRef}>
         <div className="mb-6 print:mb-8">
           <h2 className="font-bold text-center text-xl mb-1">College of Engineering</h2>
           <h3 className="font-bold text-center text-lg">
