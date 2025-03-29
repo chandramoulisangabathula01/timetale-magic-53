@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { useNavigate } from 'react-router-dom';
@@ -765,7 +764,7 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
                     
                     {formData.year === '4th Year' && (
                       <div className="space-y-4">
-                        <Alert variant="outline" className="bg-muted/50">
+                        <Alert variant="default" className="bg-muted/50">
                           <AlertTriangle className="h-4 w-4" />
                           <AlertTitle>4th Year Scheduling</AlertTitle>
                           <AlertDescription>
