@@ -17,12 +17,15 @@ const FacultyDashboard: React.FC = () => {
   
   useEffect(() => {
     if (username) {
+      // Force a fresh fetch of timetables for this faculty member
       const facultyTimetables = getTimetablesForFaculty(username);
       setTimetables(facultyTimetables);
       
       // Set the first timetable as selected by default
       if (facultyTimetables.length > 0) {
         setSelectedTimetable(facultyTimetables[0]);
+      } else {
+        setSelectedTimetable(null);
       }
     }
   }, [username]);

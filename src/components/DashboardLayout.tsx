@@ -5,9 +5,6 @@ import { Button } from "@/components/ui/button";
 import { LogOut } from 'lucide-react';
 import Logo from './Logo';
 import { useAuth } from '@/contexts/AuthContext';
-import AdminDashboard from './AdminDashboard';
-import FacultyDashboard from './FacultyDashboard';
-import StudentDashboard from './StudentDashboard';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -48,9 +45,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       
       {/* Main content */}
       <main className="container mx-auto py-8 px-4">
-        {userRole === 'admin' && <AdminDashboard />}
-        {userRole === 'faculty' && <FacultyDashboard />}
-        {userRole === 'student' && <StudentDashboard />}
         {children}
       </main>
       

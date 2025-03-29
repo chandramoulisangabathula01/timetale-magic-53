@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { FileDown, Search, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { filterTimetables } from '@/utils/timetableUtils';
+import { filterTimetables, getTimetables } from '@/utils/timetableUtils';
 import { Timetable } from '@/utils/types';
 import TimetableView from './TimetableView';
 
@@ -16,6 +16,7 @@ const StudentDashboard: React.FC = () => {
   useEffect(() => {
     if (studentFilters.year && studentFilters.branch && studentFilters.semester) {
       setLoading(true);
+      // Force a fresh fetch of timetables from localStorage
       const filteredTimetables = filterTimetables(
         studentFilters.year,
         studentFilters.branch,
