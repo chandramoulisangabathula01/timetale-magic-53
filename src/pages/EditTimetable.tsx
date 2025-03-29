@@ -5,6 +5,7 @@ import CreateTimetableForm from '@/components/CreateTimetableForm';
 import { useAuth } from '@/contexts/AuthContext';
 import { getTimetableById } from '@/utils/timetableUtils';
 import { Timetable } from '@/utils/types';
+import DashboardLayout from '@/components/DashboardLayout';
 
 const EditTimetable = () => {
   const { isAuthenticated, userRole } = useAuth();
@@ -34,11 +35,11 @@ const EditTimetable = () => {
   }, [isAuthenticated, userRole, navigate, id]);
   
   return (
-    <div className="min-h-screen bg-gray-50">
+    <DashboardLayout>
       <div className="container mx-auto py-8 px-4">
         {timetable && <CreateTimetableForm existingTimetable={timetable} />}
       </div>
-    </div>
+    </DashboardLayout>
   );
 };
 
