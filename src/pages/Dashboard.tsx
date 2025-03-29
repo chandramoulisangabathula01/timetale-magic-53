@@ -14,7 +14,11 @@ const Dashboard = () => {
     }
   }, [isAuthenticated, navigate]);
   
-  return <DashboardLayout />;
+  return (
+    <DashboardLayout>
+      {/* Dashboard content can go here */}
+    </DashboardLayout>
+  );
 };
 
 export default Dashboard;
