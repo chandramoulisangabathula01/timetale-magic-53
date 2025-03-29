@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -16,12 +17,12 @@ import ManageFaculty from "./pages/ManageFaculty";
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
+  <BrowserRouter>
+    <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/dashboard" element={<Dashboard />} />
@@ -32,10 +33,10 @@ const App = () => (
             <Route path="/manage-faculty" element={<ManageFaculty />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </BrowserRouter>
+        </TooltipProvider>
       </AuthProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
+    </QueryClientProvider>
+  </BrowserRouter>
 );
 
 export default App;
