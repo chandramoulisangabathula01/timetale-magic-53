@@ -3,6 +3,7 @@ import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import ViewTimetable from '@/components/ViewTimetable';
+import DashboardLayout from '@/components/DashboardLayout';
 
 const ViewTimetablePage = () => {
   const { isAuthenticated } = useAuth();
@@ -15,11 +16,11 @@ const ViewTimetablePage = () => {
   }, [isAuthenticated, navigate]);
   
   return (
-    <div className="min-h-screen bg-gray-50">
+    <DashboardLayout>
       <div className="container mx-auto py-8 px-4">
         <ViewTimetable />
       </div>
-    </div>
+    </DashboardLayout>
   );
 };
 

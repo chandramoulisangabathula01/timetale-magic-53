@@ -59,3 +59,11 @@ export const subjectExists = (name: string, year: YearType, branch: BranchType):
     subject.branch === branch
   );
 };
+
+// Check if subject-teacher pair already exists
+export const subjectTeacherPairExists = (subjectName: string, teacherName: string, subjectTeacherPairs: any[]): boolean => {
+  return subjectTeacherPairs.some(pair => 
+    pair.subjectName === subjectName && 
+    pair.teacherName === teacherName
+  );
+};

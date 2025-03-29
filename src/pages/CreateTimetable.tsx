@@ -3,6 +3,7 @@ import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CreateTimetableForm from '@/components/CreateTimetableForm';
 import { useAuth } from '@/contexts/AuthContext';
+import DashboardLayout from '@/components/DashboardLayout';
 
 const CreateTimetable = () => {
   const { isAuthenticated, userRole } = useAuth();
@@ -20,11 +21,11 @@ const CreateTimetable = () => {
   }, [isAuthenticated, userRole, navigate]);
   
   return (
-    <div className="min-h-screen bg-gray-50">
+    <DashboardLayout>
       <div className="container mx-auto py-8 px-4">
         <CreateTimetableForm />
       </div>
-    </div>
+    </DashboardLayout>
   );
 };
 

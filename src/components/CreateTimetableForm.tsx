@@ -33,7 +33,8 @@ import {
 } from '@/utils/types';
 import { generateTimetable, saveTimetable, countNonLabSubjectsForTeacher } from '@/utils/timetableUtils';
 import { getFaculty } from '@/utils/facultyUtils';
-import { getFilteredSubjects } from '@/utils/subjectsUtils';
+import { getFilteredSubjects, subjectTeacherPairExists } from '@/utils/subjectsUtils';
+import ManualSchedulingGrid from '@/components/ManualSchedulingGrid';
 
 interface CreateTimetableFormProps {
   existingTimetable?: Timetable;
@@ -44,7 +45,6 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
   const { toast } = useToast();
   const isEditMode = !!existingTimetable;
   
-  // Add the missing schedulingMode state
   const [schedulingMode, setSchedulingMode] = useState<'auto' | 'manual'>('auto');
   
   const [formData, setFormData] = useState<TimetableFormData>(
@@ -85,6 +85,8 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
   
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [currentStep, setCurrentStep] = useState(0);
+  
+  const [manualTimetableEntries, setManualTimetableEntries] = useState([]);
   
   useEffect(() => {
     setAvailableFaculty(getFaculty());
@@ -144,6 +146,15 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
       toast({
         title: "Missing batch number",
         description: "Please specify a batch number for lab subjects",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (subjectTeacherPairExists(newSubject, newTeacher, formData.subjectTeacherPairs)) {
+      toast({
+        title: "Duplicate pair",
+        description: "This subject-teacher pair already exists",
         variant: "destructive",
       });
       return;
@@ -290,7 +301,27 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
     }
     
     try {
-      const newTimetable = generateTimetable(formData);
+      let newTimetable;
+      
+      if (schedulingMode === 'auto') {
+        newTimetable = generateTimetable(formData);
+      } else {
+        if (manualTimetableEntries.length === 0) {
+          toast({
+            title: "Manual scheduling incomplete",
+            description: "Please complete the manual scheduling before generating the timetable",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        newTimetable = {
+          id: uuidv4(),
+          formData: formData,
+          entries: manualTimetableEntries,
+          createdAt: new Date().toISOString()
+        };
+      }
       
       if (isEditMode && existingTimetable) {
         newTimetable.id = existingTimetable.id;
@@ -886,14 +917,18 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
                         <CardHeader>
                           <CardTitle>Manual Scheduling</CardTitle>
                           <CardDescription>
-                            This feature will be available in the next update
+                            Drag and drop subjects into the timetable grid
                           </CardDescription>
                         </CardHeader>
                         <CardContent>
-                          <p className="text-sm text-muted-foreground">
-                            The manual scheduling interface will allow you to drag and drop subjects 
-                            into specific time slots. Stay tuned for this feature in an upcoming release.
-                          </p>
+                          <ManualSchedulingGrid 
+                            subjectTeacherPairs={formData.subjectTeacherPairs}
+                            year={formData.year}
+                            branch={formData.branch}
+                            freeHours={formData.freeHours}
+                            dayOptions={formData.dayOptions}
+                            onSave={setManualTimetableEntries}
+                          />
                         </CardContent>
                       </Card>
                     </div>
