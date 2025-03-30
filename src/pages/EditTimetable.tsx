@@ -35,6 +35,7 @@ const EditTimetable = () => {
     if (id) {
       const existingTimetable = getTimetableById(id);
       if (existingTimetable) {
+        console.log("Found timetable to edit:", existingTimetable);
         setTimetable(existingTimetable);
       } else {
         toast({

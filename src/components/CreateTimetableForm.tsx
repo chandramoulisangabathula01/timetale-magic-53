@@ -88,6 +88,8 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
   
   const [manualTimetableEntries, setManualTimetableEntries] = useState([]);
   
+  const [manualEntriesInitialized, setManualEntriesInitialized] = useState(false);
+  
   useEffect(() => {
     setAvailableFaculty(getFaculty());
   }, []);
@@ -97,6 +99,17 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
       setAvailableSubjects(getFilteredSubjects(formData.year, formData.branch));
     }
   }, [formData.year, formData.branch]);
+
+  useEffect(() => {
+    if (isEditMode && existingTimetable && !manualEntriesInitialized) {
+      setManualTimetableEntries(existingTimetable.entries);
+      setManualEntriesInitialized(true);
+      
+      if (existingTimetable.entries.length > 0) {
+        setSchedulingMode('manual');
+      }
+    }
+  }, [isEditMode, existingTimetable, manualEntriesInitialized]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -927,6 +940,7 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
                             freeHours={formData.freeHours}
                             dayOptions={formData.dayOptions}
                             onSave={setManualTimetableEntries}
+                            existingEntries={isEditMode && existingTimetable ? existingTimetable.entries : []}
                           />
                         </CardContent>
                       </Card>

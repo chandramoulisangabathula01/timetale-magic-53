@@ -78,14 +78,17 @@ export const getTimetablesForFaculty = (facultyName: string): Timetable[] => {
   
   // Find timetables where this faculty teaches at least one subject
   const matchingTimetables = timetables.filter(timetable => {
-    // Check subject-teacher pairs
+    // Case-insensitive comparison for faculty names
+    const normalizedFacultyName = facultyName.toLowerCase().trim();
+    
+    // Check subject-teacher pairs (case-insensitive)
     const hasSubjectAssigned = timetable.formData.subjectTeacherPairs.some(pair => 
-      pair.teacherName === facultyName
+      pair.teacherName.toLowerCase().trim() === normalizedFacultyName
     );
     
-    // Check entries
+    // Check entries (case-insensitive)
     const hasEntriesAssigned = timetable.entries.some(entry => 
-      entry.teacherName === facultyName
+      entry.teacherName && entry.teacherName.toLowerCase().trim() === normalizedFacultyName
     );
     
     console.log(`Timetable ${timetable.id}: hasSubjectAssigned=${hasSubjectAssigned}, hasEntriesAssigned=${hasEntriesAssigned}`);

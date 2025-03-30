@@ -30,6 +30,7 @@ interface ManualSchedulingGridProps {
   year: YearType;
   branch: BranchType;
   onSave: (entries: TimetableEntry[]) => void;
+  existingEntries?: TimetableEntry[];
 }
 
 const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({ 
@@ -38,15 +39,12 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
   dayOptions,
   year,
   branch,
-  onSave 
+  onSave,
+  existingEntries = []
 }) => {
   const [entries, setEntries] = useState<TimetableEntry[]>([]);
   
-  const days: Day[] = dayOptions.useCustomDays 
-    ? dayOptions.selectedDays 
-    : dayOptions.fourContinuousDays 
-      ? ['Monday', 'Tuesday', 'Wednesday', 'Thursday'] 
-      : ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const days: Day[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     
   const timeSlots: TimeSlot[] = [
     '9:30-10:20', 
@@ -59,7 +57,12 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
   ];
   
   useEffect(() => {
-    // Initialize entries
+    if (existingEntries && existingEntries.length > 0) {
+      console.log("Using existing entries:", existingEntries.length);
+      setEntries(existingEntries);
+      return;
+    }
+    
     const initialEntries: TimetableEntry[] = [];
     
     days.forEach(day => {
@@ -71,7 +74,6 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
         });
       });
       
-      // Add break and lunch entries
       initialEntries.push({
         day,
         timeSlot: '11:10-11:20',
@@ -86,11 +88,12 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
     });
     
     setEntries(initialEntries);
-  }, [days.length, timeSlots.length]);
+  }, [existingEntries]);
   
   useEffect(() => {
-    // Save entries whenever they change
-    onSave(entries);
+    if (entries.length > 0) {
+      onSave(entries);
+    }
   }, [entries, onSave]);
   
   const handleCellChange = (day: Day, timeSlot: TimeSlot, value: string, type: 'subject' | 'free') => {
@@ -170,6 +173,14 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
           {entry.isLab && entry.batchNumber && 
             <div className="text-xs text-green-600">Batch: {entry.batchNumber}</div>
           }
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="w-full h-6 text-xs mt-2"
+            onClick={() => clearCell(day, timeSlot)}
+          >
+            Clear
+          </Button>
         </div>
       );
     }
@@ -178,6 +189,14 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
       return (
         <div className="p-2 bg-gray-50 rounded">
           <div className="text-sm text-gray-600">{entry.freeType}</div>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="w-full h-6 text-xs mt-2"
+            onClick={() => clearCell(day, timeSlot)}
+          >
+            Clear
+          </Button>
         </div>
       );
     }
@@ -199,7 +218,7 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
               ) : (
                 subjectTeacherPairs.map((pair) => (
                   <SelectItem key={pair.id} value={`${pair.id}|${pair.teacherName}`}>
-                    {pair.subjectName} - {pair.teacherName}
+                    {pair.subjectName} - {pair.teacherName} {pair.isLab && "(Lab)"}
                   </SelectItem>
                 ))
               )}
@@ -254,14 +273,13 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
         </div>
         
         {[...timeSlots, '11:10-11:20', '1:00-2:00'].sort((a, b) => {
-          // Custom sort to keep the timeSlots in chronological order
           const timeOrder: Record<TimeSlot, number> = {
             '9:30-10:20': 1,
             '10:20-11:10': 2,
-            '11:10-11:20': 3, // Break
+            '11:10-11:20': 3,
             '11:20-12:10': 4,
             '12:10-1:00': 5,
-            '1:00-2:00': 6,  // Lunch
+            '1:00-2:00': 6,
             '2:00-2:50': 7,
             '2:50-3:40': 8,
             '3:40-4:30': 9
