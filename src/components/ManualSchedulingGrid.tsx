@@ -1,319 +1,283 @@
-
 import React, { useState, useEffect } from 'react';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { 
-  YearType, 
-  BranchType, 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
+import { 
+  TimetableEntry, 
+  SubjectTeacherPair, 
   Day, 
   TimeSlot, 
-  SubjectTeacherPair,
-  TimetableEntry
+  FreeHourType,
+  YearType,
+  BranchType
 } from '@/utils/types';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { CheckCircle, BookOpen, FlaskConical, Coffee } from "lucide-react";
 
 interface ManualSchedulingGridProps {
   subjectTeacherPairs: SubjectTeacherPair[];
-  year: YearType;
-  branch: BranchType;
-  freeHours: any[];
-  dayOptions: {
+  freeHours: { type: FreeHourType, customType?: string }[];
+  dayOptions: { 
     fourContinuousDays: boolean;
     useCustomDays: boolean;
     selectedDays: Day[];
   };
+  year: YearType;
+  branch: BranchType;
   onSave: (entries: TimetableEntry[]) => void;
 }
 
-const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
-  subjectTeacherPairs,
+const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({ 
+  subjectTeacherPairs, 
+  freeHours, 
+  dayOptions,
   year,
   branch,
-  freeHours,
-  dayOptions,
-  onSave
+  onSave 
 }) => {
-  const { toast } = useToast();
-  const [timetableData, setTimetableData] = useState<Record<string, any>>({});
-  const [viewMode, setViewMode] = useState<'subject' | 'teacher'>('subject');
+  const [entries, setEntries] = useState<TimetableEntry[]>([]);
   
-  // Get all days including Friday and Saturday
-  const allDays: Day[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  
-  // Use all days regardless of options for the redesigned grid
-  const days: Day[] = allDays;
-  
-  // Regular time slots (excluding breaks and lunch)
+  const days: Day[] = dayOptions.useCustomDays 
+    ? dayOptions.selectedDays 
+    : dayOptions.fourContinuousDays 
+      ? ['Monday', 'Tuesday', 'Wednesday', 'Thursday'] 
+      : ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    
   const timeSlots: TimeSlot[] = [
     '9:30-10:20', 
     '10:20-11:10', 
-    '11:10-11:20', // Break
     '11:20-12:10', 
     '12:10-1:00', 
-    '1:00-2:00',  // Lunch
     '2:00-2:50', 
     '2:50-3:40', 
     '3:40-4:30'
   ];
   
   useEffect(() => {
-    // Initialize empty timetable
-    const initialData: Record<string, any> = {
-      slots: {},
-      slotIds: [],
-    };
+    // Initialize entries
+    const initialEntries: TimetableEntry[] = [];
     
-    // Add time slots to the data
     days.forEach(day => {
       timeSlots.forEach(timeSlot => {
-        if (timeSlot === '11:10-11:20') {
-          // Break slot
-          const id = `${day}-${timeSlot}`;
-          initialData.slots[id] = {
-            id,
-            day,
-            timeSlot,
-            isBreak: true,
-            content: 'Break',
-            subjectId: null
-          };
-        } else if (timeSlot === '1:00-2:00') {
-          // Lunch slot
-          const id = `${day}-${timeSlot}`;
-          initialData.slots[id] = {
-            id,
-            day,
-            timeSlot,
-            isLunch: true,
-            content: 'Lunch',
-            subjectId: null
-          };
-        } else {
-          // Regular slot
-          const id = `${day}-${timeSlot}`;
-          initialData.slots[id] = {
-            id,
-            day,
-            timeSlot,
-            isBreak: false,
-            isLunch: false,
-            content: '',
-            subjectId: null
-          };
-          initialData.slotIds.push(id);
-        }
+        initialEntries.push({
+          day,
+          timeSlot,
+          // No subject assigned initially
+        });
+      });
+      
+      // Add break and lunch entries
+      initialEntries.push({
+        day,
+        timeSlot: '11:10-11:20',
+        isBreak: true
+      });
+      
+      initialEntries.push({
+        day,
+        timeSlot: '1:00-2:00',
+        isLunch: true
       });
     });
     
-    setTimetableData(initialData);
-  }, [subjectTeacherPairs, days]);
-
-  const handleSubjectChange = (slotId: string, subjectId: string | null) => {
-    setTimetableData(prev => ({
-      ...prev,
-      slots: {
-        ...prev.slots,
-        [slotId]: {
-          ...prev.slots[slotId],
-          subjectId
+    setEntries(initialEntries);
+  }, [days.length, timeSlots.length]);
+  
+  useEffect(() => {
+    // Save entries whenever they change
+    onSave(entries);
+  }, [entries, onSave]);
+  
+  const handleCellChange = (day: Day, timeSlot: TimeSlot, value: string, type: 'subject' | 'free') => {
+    setEntries(prevEntries => {
+      return prevEntries.map(entry => {
+        if (entry.day === day && entry.timeSlot === timeSlot) {
+          if (type === 'subject') {
+            const [subjectId, teacherId] = value.split('|');
+            const subject = subjectTeacherPairs.find(s => s.id === subjectId);
+            
+            if (subject) {
+              return {
+                ...entry,
+                subjectName: subject.subjectName,
+                teacherName: subject.teacherName,
+                isLab: subject.isLab,
+                batchNumber: subject.batchNumber,
+                isFree: false,
+                freeType: undefined
+              };
+            }
+          } else if (type === 'free') {
+            return {
+              ...entry,
+              subjectName: undefined,
+              teacherName: undefined,
+              isLab: false,
+              batchNumber: undefined,
+              isFree: true,
+              freeType: value as FreeHourType
+            };
+          }
         }
-      }
-    }));
+        return entry;
+      });
+    });
   };
   
-  const handleSaveTimetable = () => {
-    // Convert the manual timetable data to TimetableEntry format
-    const entries: TimetableEntry[] = [];
-    
-    Object.keys(timetableData.slots).forEach(slotId => {
-      const slot = timetableData.slots[slotId];
-      const { day, timeSlot, isBreak, isLunch, subjectId } = slot;
-      
-      if (isBreak) {
-        entries.push({
-          day,
-          timeSlot,
-          isBreak: true
-        });
-      } else if (isLunch) {
-        entries.push({
-          day,
-          timeSlot,
-          isLunch: true
-        });
-      } else if (subjectId) {
-        const subject = subjectTeacherPairs.find(pair => pair.id === subjectId);
-        
-        if (subject) {
-          entries.push({
+  const clearCell = (day: Day, timeSlot: TimeSlot) => {
+    setEntries(prevEntries => {
+      return prevEntries.map(entry => {
+        if (entry.day === day && entry.timeSlot === timeSlot) {
+          return {
             day,
             timeSlot,
-            subjectName: subject.subjectName,
-            teacherName: subject.teacherName,
-            isLab: subject.isLab,
-            batchNumber: subject.batchNumber
-          });
+            // Clear all other properties
+          };
         }
-      } else {
-        // Empty slot, add as free period using the configured free hours
-        const freeType = freeHours && freeHours.length > 0 ? 
-          (freeHours[0].type === 'Others' && freeHours[0].customType ? 
-            freeHours[0].customType : freeHours[0].type) : 'Library';
-          
-        entries.push({
-          day,
-          timeSlot,
-          isFree: true,
-          freeType
-        });
-      }
+        return entry;
+      });
     });
-    
-    onSave(entries);
-    
-    toast({
-      title: "Manual scheduling saved",
-      description: "Your manual timetable has been saved",
-    });
-  };
-
-  const getSubjectDisplay = (subject: SubjectTeacherPair) => {
-    return viewMode === 'subject' ? 
-      `${subject.subjectName}${subject.isLab ? ' (Lab)' : ''}` : 
-      `${subject.teacherName}`;
-  };
-
-  const getSlotBackgroundColor = (subjectId: string | null) => {
-    if (!subjectId) return "bg-white";
-    
-    const subject = subjectTeacherPairs.find(pair => pair.id === subjectId);
-    if (!subject) return "bg-white";
-    
-    if (subject.isLab) return "bg-blue-50";
-    return "bg-green-50";
   };
   
-  const getCellIcon = (slot: any) => {
-    if (slot.isBreak) return <Coffee className="h-4 w-4 mr-1 text-amber-500" />;
-    if (slot.isLunch) return <Coffee className="h-4 w-4 mr-1 text-amber-500" />;
+  const getCellContent = (day: Day, timeSlot: TimeSlot) => {
+    const entry = entries.find(e => e.day === day && e.timeSlot === timeSlot);
     
-    const subject = subjectTeacherPairs.find(pair => pair.id === slot.subjectId);
-    if (!subject) return null;
+    if (!entry) return null;
     
-    return subject.isLab ? 
-      <FlaskConical className="h-4 w-4 mr-1 text-blue-500" /> : 
-      <BookOpen className="h-4 w-4 mr-1 text-green-500" />;
+    if (entry.isBreak) {
+      return <div className="text-center py-2 bg-gray-100 text-sm">Break</div>;
+    }
+    
+    if (entry.isLunch) {
+      return <div className="text-center py-2 bg-gray-100 text-sm">Lunch</div>;
+    }
+    
+    if (entry.subjectName) {
+      return (
+        <div className={`p-2 ${entry.isLab ? 'bg-green-50' : 'bg-blue-50'} rounded`}>
+          <div className="font-medium">{entry.subjectName}</div>
+          <div className="text-xs text-gray-600">{entry.teacherName}</div>
+          {entry.isLab && entry.batchNumber && 
+            <div className="text-xs text-green-600">Batch: {entry.batchNumber}</div>
+          }
+        </div>
+      );
+    }
+    
+    if (entry.isFree && entry.freeType) {
+      return (
+        <div className="p-2 bg-gray-50 rounded">
+          <div className="text-sm text-gray-600">{entry.freeType}</div>
+        </div>
+      );
+    }
+    
+    return (
+      <div className="p-2">
+        <div className="flex gap-2 mb-2">
+          <Select 
+            onValueChange={(value) => handleCellChange(day, timeSlot, value, 'subject')}
+          >
+            <SelectTrigger className="h-8 text-xs">
+              <SelectValue placeholder="Subject" />
+            </SelectTrigger>
+            <SelectContent>
+              {subjectTeacherPairs.length === 0 ? (
+                <SelectItem value="no-subjects-available" disabled>
+                  No subjects available
+                </SelectItem>
+              ) : (
+                subjectTeacherPairs.map((pair) => (
+                  <SelectItem key={pair.id} value={pair.id}>
+                    {pair.subjectName} - {pair.teacherName}
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
+          
+          <Select 
+            onValueChange={(value) => handleCellChange(day, timeSlot, value, 'free')}
+          >
+            <SelectTrigger className="h-8 text-xs">
+              <SelectValue placeholder="Free" />
+            </SelectTrigger>
+            <SelectContent>
+              {freeHours.length === 0 ? (
+                <SelectItem value="no-free-hours-available" disabled>
+                  No free hours available
+                </SelectItem>
+              ) : (
+                freeHours.map((free, index) => (
+                  <SelectItem 
+                    key={index} 
+                    value={free.type === 'Others' && free.customType ? free.customType : free.type}
+                  >
+                    {free.type === 'Others' && free.customType ? free.customType : free.type}
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="w-full h-6 text-xs"
+          onClick={() => clearCell(day, timeSlot)}
+        >
+          Clear
+        </Button>
+      </div>
+    );
   };
   
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <p className="text-sm text-muted-foreground">
-          Select subjects from the dropdown menu in each time slot to create your manual schedule.
-        </p>
+    <div className="overflow-x-auto">
+      <div className="min-w-[900px]">
+        <div className="grid grid-cols-[100px_repeat(auto-fill,minmax(120px,1fr))] gap-1 mb-4">
+          <div className="p-2 font-medium">Time / Day</div>
+          {days.map((day) => (
+            <div key={day} className="p-2 font-medium text-center">{day}</div>
+          ))}
+        </div>
         
-        <ToggleGroup type="single" value={viewMode} onValueChange={(value) => value && setViewMode(value as 'subject' | 'teacher')}>
-          <ToggleGroupItem value="subject" aria-label="Toggle subject view">Subject</ToggleGroupItem>
-          <ToggleGroupItem value="teacher" aria-label="Toggle teacher view">Teacher</ToggleGroupItem>
-        </ToggleGroup>
+        {[...timeSlots, '11:10-11:20', '1:00-2:00'].sort((a, b) => {
+          // Custom sort to keep the timeSlots in chronological order
+          const timeOrder: Record<TimeSlot, number> = {
+            '9:30-10:20': 1,
+            '10:20-11:10': 2,
+            '11:10-11:20': 3, // Break
+            '11:20-12:10': 4,
+            '12:10-1:00': 5,
+            '1:00-2:00': 6,  // Lunch
+            '2:00-2:50': 7,
+            '2:50-3:40': 8,
+            '3:40-4:30': 9
+          };
+          return timeOrder[a as TimeSlot] - timeOrder[b as TimeSlot];
+        }).map((timeSlot) => (
+          <div key={timeSlot} className="grid grid-cols-[100px_repeat(auto-fill,minmax(120px,1fr))] gap-1 mb-1">
+            <div className="p-2 font-medium flex items-center">{timeSlot}</div>
+            {days.map((day) => (
+              <div key={`${day}-${timeSlot}`} className="border rounded">
+                {getCellContent(day, timeSlot as TimeSlot)}
+              </div>
+            ))}
+          </div>
+        ))}
       </div>
       
-      <Card className="shadow-md">
-        <CardContent className="p-4">
-          <h3 className="font-medium mb-3 text-lg text-center">Timetable Schedule</h3>
-          <div className="overflow-x-auto">
-            <div className="min-w-[900px]">
-              <div className="grid grid-cols-[100px_repeat(6,1fr)] gap-1 border-b-2 border-gray-200">
-                {/* Header row */}
-                <div className="font-medium p-2 text-center bg-gray-100 rounded-tl-md">Time / Day</div>
-                {days.map(day => (
-                  <div key={day} className="font-medium p-2 text-center bg-gray-100">
-                    {day}
-                  </div>
-                ))}
-                
-                {/* Time slots */}
-                {timeSlots.map(timeSlot => (
-                  <React.Fragment key={timeSlot}>
-                    <div className="p-2 text-xs text-center border bg-gray-50 font-medium">
-                      {timeSlot}
-                    </div>
-                    
-                    {days.map(day => {
-                      const slotId = `${day}-${timeSlot}`;
-                      const slot = timetableData.slots ? timetableData.slots[slotId] : null;
-                      
-                      if (!slot) return <div key={slotId} className="p-2 border"></div>;
-                      
-                      if (slot.isBreak || slot.isLunch) {
-                        return (
-                          <div key={slotId} className="p-2 border bg-amber-50 text-center text-xs flex items-center justify-center">
-                            <Coffee className="h-4 w-4 mr-1 text-amber-500" />
-                            <span className="font-medium">{slot.isBreak ? 'Break' : 'Lunch'}</span>
-                          </div>
-                        );
-                      }
-                      
-                      const selectedSubject = subjectTeacherPairs.find(pair => pair.id === slot.subjectId);
-                      const bgColor = getSlotBackgroundColor(slot.subjectId);
-                      
-                      return (
-                        <div key={slotId} className={`p-2 border ${bgColor} hover:bg-gray-50 transition-colors duration-200`}>
-                          <Select
-                            value={slot.subjectId || ""}
-                            onValueChange={(value) => handleSubjectChange(slotId, value || null)}
-                          >
-                            <SelectTrigger className="h-8 text-xs w-full">
-                              <SelectValue placeholder="Select subject" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="">None (Free Period)</SelectItem>
-                              {subjectTeacherPairs.map((subject) => (
-                                <SelectItem key={subject.id} value={subject.id}>
-                                  {getSubjectDisplay(subject)}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          
-                          {selectedSubject && (
-                            <div className="mt-1 text-xs flex items-center">
-                              {getCellIcon(slot)}
-                              <div>
-                                <div className="font-medium">{selectedSubject.subjectName}</div>
-                                <div className="text-muted-foreground">{selectedSubject.teacherName}</div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </React.Fragment>
-                ))}
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-      
-      <div className="flex justify-end mt-6">
-        <Button 
-          onClick={handleSaveTimetable} 
-          className="px-6"
-          size="lg"
-        >
-          <CheckCircle className="h-5 w-5 mr-2" />
-          Save Timetable
-        </Button>
+      <div className="mt-6">
+        <p className="text-sm text-muted-foreground mb-2">
+          Manual scheduling for {year} {branch}. Select subjects or free hours for each cell.
+        </p>
       </div>
     </div>
   );
