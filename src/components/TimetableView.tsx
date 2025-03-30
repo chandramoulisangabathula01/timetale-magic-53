@@ -80,9 +80,40 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
     return filteredEntries.filter(entry => entry.labGroupId === labGroupId);
   };
   
+  // Helper function to get a valid entry for a given day and time slot
+  const getActualEntry = (day: Day, timeSlot: TimeSlot) => {
+    // First, check if there's a direct entry for this time slot
+    const directEntry = filteredEntries.find(e => e.day === day && e.timeSlot === timeSlot);
+    
+    if (directEntry) return directEntry;
+    
+    // If no direct entry, check if this slot might be part of a lab group
+    // This handles the case where a lab spans multiple time slots
+    const possibleLabEntry = filteredEntries.find(e => 
+      e.day === day && 
+      e.isLabGroup && 
+      e.labGroupId && 
+      getLabGroupEntries(e.labGroupId).some(labEntry => labEntry.timeSlot === timeSlot)
+    );
+    
+    return possibleLabEntry;
+  };
+  
   // Helper function to get cell content for a specific day and time slot
   const getCellContent = (day: Day, timeSlot: TimeSlot) => {
-    const entry = filteredEntries.find(e => e.day === day && e.timeSlot === timeSlot);
+    // Skip rendering the extra break slots that appear in student and faculty view
+    if (timeSlot === '11:10-11:20' || timeSlot === '1:00-2:00') {
+      const entry = filteredEntries.find(e => e.day === day && e.timeSlot === timeSlot);
+      if (entry?.isBreak) {
+        return <div className="text-sm italic text-center">Break</div>;
+      }
+      if (entry?.isLunch) {
+        return <div className="text-sm italic text-center">Lunch</div>;
+      }
+      return null;
+    }
+    
+    const entry = getActualEntry(day, timeSlot);
     
     if (!entry) return null;
     
@@ -122,8 +153,16 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
             </div>
           );
         } else {
-          // This is a continuation slot - leave empty
-          return null;
+          // For continuation slots in a lab group, show the same content
+          return (
+            <div className="font-medium text-center">
+              <div>{entry.subjectName}</div>
+              <div className="text-xs text-muted-foreground mt-1">
+                {entry.teacherName}
+                {entry.batchNumber && <span> ({entry.batchNumber})</span>}
+              </div>
+            </div>
+          );
         }
       }
       
@@ -144,7 +183,15 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
   
   // Helper function to get cell class for styling
   const getCellClass = (day: Day, timeSlot: TimeSlot) => {
-    const entry = filteredEntries.find(e => e.day === day && e.timeSlot === timeSlot);
+    // For break and lunch time slots
+    if (timeSlot === '11:10-11:20' || timeSlot === '1:00-2:00') {
+      const entry = filteredEntries.find(e => e.day === day && e.timeSlot === timeSlot);
+      if (entry?.isBreak) return "bg-gray-100 break-slot";
+      if (entry?.isLunch) return "bg-gray-100 lunch-slot";
+      return "";
+    }
+    
+    const entry = getActualEntry(day, timeSlot);
     
     if (!entry) return "";
     
@@ -153,16 +200,19 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
     if (entry.isFree) return "bg-blue-50 free-slot";
     
     // Special handling for lab entries
-    if (entry.isLab && entry.isLabGroup && entry.labGroupId) {
-      const labGroupEntries = getLabGroupEntries(entry.labGroupId);
-      
-      // Apply lab styles to all entries in the group
-      if (labGroupEntries.some(e => e.day === day && e.timeSlot === timeSlot)) {
-        return "bg-green-50 lab-slot";
+    if (entry.isLab) {
+      if (entry.isLabGroup && entry.labGroupId) {
+        const labGroupEntries = getLabGroupEntries(entry.labGroupId);
+        
+        // Apply lab styles to all entries in the group
+        if (labGroupEntries.some(e => e.day === day && e.timeSlot === timeSlot)) {
+          return "bg-green-50 lab-slot";
+        }
       }
+      
+      return "bg-green-50 lab-slot";
     }
     
-    if (entry.isLab) return "bg-green-50 lab-slot";
     if (entry.subjectName) return "bg-white";
     
     return "";
@@ -170,6 +220,11 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
   
   // Helper function to determine if a cell should span multiple rows
   const getCellRowSpan = (day: Day, timeSlot: TimeSlot) => {
+    // Don't apply row spans to break and lunch slots
+    if (timeSlot === '11:10-11:20' || timeSlot === '1:00-2:00') {
+      return 1;
+    }
+    
     const entry = filteredEntries.find(e => e.day === day && e.timeSlot === timeSlot);
     
     if (!entry || !entry.isLabGroup || !entry.labGroupId) return 1;
@@ -188,6 +243,11 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
   
   // Helper function to determine if a cell should be rendered
   const shouldRenderCell = (day: Day, timeSlot: TimeSlot) => {
+    // Always render break and lunch slots
+    if (timeSlot === '11:10-11:20' || timeSlot === '1:00-2:00') {
+      return true;
+    }
+    
     const entry = filteredEntries.find(e => e.day === day && e.timeSlot === timeSlot);
     
     if (!entry || !entry.isLabGroup || !entry.labGroupId) return true;
@@ -201,8 +261,13 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
   
   // Generate table for printMode=false (normal view)
   if (!printMode) {
-    // Generate table rows based on time slots
-    const tableRows = timeSlots.map(timeSlot => (
+    // Filter out break and lunch slots for regular display
+    const displayTimeSlots = timeSlots.filter(slot => 
+      slot !== '11:10-11:20' && slot !== '1:00-2:00'
+    );
+    
+    // Generate table rows based on filtered time slots
+    const tableRows = displayTimeSlots.map(timeSlot => (
       <TableRow key={timeSlot}>
         <TableCell className="border p-2 text-xs bg-gray-50 font-medium">
           {timeSlot}
@@ -210,7 +275,7 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
         {days.map(day => {
           const rowSpan = getCellRowSpan(day, timeSlot);
           
-          if (rowSpan === 0) {
+          if (rowSpan === 0 || !shouldRenderCell(day, timeSlot)) {
             // Skip this cell as it's part of a lab group and not the first cell
             return null;
           }
@@ -266,13 +331,18 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
   }
   
   // Generate printable table that matches the requested format for printMode=true
+  // For print mode, show a simplified table without the break and lunch rows
+  const printTimeSlots = timeSlots.filter(slot => 
+    slot !== '11:10-11:20' && slot !== '1:00-2:00'
+  );
+
   return (
     <div className="print-timetable">
       <Table className="w-full border-collapse border table-fixed">
         <TableHeader>
           <TableRow>
             <TableHead className="border p-2 bg-gray-50 font-bold text-center">DAY</TableHead>
-            {timeSlots.map(slot => (
+            {printTimeSlots.map(slot => (
               <TableHead key={slot} className="border p-2 bg-gray-50 font-bold text-center">
                 {slot}
               </TableHead>
@@ -285,8 +355,8 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
               <TableCell className="border p-2 text-center font-bold bg-gray-50">
                 {shortDays[day]}
               </TableCell>
-              {timeSlots.map(timeSlot => {
-                const entry = filteredEntries.find(e => e.day === day && e.timeSlot === timeSlot);
+              {printTimeSlots.map(timeSlot => {
+                const entry = getActualEntry(day, timeSlot);
                 let content = '';
                 let teacher = '';
                 

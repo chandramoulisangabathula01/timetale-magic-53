@@ -13,6 +13,7 @@ import ViewTimetablePage from "./pages/ViewTimetablePage";
 import NotFound from "./pages/NotFound";
 import ManageSubjects from "./pages/ManageSubjects";
 import ManageFaculty from "./pages/ManageFaculty";
+import AdminSettingsPage from "./pages/AdminSettingsPage";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ const App = () => (
             <Route path="/view-timetable/:id" element={<ViewTimetablePage />} />
             <Route path="/manage-subjects" element={<ManageSubjects />} />
             <Route path="/manage-faculty" element={<ManageFaculty />} />
+            <Route path="/admin-settings" element={<AdminSettingsPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </TooltipProvider>
