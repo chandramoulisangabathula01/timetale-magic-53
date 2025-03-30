@@ -1,8 +1,8 @@
 
 import { v4 as uuidv4 } from 'uuid';
-import { Subject, SubjectTeacherPair, YearType, BranchType } from './types';
+import { Subject, YearType, BranchType, SubjectTeacherPair } from './types';
 
-// Define SubjectData for ManageSubjects.tsx
+// Type for temporary subject data when creating/editing subjects
 export interface SubjectData {
   id: string;
   name: string;
@@ -12,24 +12,6 @@ export interface SubjectData {
   years: YearType[];
   branches: BranchType[];
 }
-
-// Add a new subject
-export const addSubject = (subject: SubjectData): void => {
-  const subjects = getSubjects();
-  subjects.push(subject as Subject);
-  saveSubjects(subjects);
-};
-
-// Update an existing subject
-export const updateSubject = (subject: SubjectData): void => {
-  const subjects = getSubjects();
-  const index = subjects.findIndex(s => s.id === subject.id);
-  
-  if (index !== -1) {
-    subjects[index] = subject as Subject;
-    saveSubjects(subjects);
-  }
-};
 
 // Get all subjects from local storage
 export const getSubjects = (): Subject[] => {
@@ -48,38 +30,18 @@ export const getSubjectById = (id: string): Subject | null => {
   return subjects.find(subject => subject.id === id) || null;
 };
 
-// Save a single subject (add or update)
-export const saveSubject = (subject: Subject): { success: boolean; message?: string } => {
-  try {
-    const subjects = getSubjects();
-    
-    // Validate lab subjects have "lab" in the name
-    if (subject.isLab && !subject.name.toLowerCase().includes('lab')) {
-      return {
-        success: false,
-        message: "Lab subject names must include 'lab' (e.g., 'Physics lab')"
-      };
-    }
-    
-    const existingIndex = subjects.findIndex(s => s.id === subject.id);
-    
-    if (existingIndex !== -1) {
-      // Update existing subject
-      subjects[existingIndex] = subject;
-    } else {
-      // Add new subject
-      subjects.push(subject);
-    }
-    
-    saveSubjects(subjects);
-    return { success: true };
-  } catch (error) {
-    console.error("Error saving subject:", error);
-    return { 
-      success: false, 
-      message: error instanceof Error ? error.message : "An unknown error occurred"
-    };
+// Add or update a subject
+export const saveSubject = (subject: Subject): void => {
+  const subjects = getSubjects();
+  const existingIndex = subjects.findIndex(s => s.id === subject.id);
+  
+  if (existingIndex !== -1) {
+    subjects[existingIndex] = subject;
+  } else {
+    subjects.push(subject);
   }
+  
+  saveSubjects(subjects);
 };
 
 // Delete a subject by ID
@@ -89,33 +51,31 @@ export const deleteSubject = (id: string): void => {
   saveSubjects(updatedSubjects);
 };
 
-// Check if a subject name already exists
-export const subjectExists = (name: string, excludeId?: string): boolean => {
-  const subjects = getSubjects();
-  return subjects.some(subject => 
-    subject.name.toLowerCase() === name.toLowerCase() &&
-    (excludeId ? subject.id !== excludeId : true)
-  );
-};
-
 // Get subjects filtered by year and branch
 export const getFilteredSubjects = (year: YearType, branch: BranchType): Subject[] => {
   const subjects = getSubjects();
-  return subjects.filter(subject => 
-    subject.years.includes(year) &&
-    (subject.branches.includes(branch) || subject.branches.includes('Other' as BranchType))
-  );
+  // Safely filter subjects with proper checks
+  return subjects.filter(subject => {
+    // Check if years and branches exist and are arrays before using includes
+    return subject && 
+           subject.years && 
+           Array.isArray(subject.years) && 
+           subject.branches && 
+           Array.isArray(subject.branches) && 
+           subject.years.includes(year) && 
+           subject.branches.includes(branch);
+  });
 };
 
 // Check if a subject-teacher pair already exists
 export const subjectTeacherPairExists = (
-  subjectName: string,
-  teacherName: string,
+  subjectName: string, 
+  teacherName: string, 
   pairs: SubjectTeacherPair[]
 ): boolean => {
   return pairs.some(pair => 
-    pair.subjectName.toLowerCase() === subjectName.toLowerCase() &&
-    pair.teacherName.toLowerCase() === teacherName.toLowerCase()
+    pair.subjectName === subjectName && 
+    pair.teacherName === teacherName
   );
 };
 
@@ -127,12 +87,12 @@ export const initializeDefaultSubjects = (): void => {
     const defaultSubjects: Subject[] = [
       {
         id: uuidv4(),
-        name: 'Mathematics I',
+        name: 'Mathematics',
         code: 'MATH101',
         credits: 4,
         isLab: false,
         years: ['1st Year'],
-        branches: ['CSE', 'IT', 'ECE', 'EEE']
+        branches: ['CSE', 'IT', 'ECE']
       },
       {
         id: uuidv4(),
@@ -146,7 +106,7 @@ export const initializeDefaultSubjects = (): void => {
       {
         id: uuidv4(),
         name: 'Physics lab',
-        code: 'PHYLAB101',
+        code: 'PHYL101',
         credits: 2,
         isLab: true,
         years: ['1st Year'],
@@ -154,93 +114,39 @@ export const initializeDefaultSubjects = (): void => {
       },
       {
         id: uuidv4(),
-        name: 'Chemistry',
-        code: 'CHEM101',
-        credits: 3,
-        isLab: false,
-        years: ['1st Year'],
-        branches: ['CSE', 'IT', 'ECE', 'EEE']
-      },
-      {
-        id: uuidv4(),
-        name: 'Chemistry lab',
-        code: 'CHEMLAB101',
-        credits: 2,
-        isLab: true,
-        years: ['1st Year'],
-        branches: ['CSE', 'IT', 'ECE', 'EEE']
-      },
-      {
-        id: uuidv4(),
-        name: 'Programming Fundamentals',
-        code: 'CS101',
-        credits: 3,
-        isLab: false,
-        years: ['1st Year'],
-        branches: ['CSE', 'IT']
-      },
-      {
-        id: uuidv4(),
-        name: 'Programming lab',
-        code: 'CSLAB101',
-        credits: 2,
-        isLab: true,
-        years: ['1st Year'],
-        branches: ['CSE', 'IT']
-      },
-      {
-        id: uuidv4(),
-        name: 'Data Structures',
-        code: 'CS201',
+        name: 'Computer Programming',
+        code: 'CP101',
         credits: 4,
         isLab: false,
-        years: ['2nd Year'],
+        years: ['1st Year'],
         branches: ['CSE', 'IT']
       },
       {
         id: uuidv4(),
-        name: 'Data Structures lab',
-        code: 'CSLAB201',
+        name: 'Computer Programming lab',
+        code: 'CPL101',
         credits: 2,
         isLab: true,
-        years: ['2nd Year'],
+        years: ['1st Year'],
         branches: ['CSE', 'IT']
       },
       {
         id: uuidv4(),
         name: 'Database Systems',
-        code: 'CS301',
+        code: 'DBS201',
         credits: 4,
         isLab: false,
-        years: ['3rd Year'],
+        years: ['2nd Year'],
         branches: ['CSE', 'IT']
       },
       {
         id: uuidv4(),
         name: 'Database Systems lab',
-        code: 'CSLAB301',
+        code: 'DBSL201',
         credits: 2,
         isLab: true,
-        years: ['3rd Year'],
+        years: ['2nd Year'],
         branches: ['CSE', 'IT']
-      },
-      {
-        id: uuidv4(),
-        name: 'Machine Learning',
-        code: 'CS401',
-        credits: 4,
-        isLab: false,
-        years: ['4th Year'],
-        branches: ['CSE', 'AI & ML']
-      },
-      {
-        id: uuidv4(),
-        name: 'Machine Learning lab',
-        code: 'CSLAB401',
-        credits: 2,
-        isLab: true,
-        years: ['4th Year'],
-        branches: ['CSE', 'AI & ML']
       }
     ];
     

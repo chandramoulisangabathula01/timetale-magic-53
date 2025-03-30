@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -71,6 +70,22 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
     '2:50-3:40', 
     '3:40-4:30'
   ];
+  
+  const timeOrder: Record<TimeSlot, number> = {
+    '9:30-10:20': 0,
+    '10:20-11:10': 1,
+    '11:10-11:20': 2, // Break
+    '11:20-12:10': 3,
+    '12:10-1:00': 4,
+    '1:00-2:00': 5,  // Lunch
+    '2:00-2:50': 6,
+    '2:50-3:40': 7,
+    '3:40-4:30': 8,
+    // Add lab time slots
+    '9:30-1:00': 9,
+    '10:20-1:00': 10,
+    '2:00-4:30': 11
+  };
   
   useEffect(() => {
     if (existingEntries && existingEntries.length > 0) {
@@ -384,20 +399,6 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
         </div>
         
         {[...timeSlots, '11:10-11:20', '1:00-2:00'].sort((a, b) => {
-          const timeOrder: Record<string, number> = {
-            '9:30-10:20': 1,
-            '10:20-11:10': 2,
-            '11:10-11:20': 3,
-            '11:20-12:10': 4,
-            '12:10-1:00': 5,
-            '1:00-2:00': 6,
-            '2:00-2:50': 7,
-            '2:50-3:40': 8,
-            '3:40-4:30': 9,
-            '9:30-1:00': 10,
-            '10:20-1:00': 11,
-            '2:00-4:30': 12
-          };
           return timeOrder[a] - timeOrder[b];
         }).map((timeSlot) => (
           <div key={timeSlot} className="grid grid-cols-[100px_repeat(auto-fill,minmax(120px,1fr))] gap-1 mb-1">

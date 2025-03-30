@@ -5,6 +5,7 @@ import CreateTimetableForm from '@/components/CreateTimetableForm';
 import { useAuth } from '@/contexts/AuthContext';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useToast } from '@/hooks/use-toast';
+import { initializeDefaultSubjects } from '@/utils/subjectsUtils';
 
 const CreateTimetable = () => {
   const { isAuthenticated, userRole } = useAuth();
@@ -12,6 +13,9 @@ const CreateTimetable = () => {
   const { toast } = useToast();
   
   useEffect(() => {
+    // Initialize default subjects if none exist
+    initializeDefaultSubjects();
+    
     if (!isAuthenticated) {
       navigate('/');
       return;
