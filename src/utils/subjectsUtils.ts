@@ -2,6 +2,35 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Subject, SubjectTeacherPair, YearType, BranchType } from './types';
 
+// Define SubjectData for ManageSubjects.tsx
+export interface SubjectData {
+  id: string;
+  name: string;
+  code: string;
+  credits: number;
+  isLab: boolean;
+  years: YearType[];
+  branches: BranchType[];
+}
+
+// Add a new subject
+export const addSubject = (subject: SubjectData): void => {
+  const subjects = getSubjects();
+  subjects.push(subject as Subject);
+  saveSubjects(subjects);
+};
+
+// Update an existing subject
+export const updateSubject = (subject: SubjectData): void => {
+  const subjects = getSubjects();
+  const index = subjects.findIndex(s => s.id === subject.id);
+  
+  if (index !== -1) {
+    subjects[index] = subject as Subject;
+    saveSubjects(subjects);
+  }
+};
+
 // Get all subjects from local storage
 export const getSubjects = (): Subject[] => {
   const subjectsJson = localStorage.getItem('subjects');

@@ -1,4 +1,3 @@
-
 import { v4 as uuidv4 } from 'uuid';
 import {
   Timetable,
@@ -11,6 +10,7 @@ import {
   BranchType,
   SemesterType
 } from './types';
+import { getFaculty } from './facultyUtils';
 
 // Time slots for timetable
 export const TIME_SLOTS: TimeSlot[] = [
@@ -40,19 +40,25 @@ export const REGULAR_TIME_SLOTS: TimeSlot[] = [
 export const LAB_SLOT_CONFIGURATIONS = [
   // Morning lab slots
   {
-    name: '9:30-1:00',
-    slots: ['9:30-10:20', '10:20-11:10', '11:20-12:10', '12:10-1:00']
+    name: '9:30-1:00' as TimeSlot,
+    slots: ['9:30-10:20', '10:20-11:10', '11:20-12:10', '12:10-1:00'] as TimeSlot[]
   },
   {
-    name: '10:20-1:00',
-    slots: ['10:20-11:10', '11:20-12:10', '12:10-1:00']
+    name: '10:20-1:00' as TimeSlot,
+    slots: ['10:20-11:10', '11:20-12:10', '12:10-1:00'] as TimeSlot[]
   },
   // Afternoon lab slots
   {
-    name: '2:00-4:30',
-    slots: ['2:00-2:50', '2:50-3:40', '3:40-4:30']
+    name: '2:00-4:30' as TimeSlot,
+    slots: ['2:00-2:50', '2:50-3:40', '3:40-4:30'] as TimeSlot[]
   }
 ];
+
+// Get all faculty names for the dropdown
+export const getFacultyList = (): string[] => {
+  const faculty = getFaculty();
+  return faculty.map(f => f.name);
+};
 
 // Get all timetables from local storage
 export const getTimetables = (): Timetable[] => {
