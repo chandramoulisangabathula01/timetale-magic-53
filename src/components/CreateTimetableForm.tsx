@@ -202,9 +202,14 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
       return;
     }
     
+    let finalSubjectName = newSubject;
+    if (isLabSubject && !finalSubjectName.toLowerCase().includes('lab')) {
+      finalSubjectName = `${finalSubjectName} lab`;
+    }
+    
     const newPair: SubjectTeacherPair = {
       id: uuidv4(),
-      subjectName: newSubject,
+      subjectName: finalSubjectName,
       teacherName: newTeacher,
       isLab: isLabSubject,
       batchNumber: isLabSubject ? batchNumber : undefined
@@ -628,8 +633,21 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
                     <AlertCircle className="h-4 w-4" />
                     <AlertTitle>Important</AlertTitle>
                     <AlertDescription>
-                      For lab subjects, add "lab" at the end of the subject name (e.g., "Physics lab"). 
-                      Each teacher can be assigned a maximum of 3 non-lab subjects.
+                      <ul className="list-disc pl-5 space-y-1">
+                        <li>
+                          For lab subjects, make sure to add "lab" at the end of the subject name (e.g., "Physics lab").
+                          This is required for proper scheduling of lab sessions.
+                        </li>
+                        <li>
+                          Each non-lab subject will receive 4 periods per week (either as individual hours or as 2-hour blocks).
+                        </li>
+                        <li>
+                          Lab subjects will be scheduled in merged time slots: 9:30-1:00, 10:20-1:00, or 2:00-4:30.
+                        </li>
+                        <li>
+                          Each teacher can be assigned a maximum of 3 non-lab subjects.
+                        </li>
+                      </ul>
                     </AlertDescription>
                   </Alert>
                   
