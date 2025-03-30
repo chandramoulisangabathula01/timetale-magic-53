@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import Logo from '@/components/Logo';
 import { useAuth } from '@/contexts/AuthContext';
-import { getFacultyList } from '@/utils/timetableUtils';
+import { getFacultyList } from '@/utils/facultyHelpers';
 
 const Login = () => {
   const navigate = useNavigate();

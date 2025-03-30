@@ -1,4 +1,3 @@
-
 import { v4 as uuidv4 } from 'uuid';
 import { 
   Timetable, 
@@ -8,13 +7,20 @@ import {
   YearType,
   BranchType,
   SemesterType,
-  Day
+  Day,
+  TimeSlot
 } from './types';
 
 // Get all timetables from localStorage
 export const getTimetables = (): Timetable[] => {
   const timetablesJSON = localStorage.getItem('timetables');
   return timetablesJSON ? JSON.parse(timetablesJSON) : [];
+};
+
+// Get a specific timetable by ID
+export const getTimetableById = (id: string): Timetable | undefined => {
+  const timetables = getTimetables();
+  return timetables.find(timetable => timetable.id === id);
 };
 
 // Save a timetable to localStorage
@@ -91,7 +97,7 @@ export const getTimetablesForFaculty = (facultyName: string): Timetable[] => {
 export const isTeacherAvailable = (
   teacherName: string, 
   day: Day, 
-  timeSlot: string, 
+  timeSlot: TimeSlot, 
   currentTimetableId?: string
 ): boolean => {
   const allTimetables = getTimetables();
@@ -128,7 +134,7 @@ export const generateTimetable = (formData: TimetableFormData): Timetable => {
       ? ['Monday', 'Tuesday', 'Wednesday', 'Thursday']
       : ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   
-  const timeSlots = [
+  const timeSlots: TimeSlot[] = [
     '9:30-10:20', 
     '10:20-11:10', 
     '11:20-12:10', 
@@ -145,13 +151,13 @@ export const generateTimetable = (formData: TimetableFormData): Timetable => {
   days.forEach(day => {
     entries.push({
       day,
-      timeSlot: '11:10-11:20',
+      timeSlot: '11:10-11:20' as TimeSlot,
       isBreak: true
     });
     
     entries.push({
       day,
-      timeSlot: '1:00-2:00',
+      timeSlot: '1:00-2:00' as TimeSlot,
       isLunch: true
     });
   });
@@ -186,7 +192,8 @@ export const generateTimetable = (formData: TimetableFormData): Timetable => {
       const customType = formData.freeHours[0].customType;
       
       // Allocate some free slots on the last day
-      ['11:20-12:10', '12:10-1:00', '2:00-2:50'].forEach(timeSlot => {
+      const freeTimeSlots: TimeSlot[] = ['11:20-12:10', '12:10-1:00', '2:00-2:50'];
+      freeTimeSlots.forEach(timeSlot => {
         entries.push({
           day: lastDay,
           timeSlot,
@@ -198,7 +205,7 @@ export const generateTimetable = (formData: TimetableFormData): Timetable => {
   }
   
   // Utility function to check if a slot is already filled
-  const isSlotFilled = (day: Day, timeSlot: string): boolean => {
+  const isSlotFilled = (day: Day, timeSlot: TimeSlot): boolean => {
     return entries.some(entry => 
       entry.day === day && 
       entry.timeSlot === timeSlot
@@ -232,7 +239,8 @@ export const generateTimetable = (formData: TimetableFormData): Timetable => {
         
         // Allocate the lab in merged slots from 9:30 to 1:00
         // We'll create separate entries but mark them as part of the same lab group
-        ['9:30-10:20', '10:20-11:10', '11:20-12:10', '12:10-1:00'].forEach((timeSlot, index) => {
+        const morningLabSlots: TimeSlot[] = ['9:30-10:20', '10:20-11:10', '11:20-12:10', '12:10-1:00'];
+        morningLabSlots.forEach(timeSlot => {
           entries.push({
             day,
             timeSlot,
@@ -271,7 +279,8 @@ export const generateTimetable = (formData: TimetableFormData): Timetable => {
           const labGroupId = uuidv4();
           
           // Allocate the lab in merged slots from 2:00 to 4:30
-          ['2:00-2:50', '2:50-3:40', '3:40-4:30'].forEach(timeSlot => {
+          const afternoonLabSlots: TimeSlot[] = ['2:00-2:50', '2:50-3:40', '3:40-4:30'];
+          afternoonLabSlots.forEach(timeSlot => {
             entries.push({
               day,
               timeSlot,
