@@ -348,7 +348,6 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
     }
   };
 
-  
   return (
     <div className="space-y-6">
       <div>
@@ -580,7 +579,7 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
                         </SelectTrigger>
                         <SelectContent>
                           {availableSubjects.length === 0 ? (
-                            <SelectItem value="no-subjects" disabled>
+                            <SelectItem value="no-subjects-available" disabled>
                               No subjects available - create subjects first
                             </SelectItem>
                           ) : (
@@ -610,7 +609,7 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
                         </SelectTrigger>
                         <SelectContent>
                           {availableFaculty.length === 0 ? (
-                            <SelectItem value="no-faculty" disabled>
+                            <SelectItem value="no-faculty-available" disabled>
                               No faculty available - create faculty first
                             </SelectItem>
                           ) : (

@@ -168,11 +168,17 @@ const Login = () => {
                       <SelectValue placeholder="Select Faculty Name" />
                     </SelectTrigger>
                     <SelectContent>
-                      {FACULTY_LIST.map((faculty) => (
-                        <SelectItem key={faculty} value={faculty}>
-                          {faculty}
+                      {FACULTY_LIST.length === 0 ? (
+                        <SelectItem value="no-faculty-available" disabled>
+                          No faculty available
                         </SelectItem>
-                      ))}
+                      ) : (
+                        FACULTY_LIST.map((faculty) => (
+                          <SelectItem key={faculty} value={faculty}>
+                            {faculty}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
