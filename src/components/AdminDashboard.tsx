@@ -1,11 +1,21 @@
-import React from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, Users, Book } from 'lucide-react';
+import { Calendar, Users, Book, Settings, Edit, Eye, Trash2 } from 'lucide-react';
+import { getTimetables } from '@/utils/timetableUtils';
+import { Timetable } from '@/utils/types';
 
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
+  const [timetables, setTimetables] = useState<Timetable[]>([]);
+  
+  useEffect(() => {
+    // Load timetables when component mounts
+    const loadedTimetables = getTimetables();
+    setTimetables(loadedTimetables);
+  }, []);
   
   return (
     <div className="space-y-6">
@@ -62,18 +72,78 @@ const AdminDashboard: React.FC = () => {
         <Card className="cursor-pointer hover:shadow-md transition-shadow duration-200" onClick={() => navigate('/admin-settings')}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Book className="h-4 w-4 mr-2" />
+              <Settings className="h-4 w-4 mr-2" />
               Admin Settings
             </CardTitle>
             <CardDescription>Change username and password.</CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
-              Change username and password.
+              Update your admin credentials.
             </p>
           </CardContent>
         </Card>
       </div>
+      
+      {/* Available Timetables Section */}
+      {timetables.length > 0 && (
+        <div className="mt-8">
+          <h2 className="text-xl font-semibold mb-4">Available Timetables</h2>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse border rounded-md">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="p-2 text-left border">Year</th>
+                  <th className="p-2 text-left border">Branch</th>
+                  <th className="p-2 text-left border">Semester</th>
+                  <th className="p-2 text-left border">Room</th>
+                  <th className="p-2 text-left border">Academic Year</th>
+                  <th className="p-2 text-left border">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {timetables.map(timetable => (
+                  <tr key={timetable.id} className="border-b hover:bg-gray-50">
+                    <td className="p-2 border">{timetable.formData.year}</td>
+                    <td className="p-2 border">{timetable.formData.branch}</td>
+                    <td className="p-2 border">{timetable.formData.semester}</td>
+                    <td className="p-2 border">{timetable.formData.roomNumber}</td>
+                    <td className="p-2 border">{timetable.formData.academicYear}</td>
+                    <td className="p-2 border">
+                      <div className="flex space-x-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex items-center gap-1"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/view-timetable/${timetable.id}`);
+                          }}
+                        >
+                          <Eye className="h-3 w-3" />
+                          View
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex items-center gap-1"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/edit-timetable/${timetable.id}`);
+                          }}
+                        >
+                          <Edit className="h-3 w-3" />
+                          Edit
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

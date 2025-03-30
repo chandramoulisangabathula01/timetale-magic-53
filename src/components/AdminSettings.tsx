@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,22 @@ const AdminSettings: React.FC = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
+  // Initialize admin credentials in localStorage if they don't exist
+  useEffect(() => {
+    const users = JSON.parse(localStorage.getItem('users') || '[]');
+    const adminExists = users.some((user: any) => user.role === 'admin');
+    
+    if (!adminExists) {
+      // Add default admin user if none exists
+      users.push({
+        username: 'admin',
+        password: 'admin123',
+        role: 'admin'
+      });
+      localStorage.setItem('users', JSON.stringify(users));
+    }
+  }, []);
+  
   const handleUpdateCredentials = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -29,9 +45,6 @@ const AdminSettings: React.FC = () => {
       });
       return;
     }
-    
-    // In a real application, you would make an API call to update credentials
-    // For this demo, we'll just simulate a success
     
     // Get current credentials from localStorage
     const users = JSON.parse(localStorage.getItem('users') || '[]');
@@ -99,125 +112,100 @@ const AdminSettings: React.FC = () => {
         <h1 className="text-2xl font-bold">Admin Settings</h1>
       </div>
       
-      <Tabs defaultValue="credentials" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="credentials">Admin Credentials</TabsTrigger>
-          <TabsTrigger value="systemSettings">System Settings</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="credentials">
-          <Card>
-            <CardHeader>
-              <CardTitle>Update Admin Credentials</CardTitle>
-              <CardDescription>
-                Change your admin username and password. For security reasons, you need to enter your current password.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleUpdateCredentials} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="username">New Username (optional)</Label>
-                  <Input
-                    id="username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    placeholder="Enter new username"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="currentPassword">Current Password</Label>
-                  <div className="relative">
-                    <Input
-                      id="currentPassword"
-                      type={showCurrentPassword ? "text" : "password"}
-                      value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                      placeholder="Enter current password"
-                      required
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-2 top-0 h-full"
-                      onClick={() => togglePasswordVisibility('current')}
-                    >
-                      {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="newPassword">New Password (optional)</Label>
-                  <div className="relative">
-                    <Input
-                      id="newPassword"
-                      type={showNewPassword ? "text" : "password"}
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      placeholder="Enter new password"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-2 top-0 h-full"
-                      onClick={() => togglePasswordVisibility('new')}
-                    >
-                      {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                  <div className="relative">
-                    <Input
-                      id="confirmPassword"
-                      type={showConfirmPassword ? "text" : "password"}
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="Confirm new password"
-                      disabled={!newPassword}
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-2 top-0 h-full"
-                      onClick={() => togglePasswordVisibility('confirm')}
-                      disabled={!newPassword}
-                    >
-                      {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                </div>
-                
-                <Button type="submit" className="w-full flex items-center gap-2">
-                  <Save className="h-4 w-4" /> Save Changes
+      <Card>
+        <CardHeader>
+          <CardTitle>Update Admin Credentials</CardTitle>
+          <CardDescription>
+            Change your admin username and password. For security reasons, you need to enter your current password.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleUpdateCredentials} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="username">New Username (optional)</Label>
+              <Input
+                id="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Enter new username"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="currentPassword">Current Password</Label>
+              <div className="relative">
+                <Input
+                  id="currentPassword"
+                  type={showCurrentPassword ? "text" : "password"}
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="Enter current password"
+                  required
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-2 top-0 h-full"
+                  onClick={() => togglePasswordVisibility('current')}
+                >
+                  {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
-              </form>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="systemSettings">
-          <Card>
-            <CardHeader>
-              <CardTitle>System Settings</CardTitle>
-              <CardDescription>
-                Configure system-wide settings for the timetable application.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Additional system settings will be available in future updates.
-              </p>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="newPassword">New Password (optional)</Label>
+              <div className="relative">
+                <Input
+                  id="newPassword"
+                  type={showNewPassword ? "text" : "password"}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Enter new password"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-2 top-0 h-full"
+                  onClick={() => togglePasswordVisibility('new')}
+                >
+                  {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirm New Password</Label>
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Confirm new password"
+                  disabled={!newPassword}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-2 top-0 h-full"
+                  onClick={() => togglePasswordVisibility('confirm')}
+                  disabled={!newPassword}
+                >
+                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
+            </div>
+            
+            <Button type="submit" className="w-full flex items-center gap-2">
+              <Save className="h-4 w-4" /> Save Changes
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 };

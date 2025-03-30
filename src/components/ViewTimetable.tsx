@@ -36,10 +36,12 @@ const ViewTimetable: React.FC = () => {
         
         <TimetableView 
           timetable={timetable} 
-          printMode={true}
+          printMode={false}
         />
 
+        {/* Always show faculty details, regardless of view mode */}
         <div className="mt-8">
+          <h4 className="font-semibold mb-2">Faculty Details</h4>
           <TimetableFacultyDetails timetable={timetable} />
         </div>
       </div>

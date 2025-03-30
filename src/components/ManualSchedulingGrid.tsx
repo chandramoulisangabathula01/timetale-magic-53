@@ -181,6 +181,7 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
   
   useEffect(() => {
     if (entries.length > 0) {
+      // Save entries immediately after they're changed
       onSave(entries);
     }
   }, [entries, onSave]);
@@ -205,26 +206,24 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
   };
   
   const handleCellChange = (day: Day, timeSlot: TimeSlot, value: string, type: 'subject' | 'free') => {
-    setEntries(prevEntries => {
-      // Create a new array of entries to update state properly
-      return prevEntries.map(entry => {
-        if (entry.day === day && entry.timeSlot === timeSlot) {
-          if (type === 'subject') {
-            const [subjectId, teacherId] = value.split('|');
-            const subject = subjectTeacherPairs.find(s => s.id === subjectId);
-            
-            if (subject) {
-              // Check for teacher conflicts
-              if (checkTeacherConflicts(day, timeSlot, subject.teacherName)) {
-                toast({
-                  title: "Scheduling Conflict",
-                  description: `${subject.teacherName} already has a class scheduled at this time slot in another class.`,
-                  variant: "destructive"
-                });
-                return entry;
-              }
-              
-              // Create a new entry object with the subject details
+    if (type === 'subject') {
+      const [subjectId, teacherName] = value.split('|');
+      const subject = subjectTeacherPairs.find(s => s.id === subjectId);
+      
+      if (subject) {
+        // Check for teacher conflicts
+        if (checkTeacherConflicts(day, timeSlot, subject.teacherName)) {
+          toast({
+            title: "Scheduling Conflict",
+            description: `${subject.teacherName} already has a class scheduled at this time slot in another class.`,
+            variant: "destructive"
+          });
+          return;
+        }
+        
+        setEntries(prevEntries => {
+          return prevEntries.map(entry => {
+            if (entry.day === day && entry.timeSlot === timeSlot) {
               return {
                 ...entry,
                 subjectName: subject.subjectName,
@@ -235,8 +234,21 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
                 freeType: undefined
               };
             }
-          } else if (type === 'free') {
-            // Create a new entry object with the free hour details
+            return entry;
+          });
+        });
+        
+        // Show success toast for feedback
+        toast({
+          title: "Subject Assigned",
+          description: `${subject.subjectName} with ${subject.teacherName} has been assigned to this slot.`,
+          variant: "default"
+        });
+      }
+    } else if (type === 'free') {
+      setEntries(prevEntries => {
+        return prevEntries.map(entry => {
+          if (entry.day === day && entry.timeSlot === timeSlot) {
             return {
               ...entry,
               subjectName: undefined,
@@ -247,18 +259,23 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
               freeType: value as FreeHourType
             };
           }
-        }
-        return entry;
+          return entry;
+        });
       });
-    });
+      
+      // Show success toast for feedback
+      toast({
+        title: "Free Hour Added",
+        description: `${value} has been added to this slot.`,
+        variant: "default"
+      });
+    }
   };
   
   const clearCell = (day: Day, timeSlot: TimeSlot) => {
     setEntries(prevEntries => {
-      // Create a new array with the updated entry
-      return prevEntries.map(entry => {
+      const updatedEntries = prevEntries.map(entry => {
         if (entry.day === day && entry.timeSlot === timeSlot) {
-          // Return a new entry object with cleared fields
           return {
             day,
             timeSlot,
@@ -273,6 +290,15 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
         }
         return entry;
       });
+      
+      // Show success toast for feedback
+      toast({
+        title: "Cell Cleared",
+        description: "The time slot has been cleared.",
+        variant: "default"
+      });
+      
+      return updatedEntries;
     });
   };
   

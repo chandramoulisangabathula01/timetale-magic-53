@@ -1,147 +1,142 @@
 
-# College Timetable Management System - Documentation
-
-## Table of Contents
-
-1. [Introduction](#introduction)
-2. [Tech Stack](#tech-stack)
-3. [Features](#features)
-4. [User Roles](#user-roles)
-5. [System Architecture](#system-architecture)
-6. [Core Components](#core-components)
-7. [Workflows](#workflows)
-8. [Data Models](#data-models)
-9. [Future Enhancements](#future-enhancements)
+# College Timetable Management System Documentation
 
 ## Introduction
 
-The College Timetable Management System is a comprehensive web application designed to simplify the process of creating, managing, and viewing academic timetables for educational institutions. This system allows administrators to generate timetables automatically or manually for different academic years, branches, and semesters, while providing faculty and students with personalized views of their schedules.
+The College Timetable Management System is a comprehensive web application designed to create and manage academic timetables for educational institutions. This system simplifies the complex task of scheduling classes, assigning faculty, and managing academic resources across multiple departments and years.
 
-## Tech Stack
+## Table of Contents
 
-The application is built using modern web technologies:
-
-- **Frontend Framework**: React with TypeScript
-- **State Management**: React Context API and React Query
-- **Routing**: React Router
-- **UI Component Library**: Shadcn UI
-- **Styling**: Tailwind CSS
-- **Icons**: Lucide React
-- **Data Persistence**: Browser LocalStorage
-- **Build Tool**: Vite
+1. [Features](#features)
+2. [Technology Stack](#technology-stack)
+3. [User Roles](#user-roles)
+4. [System Modules](#system-modules)
+5. [Timetable Management](#timetable-management)
+6. [Database Structure](#database-structure)
+7. [Process Flow](#process-flow)
+8. [Installation and Setup](#installation-and-setup)
+9. [Screenshots](#screenshots)
 
 ## Features
 
-### For Administrators
+- **Automated Timetable Generation**: Generate complete timetables with a single click
+- **Manual Scheduling**: Fine-tune timetables with a user-friendly interface
+- **Lab Session Management**: Handle lab sessions that span multiple periods
+- **Conflict Detection**: Automatically detect and prevent faculty scheduling conflicts
+- **Multiple User Roles**: Admin, Faculty, and Student views with appropriate permissions
+- **Free Period Management**: Designate slots for library, sports, projects, etc.
+- **PDF Export**: Print or download timetables in PDF format
+- **Faculty Workload Management**: Track and balance faculty workload
+- **Multi-Department Support**: Create timetables for various departments and years
+- **User-Friendly Interface**: Intuitive design with responsive layout
 
-- **Timetable Creation**: Generate timetables automatically or manually for different academic years, branches, and semesters
-- **Faculty Management**: Add, edit, and manage faculty members and their teaching assignments
-- **Subject Management**: Maintain a database of subjects with their details
-- **Conflict Detection**: Prevent scheduling conflicts for faculty members
-- **PDF Export**: Export timetables as PDF documents
-- **Admin Settings**: Update admin credentials
+## Technology Stack
 
-### For Faculty Members
-
-- **Personalized Schedule**: View only the classes they are teaching
-- **Multi-timetable View**: Access all timetables where they're assigned
-- **PDF Export**: Download their teaching schedule
-
-### For Students
-
-- **Class Timetable**: View the timetable for their specific year, branch, and semester
-- **PDF Export**: Download their class timetable
+- **Frontend Framework**: React with TypeScript
+- **Styling**: Tailwind CSS
+- **UI Components**: Shadcn UI
+- **Routing**: React Router
+- **State Management**: React Hooks
+- **Data Visualization**: Recharts
+- **Build Tool**: Vite
+- **Client-Side Storage**: localStorage for data persistence
 
 ## User Roles
 
-The system supports three types of users:
+### Admin
+- Create, edit, and delete timetables
+- Manage faculty and subjects
+- Override scheduling conflicts
+- Update admin credentials
+- View all timetables
 
-1. **Administrator**: Has full access to create, edit, and manage all aspects of the timetable system
-2. **Faculty**: Can view their teaching schedule across multiple classes
-3. **Student**: Can view the timetable for their specific class
+### Faculty
+- View assigned classes and schedules
+- View personal timetable filtered by faculty name
+- Download timetable as PDF
 
-## System Architecture
+### Student
+- View class timetable based on year, branch, and semester
+- Download timetable as PDF
 
-The application follows a component-based architecture with clear separation of concerns:
+## System Modules
 
-- **Pages**: Main views of the application (Dashboard, Create Timetable, etc.)
-- **Components**: Reusable UI elements
-- **Utils**: Utility functions for data manipulation and business logic
-- **Contexts**: Global state management
-- **Hooks**: Custom React hooks
+### Authentication System
+The system uses a role-based authentication system with three distinct user types: admin, faculty, and student. Authentication data is stored in the browser's localStorage for persistent sessions.
 
-## Core Components
+```typescript
+// Sample authentication context structure
+{
+  isAuthenticated: boolean;
+  userRole: 'admin' | 'faculty' | 'student';
+  username: string;
+  studentFilters?: {
+    year: string;
+    branch: string;
+    semester: string;
+  }
+}
+```
 
-### Timetable Generation Engine
+### Admin Dashboard
+The admin dashboard provides access to all administrative functions:
+- Create new timetables
+- View and edit existing timetables
+- Manage faculty and subjects
+- Access admin settings
 
-The timetable generation engine is the heart of the system, responsible for automatically creating timetables based on input parameters. The algorithm:
+### Faculty Management
+Administrators can add, edit, and delete faculty records, including:
+- Name and department
+- Contact information
+- Assigned subjects
+- Faculty expertise
 
-1. Takes course details, faculty assignments, and constraints as input
-2. Creates a schedule grid for the week
-3. Allocates labs in continuous time slots
-4. Distributes regular subjects throughout the week
-5. Handles faculty availability to prevent conflicts
-6. Adds breaks and free periods
+### Subject Management
+The subject management module allows administrators to:
+- Add new subjects with credit hours
+- Assign subjects to specific years and branches
+- Mark subjects as theory or lab
+- Map subjects to qualified faculty members
 
-Key files:
-- `src/utils/timetableUtils.ts`: Contains the timetable generation logic
-- `src/components/CreateTimetableForm.tsx`: User interface for timetable creation
+### Timetable Creator
+The timetable creator is the core functionality of the system with features like:
+- Year, branch, and semester selection
+- Room assignment
+- Class incharge designation
+- Subject-teacher mapping
+- Free period configuration
+- Day selection for 4th year (4/6 day options)
 
-### Manual Scheduling Grid
+## Timetable Management
 
-For fine-grained control, the system allows administrators to manually design timetables:
+### Automatic Generation
+The system can automatically generate a complete timetable following these rules:
+- Each subject gets appropriate time allocation
+- Lab sessions are allocated in continuous blocks
+- Faculty conflicts are prevented
+- Free periods are distributed appropriately
+- Breaks and lunch periods are scheduled
 
-1. Drag-and-drop interface for subjects
-2. Real-time conflict detection
-3. Support for lab sessions spanning multiple periods
+### Manual Scheduling
+For fine-tuning, the system provides a grid interface where administrators can:
+- Drag and drop subjects into time slots
+- Assign free periods (library, sports, etc.)
+- Manually resolve conflicts
+- Clear individual slots
 
-Key files:
-- `src/components/ManualSchedulingGrid.tsx`: The interactive scheduling interface
+### Lab Sessions
+Lab sessions require special handling:
+- Multiple continuous periods (typically 3-4)
+- Batch assignments
+- Specific lab room allocation
+- Special display in the timetable view
 
-### Timetable View
+## Database Structure
 
-A versatile component that renders the timetable in different formats:
+The system uses localStorage for data persistence with the following key structures:
 
-1. Regular view for normal usage
-2. Faculty-filtered view that shows only a specific faculty's classes
-3. Print-optimized view for PDF export
-
-Key files:
-- `src/components/TimetableView.tsx`: The main timetable rendering component
-
-## Workflows
-
-### Creating a New Timetable
-
-1. Administrator logs in
-2. Navigates to "Create Timetable"
-3. Enters timetable details (year, branch, semester, etc.)
-4. Adds subject-teacher pairs
-5. Configures free hours and day options
-6. Chooses automatic generation or manual scheduling
-7. Reviews and finalizes the timetable
-
-### Viewing Faculty Schedule
-
-1. Faculty member logs in
-2. Automatically redirected to their dashboard
-3. Views their teaching schedule across all classes
-4. Can select different timetables if teaching multiple classes
-5. Can download their schedule as PDF
-
-### Viewing Student Timetable
-
-1. Student logs in
-2. Automatically redirected to their dashboard
-3. Views the timetable for their class
-4. Can download the timetable as PDF
-
-## Data Models
-
-The system uses several key data structures:
-
-### Timetable
-
+### Timetables
 ```typescript
 interface Timetable {
   id: string;
@@ -151,8 +146,18 @@ interface Timetable {
 }
 ```
 
-### TimetableEntry
+### Subject-Teacher Pairs
+```typescript
+interface SubjectTeacherPair {
+  id: string;
+  subjectName: string;
+  teacherName: string;
+  isLab: boolean;
+  batchNumber?: string;
+}
+```
 
+### Timetable Entries
 ```typescript
 interface TimetableEntry {
   day: Day;
@@ -170,42 +175,68 @@ interface TimetableEntry {
 }
 ```
 
-### Faculty
+## Process Flow
 
-```typescript
-interface Faculty {
-  id: string;
-  name: string;
-  shortName: string;
-  department: string;
-  designation: string;
-  email: string;
-  subjects: string[];
-}
-```
+1. **Admin Login**: Administrator logs in with credentials
+2. **Create Timetable**: Admin initiates timetable creation
+3. **Basic Information**: Add timetable metadata (year, branch, etc.)
+4. **Subject-Teacher Mapping**: Assign teachers to subjects
+5. **Free Hour Configuration**: Set up free periods
+6. **Generate/Schedule**: Either auto-generate or manually schedule
+7. **Review and Adjust**: Fine-tune the timetable as needed
+8. **Save Timetable**: Store the completed timetable
+9. **Student/Faculty Access**: Users can view relevant timetables
 
-### Subject
+## Installation and Setup
 
-```typescript
-interface Subject {
-  id: string;
-  name: string;
-  code: string;
-  credits: number;
-  isLab: boolean;
-  years: YearType[];
-  branches: BranchType[];
-}
-```
+1. Clone the repository:
+   ```
+   git clone https://github.com/yourusername/college-timetable-system.git
+   ```
 
-## Future Enhancements
+2. Install dependencies:
+   ```
+   npm install
+   ```
 
-Potential areas for future development:
+3. Start the development server:
+   ```
+   npm run dev
+   ```
 
-1. **Server-Side Database**: Move from localStorage to a proper database system
-2. **Authentication System**: Implement a robust authentication system with password reset
-3. **Notification System**: Alert faculty and students about timetable changes
-4. **Room Allocation**: Add classroom management and intelligent room allocation
-5. **Conflict Resolution**: Add AI-based suggestions for resolving timetable conflicts
-6. **Mobile App**: Develop a mobile application for easier access
-7. **Calendar Integration**: Allow users to sync timetables with their calendar applications
+4. Access the application at `http://localhost:5173`
+
+5. Default admin credentials:
+   - Username: admin
+   - Password: admin123
+
+## Screenshots
+
+### Login Page
+![Login Page](/documentation-images/login.png)
+
+### Admin Dashboard
+![Admin Dashboard](/documentation-images/admin-dashboard.png)
+
+### Create Timetable
+![Create Timetable](/documentation-images/create-timetable.png)
+
+### Manual Scheduling
+![Manual Scheduling](/documentation-images/manual-scheduling.png)
+
+### View Timetable
+![View Timetable](/documentation-images/view-timetable.png)
+
+### Faculty View
+![Faculty View](/documentation-images/faculty-view.png)
+
+### Student View
+![Student View](/documentation-images/student-view.png)
+
+## Conclusion
+
+The College Timetable Management System provides a comprehensive solution for educational institutions to efficiently manage their class scheduling needs. With its user-friendly interface and powerful features, it significantly reduces the time and effort required for timetable creation while ensuring conflict-free schedules.
+
+## Acknowledgements
+
+This project was developed using React, Tailwind CSS, and Shadcn UI, with special thanks to the open source community for their valuable contributions to the libraries and tools used in this project.

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Timetable, Day, TimeSlot } from '@/utils/types';
 import {
@@ -101,22 +100,21 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
   
   // Helper function to get cell content for a specific day and time slot
   const getCellContent = (day: Day, timeSlot: TimeSlot) => {
-    // Skip rendering the extra break slots that appear in student and faculty view
-    if (timeSlot === '11:10-11:20' || timeSlot === '1:00-2:00') {
-      const entry = filteredEntries.find(e => e.day === day && e.timeSlot === timeSlot);
-      if (entry?.isBreak) {
-        return <div className="text-sm italic text-center">Break</div>;
-      }
-      if (entry?.isLunch) {
-        return <div className="text-sm italic text-center">Lunch</div>;
-      }
-      return null;
+    // Special handling for break and lunch slots
+    if (timeSlot === '11:10-11:20') {
+      return <div className="text-sm italic text-center">Break</div>;
+    }
+    
+    if (timeSlot === '1:00-2:00') {
+      return <div className="text-sm italic text-center">Lunch</div>;
     }
     
     const entry = getActualEntry(day, timeSlot);
     
     if (!entry) return null;
     
+    // These conditions are kept for compatibility but should not be needed
+    // since we now always render break and lunch in their respective slots above
     if (entry.isBreak) {
       return <div className="text-sm italic text-center">Break</div>;
     }
@@ -184,12 +182,8 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
   // Helper function to get cell class for styling
   const getCellClass = (day: Day, timeSlot: TimeSlot) => {
     // For break and lunch time slots
-    if (timeSlot === '11:10-11:20' || timeSlot === '1:00-2:00') {
-      const entry = filteredEntries.find(e => e.day === day && e.timeSlot === timeSlot);
-      if (entry?.isBreak) return "bg-gray-100 break-slot";
-      if (entry?.isLunch) return "bg-gray-100 lunch-slot";
-      return "";
-    }
+    if (timeSlot === '11:10-11:20') return "bg-gray-100 break-slot";
+    if (timeSlot === '1:00-2:00') return "bg-gray-100 lunch-slot";
     
     const entry = getActualEntry(day, timeSlot);
     
@@ -261,12 +255,10 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
   
   // Generate table for printMode=false (normal view)
   if (!printMode) {
-    // Filter out break and lunch slots for regular display
-    const displayTimeSlots = timeSlots.filter(slot => 
-      slot !== '11:10-11:20' && slot !== '1:00-2:00'
-    );
+    // Include break and lunch slots for display
+    const displayTimeSlots = timeSlots;
     
-    // Generate table rows based on filtered time slots
+    // Generate table rows based on time slots
     const tableRows = displayTimeSlots.map(timeSlot => (
       <TableRow key={timeSlot}>
         <TableCell className="border p-2 text-xs bg-gray-50 font-medium">
@@ -330,19 +322,14 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
     );
   }
   
-  // Generate printable table that matches the requested format for printMode=true
-  // For print mode, show a simplified table without the break and lunch rows
-  const printTimeSlots = timeSlots.filter(slot => 
-    slot !== '11:10-11:20' && slot !== '1:00-2:00'
-  );
-
+  // Generate printable table that includes breaks and lunch
   return (
     <div className="print-timetable">
       <Table className="w-full border-collapse border table-fixed">
         <TableHeader>
           <TableRow>
             <TableHead className="border p-2 bg-gray-50 font-bold text-center">DAY</TableHead>
-            {printTimeSlots.map(slot => (
+            {timeSlots.map(slot => (
               <TableHead key={slot} className="border p-2 bg-gray-50 font-bold text-center">
                 {slot}
               </TableHead>
@@ -355,21 +342,26 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
               <TableCell className="border p-2 text-center font-bold bg-gray-50">
                 {shortDays[day]}
               </TableCell>
-              {printTimeSlots.map(timeSlot => {
-                const entry = getActualEntry(day, timeSlot);
+              {timeSlots.map(timeSlot => {
                 let content = '';
                 let teacher = '';
                 
-                if (entry) {
-                  if (entry.isBreak) {
-                    content = 'Break';
-                  } else if (entry.isLunch) {
-                    content = 'Lunch';
-                  } else if (entry.subjectName) {
-                    content = entry.subjectName;
-                    teacher = entry.teacherName || '';
-                  } else if (entry.isFree && entry.freeType) {
-                    content = entry.freeType;
+                // Special handling for breaks and lunch
+                if (timeSlot === '11:10-11:20') {
+                  content = 'Break';
+                } else if (timeSlot === '1:00-2:00') {
+                  content = 'Lunch';
+                } else {
+                  // Regular slot handling
+                  const entry = getActualEntry(day, timeSlot);
+                  
+                  if (entry) {
+                    if (entry.subjectName) {
+                      content = entry.subjectName;
+                      teacher = entry.teacherName || '';
+                    } else if (entry.isFree && entry.freeType) {
+                      content = entry.freeType;
+                    }
                   }
                 }
                 
