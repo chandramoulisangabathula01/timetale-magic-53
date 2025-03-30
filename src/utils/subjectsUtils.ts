@@ -16,7 +16,20 @@ export interface SubjectData {
 // Get all subjects from local storage
 export const getSubjects = (): Subject[] => {
   const subjectsJson = localStorage.getItem('subjects');
-  return subjectsJson ? JSON.parse(subjectsJson) : [];
+  let subjects = subjectsJson ? JSON.parse(subjectsJson) : [];
+  
+  // Ensure all subjects have the required properties
+  subjects = subjects.map((subject: any) => ({
+    id: subject.id || uuidv4(),
+    name: subject.name || '',
+    code: subject.code || '',
+    credits: subject.credits || 0,
+    isLab: subject.isLab || false,
+    years: Array.isArray(subject.years) ? subject.years : (subject.year ? [subject.year] : ['1st Year']),
+    branches: Array.isArray(subject.branches) ? subject.branches : (subject.branch ? [subject.branch] : ['CSE'])
+  }));
+  
+  return subjects;
 };
 
 // Save all subjects to local storage

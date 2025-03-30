@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,7 @@ import {
   addSubject, 
   updateSubject, 
   deleteSubject,
+  initializeDefaultSubjects,
   SubjectData
 } from '@/utils/subjectsUtils';
 import { YearType, BranchType } from '@/utils/types';
@@ -35,6 +37,9 @@ const ManageSubjects = () => {
   const [subjectBranch, setSubjectBranch] = useState<BranchType>('CSE');
   
   useEffect(() => {
+    // Make sure we have default subjects
+    initializeDefaultSubjects();
+    
     if (!isAuthenticated) {
       navigate('/');
       return;
@@ -54,11 +59,15 @@ const ManageSubjects = () => {
     let filtered = [...subjects];
     
     if (filterYear !== 'all') {
-      filtered = filtered.filter(subject => subject.years.includes(filterYear));
+      filtered = filtered.filter(subject => 
+        subject.years && Array.isArray(subject.years) && subject.years.includes(filterYear)
+      );
     }
     
     if (filterBranch !== 'all') {
-      filtered = filtered.filter(subject => subject.branches.includes(filterBranch));
+      filtered = filtered.filter(subject => 
+        subject.branches && Array.isArray(subject.branches) && subject.branches.includes(filterBranch)
+      );
     }
     
     setFilteredSubjects(filtered);
@@ -78,7 +87,9 @@ const ManageSubjects = () => {
     const isDuplicate = subjects.some(
       subject => 
         subject.name.toLowerCase() === newSubject.toLowerCase() && 
+        subject.years && 
         subject.years.includes(subjectYear) && 
+        subject.branches &&
         subject.branches.includes(subjectBranch)
     );
     
@@ -129,7 +140,15 @@ const ManageSubjects = () => {
       subject => 
         subject.id !== editingSubject.id &&
         subject.name.toLowerCase() === editingSubject.name.toLowerCase() && 
+        subject.years &&
+        Array.isArray(subject.years) &&
+        editingSubject.years &&
+        Array.isArray(editingSubject.years) &&
         subject.years.some(y => editingSubject.years.includes(y)) && 
+        subject.branches &&
+        Array.isArray(subject.branches) &&
+        editingSubject.branches &&
+        Array.isArray(editingSubject.branches) &&
         subject.branches.some(b => editingSubject.branches.includes(b))
     );
     
@@ -177,7 +196,7 @@ const ManageSubjects = () => {
   };
   
   return (
-    <div className="min-h-screen bg-gray-50">
+    <DashboardLayout>
       <div className="container mx-auto py-8 px-4">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Manage Subjects</h1>
@@ -348,7 +367,7 @@ const ManageSubjects = () => {
                               <div className="space-y-2">
                                 <Label htmlFor={`edit-year-${subject.id}`}>Year</Label>
                                 <Select 
-                                  value={editingSubject.years[0]} 
+                                  value={editingSubject.years && editingSubject.years.length > 0 ? editingSubject.years[0] : '1st Year'} 
                                   onValueChange={(value) => setEditingSubject({
                                     ...editingSubject,
                                     years: [value as YearType]
@@ -369,7 +388,7 @@ const ManageSubjects = () => {
                               <div className="space-y-2">
                                 <Label htmlFor={`edit-branch-${subject.id}`}>Branch</Label>
                                 <Select 
-                                  value={editingSubject.branches[0]} 
+                                  value={editingSubject.branches && editingSubject.branches.length > 0 ? editingSubject.branches[0] : 'CSE'} 
                                   onValueChange={(value) => setEditingSubject({
                                     ...editingSubject,
                                     branches: [value as BranchType]
@@ -413,7 +432,8 @@ const ManageSubjects = () => {
                             <div>
                               <div className="font-medium">{subject.name}</div>
                               <div className="text-sm text-muted-foreground">
-                                {subject.years[0]}, {subject.branches[0]}
+                                {subject.years && subject.years.length > 0 ? subject.years[0] : 'N/A'}, 
+                                {subject.branches && subject.branches.length > 0 ? subject.branches[0] : 'N/A'}
                                 {subject.isLab && <span className="ml-2 text-primary">Lab</span>}
                               </div>
                             </div>
@@ -446,7 +466,7 @@ const ManageSubjects = () => {
           </Card>
         </div>
       </div>
-    </div>
+    </DashboardLayout>
   );
 };
 
