@@ -1,89 +1,31 @@
+
 import { v4 as uuidv4 } from 'uuid';
-import {
-  Timetable,
-  TimetableEntry,
-  TimetableFormData,
-  Day,
-  TimeSlot,
+import { 
+  Timetable, 
+  TimetableFormData, 
+  TimetableEntry, 
   SubjectTeacherPair,
   YearType,
   BranchType,
-  SemesterType
+  SemesterType,
+  Day
 } from './types';
-import { getFaculty } from './facultyUtils';
 
-// Time slots for timetable
-export const TIME_SLOTS: TimeSlot[] = [
-  '9:30-10:20',
-  '10:20-11:10',
-  '11:10-11:20', // Break
-  '11:20-12:10',
-  '12:10-1:00',
-  '1:00-2:00',  // Lunch
-  '2:00-2:50',
-  '2:50-3:40',
-  '3:40-4:30'
-];
-
-// Regular class time slots (excluding breaks and lunch)
-export const REGULAR_TIME_SLOTS: TimeSlot[] = [
-  '9:30-10:20',
-  '10:20-11:10',
-  '11:20-12:10',
-  '12:10-1:00',
-  '2:00-2:50',
-  '2:50-3:40',
-  '3:40-4:30'
-];
-
-// Lab slot configurations
-export const LAB_SLOT_CONFIGURATIONS = [
-  // Morning lab slots
-  {
-    name: '9:30-1:00' as TimeSlot,
-    slots: ['9:30-10:20', '10:20-11:10', '11:20-12:10', '12:10-1:00'] as TimeSlot[]
-  },
-  {
-    name: '10:20-1:00' as TimeSlot,
-    slots: ['10:20-11:10', '11:20-12:10', '12:10-1:00'] as TimeSlot[]
-  },
-  // Afternoon lab slots
-  {
-    name: '2:00-4:30' as TimeSlot,
-    slots: ['2:00-2:50', '2:50-3:40', '3:40-4:30'] as TimeSlot[]
-  }
-];
-
-// Get all faculty names for the dropdown
-export const getFacultyList = (): string[] => {
-  const faculty = getFaculty();
-  return faculty.map(f => f.name);
-};
-
-// Get all timetables from local storage
+// Get all timetables from localStorage
 export const getTimetables = (): Timetable[] => {
-  const timetablesJson = localStorage.getItem('timetables');
-  return timetablesJson ? JSON.parse(timetablesJson) : [];
+  const timetablesJSON = localStorage.getItem('timetables');
+  return timetablesJSON ? JSON.parse(timetablesJSON) : [];
 };
 
-// Save all timetables to local storage
-export const saveTimetables = (timetables: Timetable[]): void => {
-  localStorage.setItem('timetables', JSON.stringify(timetables));
-};
-
-// Get a timetable by ID
-export const getTimetableById = (id: string): Timetable | null => {
-  const timetables = getTimetables();
-  return timetables.find(timetable => timetable.id === id) || null;
-};
-
-// Save a single timetable (add or update)
-export const saveTimetable = (timetable: Timetable): { success: boolean; message?: string } => {
+// Save a timetable to localStorage
+export const saveTimetable = (timetable: Timetable): { success: boolean, message?: string } => {
   try {
     const timetables = getTimetables();
+    
+    // Check if this is an update or a new timetable
     const existingIndex = timetables.findIndex(t => t.id === timetable.id);
     
-    if (existingIndex !== -1) {
+    if (existingIndex >= 0) {
       // Update existing timetable
       timetables[existingIndex] = timetable;
     } else {
@@ -91,61 +33,53 @@ export const saveTimetable = (timetable: Timetable): { success: boolean; message
       timetables.push(timetable);
     }
     
-    saveTimetables(timetables);
+    localStorage.setItem('timetables', JSON.stringify(timetables));
     return { success: true };
   } catch (error) {
     console.error("Error saving timetable:", error);
     return { 
       success: false, 
-      message: error instanceof Error ? error.message : "An unknown error occurred"
+      message: error instanceof Error ? error.message : "An unknown error occurred" 
     };
   }
 };
 
-// Delete a timetable by ID
+// Delete a timetable from localStorage
 export const deleteTimetable = (id: string): void => {
   const timetables = getTimetables();
-  const updatedTimetables = timetables.filter(timetable => timetable.id !== id);
-  saveTimetables(updatedTimetables);
+  const updatedTimetables = timetables.filter(t => t.id !== id);
+  localStorage.setItem('timetables', JSON.stringify(updatedTimetables));
 };
 
-// Check if a timetable exists for given criteria
-export const doesTimetableExist = (
-  formData: TimetableFormData,
-  excludeId?: string
-): boolean => {
+// Check if a timetable with the same year, branch and semester already exists
+export const doesTimetableExist = (formData: TimetableFormData, excludeId?: string): boolean => {
   const timetables = getTimetables();
-  return timetables.some(timetable => 
-    timetable.formData.year === formData.year &&
-    timetable.formData.branch === formData.branch &&
-    timetable.formData.semester === formData.semester &&
-    (excludeId ? timetable.id !== excludeId : true)
+  return timetables.some(t => 
+    t.formData.year === formData.year && 
+    t.formData.branch === formData.branch && 
+    t.formData.semester === formData.semester &&
+    t.id !== excludeId
   );
 };
 
-// Count non-lab subjects for teacher
-export const countNonLabSubjectsForTeacher = (
-  teacherName: string,
-  pairs: SubjectTeacherPair[]
-): number => {
-  return pairs.filter(pair => pair.teacherName === teacherName && !pair.isLab).length;
+// Count how many non-lab subjects are assigned to a teacher
+export const countNonLabSubjectsForTeacher = (teacherName: string, subjectTeacherPairs: SubjectTeacherPair[]): number => {
+  return subjectTeacherPairs.filter(pair => 
+    pair.teacherName === teacherName && !pair.isLab
+  ).length;
 };
 
-// Filter timetables based on criteria
-export const filterTimetables = (
-  year: YearType,
-  branch: BranchType,
-  semester: SemesterType
-): Timetable[] => {
+// Filter timetables based on year, branch and semester
+export const filterTimetables = (year: YearType, branch: BranchType, semester: SemesterType): Timetable[] => {
   const timetables = getTimetables();
-  return timetables.filter(timetable => 
-    timetable.formData.year === year &&
-    timetable.formData.branch === branch &&
-    timetable.formData.semester === semester
+  return timetables.filter(t => 
+    t.formData.year === year && 
+    t.formData.branch === branch && 
+    t.formData.semester === semester
   );
 };
 
-// Get timetables for a specific faculty member
+// Get timetables where a specific faculty is teaching
 export const getTimetablesForFaculty = (facultyName: string): Timetable[] => {
   const timetables = getTimetables();
   return timetables.filter(timetable => 
@@ -153,25 +87,61 @@ export const getTimetablesForFaculty = (facultyName: string): Timetable[] => {
   );
 };
 
-// Generate automatic timetable
-export const generateTimetable = (formData: TimetableFormData): Timetable => {
-  // Determine days based on configuration
-  let days: Day[];
+// Check if teacher is already assigned to any class during this time slot
+export const isTeacherAvailable = (
+  teacherName: string, 
+  day: Day, 
+  timeSlot: string, 
+  currentTimetableId?: string
+): boolean => {
+  const allTimetables = getTimetables();
   
-  if (formData.year === '4th Year') {
-    days = formData.dayOptions.useCustomDays 
-      ? formData.dayOptions.selectedDays
-      : formData.dayOptions.fourContinuousDays 
-        ? ['Monday', 'Tuesday', 'Wednesday', 'Thursday']
-        : ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  } else {
-    days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  // Look through all timetables (excluding the current one being edited)
+  for (const timetable of allTimetables) {
+    // Skip the current timetable if we're editing it
+    if (currentTimetableId && timetable.id === currentTimetableId) {
+      continue;
+    }
+    
+    // Check if teacher has another class at this time
+    const conflict = timetable.entries.some(entry => 
+      entry.day === day && 
+      entry.timeSlot === timeSlot && 
+      entry.teacherName === teacherName &&
+      !entry.isBreak &&
+      !entry.isLunch
+    );
+    
+    if (conflict) {
+      return false; // Teacher is not available
+    }
   }
+  
+  return true; // Teacher is available
+};
+
+// Generate Timetable Automatically
+export const generateTimetable = (formData: TimetableFormData): Timetable => {
+  const days: Day[] = formData.year === '4th Year' && formData.dayOptions.useCustomDays
+    ? formData.dayOptions.selectedDays
+    : formData.year === '4th Year' && formData.dayOptions.fourContinuousDays
+      ? ['Monday', 'Tuesday', 'Wednesday', 'Thursday']
+      : ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  
+  const timeSlots = [
+    '9:30-10:20', 
+    '10:20-11:10', 
+    '11:20-12:10', 
+    '12:10-1:00', 
+    '2:00-2:50', 
+    '2:50-3:40', 
+    '3:40-4:30'
+  ];
   
   // Initialize entries with breaks and lunch
   const entries: TimetableEntry[] = [];
   
-  // Add break and lunch slots
+  // Add breaks and lunch periods
   days.forEach(day => {
     entries.push({
       day,
@@ -186,258 +156,205 @@ export const generateTimetable = (formData: TimetableFormData): Timetable => {
     });
   });
   
-  // Create a mapping of subjects by type
-  const labSubjects = formData.subjectTeacherPairs.filter(pair => pair.isLab);
+  // Get non-lab subjects
   const nonLabSubjects = formData.subjectTeacherPairs.filter(pair => !pair.isLab);
   
-  // Track used slots to avoid conflicts
-  const usedSlots: Record<string, boolean> = {};
+  // Get lab subjects
+  const labSubjects = formData.subjectTeacherPairs.filter(pair => pair.isLab);
   
-  // Mark break and lunch slots as used
-  entries.forEach(entry => {
-    usedSlots[`${entry.day}-${entry.timeSlot}`] = true;
-  });
-  
-  // Helper function to check if a slot is available
-  const isSlotAvailable = (day: Day, timeSlot: TimeSlot): boolean => {
-    return !usedSlots[`${day}-${timeSlot}`];
-  };
-  
-  // Helper function to mark a slot as used
-  const markSlotAsUsed = (day: Day, timeSlot: TimeSlot, value = true): void => {
-    usedSlots[`${day}-${timeSlot}`] = value;
-  };
-  
-  // Step 1: Allocate Lab Subjects
-  if (labSubjects.length > 0) {
-    let labSubjectPairs: { subject1: SubjectTeacherPair, subject2: SubjectTeacherPair | null }[] = [];
-    
-    // Create pairs of lab subjects if possible
-    if (labSubjects.length >= 2) {
-      for (let i = 0; i < labSubjects.length; i += 2) {
-        if (i + 1 < labSubjects.length) {
-          labSubjectPairs.push({
-            subject1: labSubjects[i],
-            subject2: labSubjects[i + 1]
-          });
-        } else {
-          labSubjectPairs.push({
-            subject1: labSubjects[i],
-            subject2: null
-          });
-        }
-      }
+  // Add free hours
+  if (formData.freeHours.length > 0) {
+    // Prefer to allocate free hours on Saturday for years 1-3
+    if (formData.year !== '4th Year' && days.includes('Saturday')) {
+      // Allocate free hours on Saturday
+      timeSlots.forEach(timeSlot => {
+        const freeType = formData.freeHours[0].type;
+        const customType = formData.freeHours[0].customType;
+        
+        entries.push({
+          day: 'Saturday',
+          timeSlot,
+          isFree: true,
+          freeType: customType || freeType
+        });
+      });
     } else {
-      labSubjectPairs.push({
-        subject1: labSubjects[0],
-        subject2: null
+      // For 4th Year or if Saturday is not available, distribute free hours
+      // throughout the week
+      const lastDay = days[days.length - 1];
+      const freeType = formData.freeHours[0].type;
+      const customType = formData.freeHours[0].customType;
+      
+      // Allocate some free slots on the last day
+      ['11:20-12:10', '12:10-1:00', '2:00-2:50'].forEach(timeSlot => {
+        entries.push({
+          day: lastDay,
+          timeSlot,
+          isFree: true,
+          freeType: customType || freeType
+        });
       });
     }
-    
-    // Allocate the lab subject pairs
-    labSubjectPairs.forEach((pair, pairIndex) => {
-      // Try to find available lab slots
-      for (const labConfig of LAB_SLOT_CONFIGURATIONS) {
-        for (const day of days) {
-          // Check if all slots in the lab configuration are available
-          const allSlotsAvailable = labConfig.slots.every(slot => isSlotAvailable(day, slot));
-          
-          if (allSlotsAvailable) {
-            // Allocate the first lab subject
-            for (const slot of labConfig.slots) {
-              entries.push({
-                day,
-                timeSlot: slot,
-                subjectName: pair.subject1.subjectName,
-                teacherName: pair.subject1.teacherName,
-                isLab: true,
-                batchNumber: 'B1',
-                isLabGroup: true,
-                labGroupId: `lab-group-${pairIndex}-1`
-              });
-              
-              markSlotAsUsed(day, slot);
-            }
-            
-            // Find another day for the second batch or subject
-            let secondDay = null;
-            for (const otherDay of days) {
-              if (otherDay !== day) {
-                const allOtherSlotsAvailable = labConfig.slots.every(slot => isSlotAvailable(otherDay, slot));
-                if (allOtherSlotsAvailable) {
-                  secondDay = otherDay;
-                  break;
-                }
-              }
-            }
-            
-            if (secondDay) {
-              // If there's a second subject in the pair
-              if (pair.subject2) {
-                // First subject gets batch 1, second subject gets batch 2 on first day
-                for (const slot of labConfig.slots) {
-                  entries.push({
-                    day: secondDay,
-                    timeSlot: slot,
-                    subjectName: pair.subject1.subjectName,
-                    teacherName: pair.subject1.teacherName,
-                    isLab: true,
-                    batchNumber: 'B2',
-                    isLabGroup: true,
-                    labGroupId: `lab-group-${pairIndex}-2`
-                  });
-                  
-                  markSlotAsUsed(secondDay, slot);
-                }
-                
-                // Find a third day for the second subject, batch 1
-                let thirdDay = null;
-                for (const otherDay of days) {
-                  if (otherDay !== day && otherDay !== secondDay) {
-                    const allOtherSlotsAvailable = labConfig.slots.every(slot => isSlotAvailable(otherDay, slot));
-                    if (allOtherSlotsAvailable) {
-                      thirdDay = otherDay;
-                      break;
-                    }
-                  }
-                }
-                
-                if (thirdDay) {
-                  // Allocate second subject, batch 1
-                  for (const slot of labConfig.slots) {
-                    entries.push({
-                      day: thirdDay,
-                      timeSlot: slot,
-                      subjectName: pair.subject2.subjectName,
-                      teacherName: pair.subject2.teacherName,
-                      isLab: true,
-                      batchNumber: 'B1',
-                      isLabGroup: true,
-                      labGroupId: `lab-group-${pairIndex}-3`
-                    });
-                    
-                    markSlotAsUsed(thirdDay, slot);
-                  }
-                  
-                  // Find a fourth day for the second subject, batch 2
-                  let fourthDay = null;
-                  for (const otherDay of days) {
-                    if (otherDay !== day && otherDay !== secondDay && otherDay !== thirdDay) {
-                      const allOtherSlotsAvailable = labConfig.slots.every(slot => isSlotAvailable(otherDay, slot));
-                      if (allOtherSlotsAvailable) {
-                        fourthDay = otherDay;
-                        break;
-                      }
-                    }
-                  }
-                  
-                  if (fourthDay) {
-                    // Allocate second subject, batch 2
-                    for (const slot of labConfig.slots) {
-                      entries.push({
-                        day: fourthDay,
-                        timeSlot: slot,
-                        subjectName: pair.subject2.subjectName,
-                        teacherName: pair.subject2.teacherName,
-                        isLab: true,
-                        batchNumber: 'B2',
-                        isLabGroup: true,
-                        labGroupId: `lab-group-${pairIndex}-4`
-                      });
-                      
-                      markSlotAsUsed(fourthDay, slot);
-                    }
-                  }
-                }
-              } else {
-                // If there's only one lab subject, allocate both batches
-                for (const slot of labConfig.slots) {
-                  entries.push({
-                    day: secondDay,
-                    timeSlot: slot,
-                    subjectName: pair.subject1.subjectName,
-                    teacherName: pair.subject1.teacherName,
-                    isLab: true,
-                    batchNumber: 'B2',
-                    isLabGroup: true,
-                    labGroupId: `lab-group-${pairIndex}-2`
-                  });
-                  
-                  markSlotAsUsed(secondDay, slot);
-                }
-              }
-            }
-            
-            break; // Stop looking for days for this lab config once found
-          }
-        }
-      }
-    });
   }
   
-  // Step 2: Allocate Non-Lab Subjects (each gets 4 periods)
-  nonLabSubjects.forEach((subject, subjectIndex) => {
-    let allocatedPeriods = 0;
-    let attemptedTwoPeriods = false;
+  // Utility function to check if a slot is already filled
+  const isSlotFilled = (day: Day, timeSlot: string): boolean => {
+    return entries.some(entry => 
+      entry.day === day && 
+      entry.timeSlot === timeSlot
+    );
+  };
+  
+  // Allocate lab subjects (they need merged slots)
+  labSubjects.forEach(labSubject => {
+    let allocated = false;
     
-    // Try to allocate 2 consecutive periods first (for 2 subjects)
-    if (!attemptedTwoPeriods && allocatedPeriods < 4) {
-      for (const day of days) {
-        // Check consecutive slots availability
-        for (let i = 0; i < REGULAR_TIME_SLOTS.length - 1; i++) {
-          const firstSlot = REGULAR_TIME_SLOTS[i];
-          const secondSlot = REGULAR_TIME_SLOTS[i + 1];
-          
-          // Skip if slots are separated by break or lunch
-          if (
-            (firstSlot === '10:20-11:10' && secondSlot === '11:20-12:10') ||
-            (firstSlot === '12:10-1:00' && secondSlot === '2:00-2:50')
-          ) {
-            continue;
-          }
-          
-          if (isSlotAvailable(day, firstSlot) && isSlotAvailable(day, secondSlot)) {
-            // Allocate 2 consecutive periods
-            entries.push({
-              day,
-              timeSlot: firstSlot,
-              subjectName: subject.subjectName,
-              teacherName: subject.teacherName,
-              isLab: false
-            });
-            
-            entries.push({
-              day,
-              timeSlot: secondSlot,
-              subjectName: subject.subjectName,
-              teacherName: subject.teacherName,
-              isLab: false
-            });
-            
-            markSlotAsUsed(day, firstSlot);
-            markSlotAsUsed(day, secondSlot);
-            
-            allocatedPeriods += 2;
-            break;
-          }
-        }
+    // Try to allocate labs in the morning slots (9:30-1:00)
+    for (const day of days) {
+      // Skip Saturday for lab allocation
+      if (day === 'Saturday') continue;
+      
+      // Check if morning slots are available
+      const morningSlotsFree = !isSlotFilled(day, '9:30-10:20') && 
+                               !isSlotFilled(day, '10:20-11:10') && 
+                               !isSlotFilled(day, '11:20-12:10') && 
+                               !isSlotFilled(day, '12:10-1:00');
+      
+      // Check if teacher is available for all these slots
+      const teacherAvailable = isTeacherAvailable(labSubject.teacherName, day, '9:30-10:20') &&
+                              isTeacherAvailable(labSubject.teacherName, day, '10:20-11:10') &&
+                              isTeacherAvailable(labSubject.teacherName, day, '11:20-12:10') &&
+                              isTeacherAvailable(labSubject.teacherName, day, '12:10-1:00');
+      
+      if (morningSlotsFree && teacherAvailable) {
+        // Create a lab group ID to associate these entries
+        const labGroupId = uuidv4();
         
-        if (allocatedPeriods >= 2) {
-          attemptedTwoPeriods = true;
+        // Allocate the lab in merged slots from 9:30 to 1:00
+        // We'll create separate entries but mark them as part of the same lab group
+        ['9:30-10:20', '10:20-11:10', '11:20-12:10', '12:10-1:00'].forEach((timeSlot, index) => {
+          entries.push({
+            day,
+            timeSlot,
+            subjectName: labSubject.subjectName,
+            teacherName: labSubject.teacherName,
+            isLab: true,
+            batchNumber: labSubject.batchNumber,
+            isLabGroup: true,
+            labGroupId
+          });
+        });
+        
+        allocated = true;
+        break;
+      }
+    }
+    
+    // If not allocated in morning, try afternoon slots (2:00-4:30)
+    if (!allocated) {
+      for (const day of days) {
+        // Skip Saturday for lab allocation
+        if (day === 'Saturday') continue;
+        
+        // Check if afternoon slots are available
+        const afternoonSlotsFree = !isSlotFilled(day, '2:00-2:50') && 
+                                  !isSlotFilled(day, '2:50-3:40') && 
+                                  !isSlotFilled(day, '3:40-4:30');
+        
+        // Check if teacher is available for all these slots
+        const teacherAvailable = isTeacherAvailable(labSubject.teacherName, day, '2:00-2:50') &&
+                                isTeacherAvailable(labSubject.teacherName, day, '2:50-3:40') &&
+                                isTeacherAvailable(labSubject.teacherName, day, '3:40-4:30');
+        
+        if (afternoonSlotsFree && teacherAvailable) {
+          // Create a lab group ID to associate these entries
+          const labGroupId = uuidv4();
+          
+          // Allocate the lab in merged slots from 2:00 to 4:30
+          ['2:00-2:50', '2:50-3:40', '3:40-4:30'].forEach(timeSlot => {
+            entries.push({
+              day,
+              timeSlot,
+              subjectName: labSubject.subjectName,
+              teacherName: labSubject.teacherName,
+              isLab: true,
+              batchNumber: labSubject.batchNumber,
+              isLabGroup: true,
+              labGroupId
+            });
+          });
+          
+          allocated = true;
           break;
         }
       }
     }
     
-    // Allocate remaining individual periods (to reach 4 total)
-    while (allocatedPeriods < 4) {
-      let periodAllocated = false;
-      
-      for (const day of days) {
-        if (periodAllocated) break;
+    // If still not allocated, try to find any available consecutive slots
+    if (!allocated) {
+      dayLoop: for (const day of days) {
+        // Skip Saturday for lab allocation
+        if (day === 'Saturday') continue;
         
-        for (const timeSlot of REGULAR_TIME_SLOTS) {
-          if (isSlotAvailable(day, timeSlot)) {
+        for (let i = 0; i < timeSlots.length - 2; i++) {
+          const consecutive = [timeSlots[i], timeSlots[i+1], timeSlots[i+2]];
+          
+          // Check if all consecutive slots are available
+          const allSlotsFree = consecutive.every(timeSlot => !isSlotFilled(day, timeSlot));
+          
+          // Check if teacher is available for all these slots
+          const teacherAvailable = consecutive.every(timeSlot => 
+            isTeacherAvailable(labSubject.teacherName, day, timeSlot)
+          );
+          
+          if (allSlotsFree && teacherAvailable) {
+            // Create a lab group ID to associate these entries
+            const labGroupId = uuidv4();
+            
+            // Allocate the lab in these consecutive slots
+            consecutive.forEach(timeSlot => {
+              entries.push({
+                day,
+                timeSlot,
+                subjectName: labSubject.subjectName,
+                teacherName: labSubject.teacherName,
+                isLab: true,
+                batchNumber: labSubject.batchNumber,
+                isLabGroup: true,
+                labGroupId
+              });
+            });
+            
+            allocated = true;
+            break dayLoop;
+          }
+        }
+      }
+    }
+  });
+  
+  // Allocate non-lab subjects (4 periods each)
+  nonLabSubjects.forEach(subject => {
+    let allocatedPeriods = 0;
+    
+    // Allocate 4 periods for each non-lab subject
+    while (allocatedPeriods < 4) {
+      // Try to find an empty slot
+      let allocated = false;
+      
+      dayLoop: for (const day of days) {
+        // Skip Saturday for regular subject allocation if possible
+        if (day === 'Saturday' && formData.year !== '4th Year') continue;
+        
+        for (const timeSlot of timeSlots) {
+          // Check if this slot is available
+          if (!isSlotFilled(day, timeSlot)) {
+            // Check if teacher is available during this time slot
+            if (!isTeacherAvailable(subject.teacherName, day, timeSlot)) {
+              continue; // Teacher is already assigned elsewhere, try another slot
+            }
+            
+            // Allocate this period
             entries.push({
               day,
               timeSlot,
@@ -446,48 +363,113 @@ export const generateTimetable = (formData: TimetableFormData): Timetable => {
               isLab: false
             });
             
-            markSlotAsUsed(day, timeSlot);
             allocatedPeriods++;
-            periodAllocated = true;
-            break;
+            allocated = true;
+            break dayLoop;
           }
         }
       }
       
-      if (!periodAllocated) {
-        // Could not allocate all 4 periods
+      // If we couldn't allocate a period, we need to try harder
+      if (!allocated) {
+        // Try again, including Saturday
+        for (const day of days) {
+          for (const timeSlot of timeSlots) {
+            if (!isSlotFilled(day, timeSlot)) {
+              // Check if teacher is available during this time slot
+              if (!isTeacherAvailable(subject.teacherName, day, timeSlot)) {
+                continue; // Teacher is already assigned elsewhere, try another slot
+              }
+              
+              entries.push({
+                day,
+                timeSlot,
+                subjectName: subject.subjectName,
+                teacherName: subject.teacherName,
+                isLab: false
+              });
+              
+              allocatedPeriods++;
+              allocated = true;
+              break;
+            }
+          }
+          
+          if (allocated) break;
+        }
+      }
+      
+      // If still not allocated, we might have to replace some free periods
+      if (!allocated) {
+        // Find a free period to replace
+        for (const day of days) {
+          for (const timeSlot of timeSlots) {
+            const freeEntry = entries.find(e => 
+              e.day === day && 
+              e.timeSlot === timeSlot && 
+              e.isFree
+            );
+            
+            if (freeEntry) {
+              // Check if teacher is available during this time slot
+              if (!isTeacherAvailable(subject.teacherName, day, timeSlot)) {
+                continue; // Teacher is already assigned elsewhere, try another slot
+              }
+              
+              // Replace the free period with this subject
+              const index = entries.indexOf(freeEntry);
+              entries[index] = {
+                day,
+                timeSlot,
+                subjectName: subject.subjectName,
+                teacherName: subject.teacherName,
+                isLab: false
+              };
+              
+              allocatedPeriods++;
+              allocated = true;
+              break;
+            }
+          }
+          
+          if (allocated) break;
+        }
+      }
+      
+      // If we still couldn't allocate, we might be out of slots
+      if (!allocated) {
         console.warn(`Could not allocate all 4 periods for ${subject.subjectName}`);
         break;
       }
     }
   });
   
-  // Step 3: Allocate Free Hours (Using specified free hour types)
-  for (const day of days) {
-    for (const timeSlot of REGULAR_TIME_SLOTS) {
-      if (isSlotAvailable(day, timeSlot)) {
-        // Get a free hour type from the provided options
-        const freeHourIndex = Math.floor(Math.random() * formData.freeHours.length);
-        const freeHour = formData.freeHours[freeHourIndex];
+  // For any remaining empty slots, fill with free periods
+  days.forEach(day => {
+    timeSlots.forEach(timeSlot => {
+      if (!isSlotFilled(day, timeSlot)) {
+        // Get the first free hour type
+        const freeHour = formData.freeHours[0];
+        const freeType = freeHour.type;
+        const customType = freeHour.customType;
         
         entries.push({
           day,
           timeSlot,
           isFree: true,
-          freeType: freeHour.type === 'Others' && freeHour.customType 
-            ? freeHour.customType 
-            : freeHour.type
+          freeType: customType || freeType
         });
-        
-        markSlotAsUsed(day, timeSlot);
       }
-    }
-  }
+    });
+  });
   
-  return {
+  // Create the timetable object
+  const timetable: Timetable = {
     id: uuidv4(),
     formData,
     entries,
     createdAt: new Date().toISOString()
   };
+  
+  return timetable;
 };

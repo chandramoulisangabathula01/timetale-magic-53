@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,7 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { getTimetables } from "@/utils/timetableUtils";
+import { getTimetables, isTeacherAvailable } from "@/utils/timetableUtils";
 import { 
   TimetableEntry, 
   SubjectTeacherPair, 
@@ -186,29 +187,21 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
 
   // Check for teacher conflicts across timetables
   const checkTeacherConflicts = (day: Day, timeSlot: TimeSlot, teacherName: string): boolean => {
-    // Get all existing timetables
-    const allTimetables = getTimetables();
-    
-    // Skip checking the current timetable (we're editing it)
-    for (const timetable of allTimetables) {
-      // Skip if this is for the same year/branch (same timetable)
-      if (timetable.formData.year === year && timetable.formData.branch === branch) {
-        continue;
-      }
-      
-      // Check if teacher has another class at this time
-      const hasConflict = timetable.entries.some(entry => 
-        entry.day === day && 
-        entry.timeSlot === timeSlot && 
-        entry.teacherName === teacherName
-      );
-      
-      if (hasConflict) {
-        return true;
-      }
+    // First check within this timetable being edited
+    const conflictInCurrentTimetable = entries.some(entry => 
+      entry.day === day && 
+      entry.timeSlot === timeSlot && 
+      entry.teacherName === teacherName &&
+      !entry.isBreak &&
+      !entry.isLunch
+    );
+
+    if (conflictInCurrentTimetable) {
+      return true;
     }
     
-    return false;
+    // Check across all other timetables
+    return !isTeacherAvailable(teacherName, day, timeSlot);
   };
   
   const handleCellChange = (day: Day, timeSlot: TimeSlot, value: string, type: 'subject' | 'free') => {
