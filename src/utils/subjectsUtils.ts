@@ -30,7 +30,24 @@ export const getSubjectById = (id: string): Subject | null => {
   return subjects.find(subject => subject.id === id) || null;
 };
 
-// Add or update a subject
+// Add a new subject
+export const addSubject = (subjectData: SubjectData): void => {
+  const subjects = getSubjects();
+  subjects.push(subjectData as Subject);
+  saveSubjects(subjects);
+};
+
+// Update an existing subject
+export const updateSubject = (subjectData: SubjectData): void => {
+  const subjects = getSubjects();
+  const index = subjects.findIndex(s => s.id === subjectData.id);
+  if (index !== -1) {
+    subjects[index] = subjectData as Subject;
+    saveSubjects(subjects);
+  }
+};
+
+// Save or update a subject
 export const saveSubject = (subject: Subject): void => {
   const subjects = getSubjects();
   const existingIndex = subjects.findIndex(s => s.id === subject.id);
