@@ -51,13 +51,21 @@ const ViewTimetable: React.FC = () => {
               text-align: center;
               margin-bottom: 20px;
             }
+            .logo-container {
+              text-align: center;
+              margin-bottom: 10px;
+            }
+            .logo {
+              width: 80px;
+              height: 80px;
+            }
             table {
               width: 100%;
               border-collapse: collapse;
               margin-bottom: 20px;
             }
             th, td {
-              border: 1px solid #ddd;
+              border: 1px solid #000;
               padding: 8px;
               text-align: center;
             }
@@ -76,11 +84,15 @@ const ViewTimetable: React.FC = () => {
               background-color: #e6ffe6;
               font-weight: 500;
             }
-            .subject-list {
+            .details-row {
+              display: flex;
+              justify-content: space-between;
+              margin-bottom: 10px;
+            }
+            .faculty-details {
               margin-top: 20px;
-              display: grid;
-              grid-template-columns: repeat(3, 1fr);
-              gap: 10px;
+              border-top: 1px solid #ddd;
+              padding-top: 10px;
             }
             .subject-item {
               margin-bottom: 5px;
@@ -104,18 +116,41 @@ const ViewTimetable: React.FC = () => {
         </head>
         <body>
           <div class="print-header">
-            <h2 style="margin-bottom: 5px;">College of Engineering</h2>
-            <h3 style="margin-top: 0; margin-bottom: 5px;">
-              ${timetable?.formData.courseName} - ${timetable?.formData.year} - ${timetable?.formData.branch} - Semester ${timetable?.formData.semester}
+            <div class="logo-container">
+              <img src="/public/lovable-uploads/eb4f9a1c-adf2-4f9d-b5b7-86a8c285a2ec.png" class="logo" alt="College Logo">
+            </div>
+            <h2 style="margin-bottom: 5px;">University College of Engineering & Technology for Women</h2>
+            <p style="margin-top: 0; margin-bottom: 10px;">Kakatiya University Campus, Warangal (T.S) - 506009</p>
+            <h3 style="margin-top: 0; margin-bottom: 5px; text-decoration: underline;">
+              ${timetable?.formData.courseName}.${timetable?.formData.branch} (${timetable?.formData.semester}) SEMESTER TIME TABLE STATEMENT ${timetable?.formData.academicYear}
             </h3>
-            <p style="margin-top: 0; margin-bottom: 5px; font-size: 14px; color: #666;">
-              Academic Year: ${timetable?.formData.academicYear} | Room: ${timetable?.formData.roomNumber}
-            </p>
-            <p style="margin-top: 0; font-size: 14px;">
-              Class Incharge: <span style="font-weight: bold;">${timetable?.formData.classInchargeName}</span> | Contact: ${timetable?.formData.mobileNumber}
+            <p style="margin-top: 0; margin-bottom: 15px;">
+              ${timetable?.formData.year} ${timetable?.formData.branch} - ${timetable?.formData.academicYear}
             </p>
           </div>
+
+          <div class="details-row">
+            <div><strong>Class In-Charge:</strong> ${timetable?.formData.classInchargeName}</div>
+            <div><strong>Room No:</strong> ${timetable?.formData.roomNumber}</div>
+          </div>
+          <div class="details-row">
+            <div><strong>Mobile Number:</strong> ${timetable?.formData.mobileNumber}</div>
+            <div><strong>W.E.F:</strong> ${timetable?.formData.date || new Date().toISOString().split('T')[0]}</div>
+          </div>
+
           ${content.innerHTML}
+          
+          <div class="faculty-details">
+            <h3>FACULTY DETAILS:</h3>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+              ${timetable?.formData.subjectTeacherPairs.map(pair => `
+                <div class="subject-item">
+                  ${pair.subjectName} - ${pair.teacherName} ${pair.isLab ? '(Lab)' : ''}
+                </div>
+              `).join('')}
+            </div>
+          </div>
+          
           <button class="print-button" onclick="window.print(); setTimeout(() => window.close(), 500);">
             Print Timetable
           </button>
@@ -194,7 +229,30 @@ const ViewTimetable: React.FC = () => {
       </div>
       
       <div className="border rounded-lg p-6 print:border-none" ref={printRef}>
-        <div className="mb-6 print:mb-8">
+        <div className="print-only">
+          <div className="flex justify-center mb-4">
+            <img src="/public/lovable-uploads/eb4f9a1c-adf2-4f9d-b5b7-86a8c285a2ec.png" alt="College Logo" className="w-20 h-20" />
+          </div>
+          <h2 className="font-bold text-center text-xl mb-1">University College of Engineering & Technology for Women</h2>
+          <p className="text-center text-sm mb-2">Kakatiya University Campus, Warangal (T.S) - 506009</p>
+          <h3 className="font-bold text-center text-lg underline mb-2">
+            {timetable.formData.courseName}.{timetable.formData.branch} ({timetable.formData.semester}) SEMESTER TIME TABLE STATEMENT {timetable.formData.academicYear}
+          </h3>
+          <p className="text-center text-sm mb-4">
+            {timetable.formData.year} {timetable.formData.branch} - {timetable.formData.academicYear}
+          </p>
+          
+          <div className="flex justify-between items-center mb-2 px-2">
+            <div><span className="font-semibold">Class In-Charge:</span> {timetable.formData.classInchargeName}</div>
+            <div><span className="font-semibold">Room No:</span> {timetable.formData.roomNumber}</div>
+          </div>
+          <div className="flex justify-between items-center mb-4 px-2">
+            <div><span className="font-semibold">Mobile Number:</span> {timetable.formData.mobileNumber}</div>
+            <div><span className="font-semibold">W.E.F:</span> {timetable.formData.date || new Date().toISOString().split('T')[0]}</div>
+          </div>
+        </div>
+        
+        <div className="mb-6 no-print">
           <h2 className="font-bold text-center text-xl mb-1">College of Engineering</h2>
           <h3 className="font-bold text-center text-lg">
             {timetable.formData.courseName} - {timetable.formData.year} - {timetable.formData.branch} - Semester {timetable.formData.semester}
@@ -211,6 +269,18 @@ const ViewTimetable: React.FC = () => {
           timetable={timetable} 
           printMode={true}
         />
+
+        <div className="print-only mt-6">
+          <h3 className="font-bold text-lg mb-2">FACULTY DETAILS:</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+            {timetable.formData.subjectTeacherPairs.map((pair) => (
+              <div key={pair.id} className="text-sm">
+                <span>{pair.subjectName} - {pair.teacherName}</span>
+                {pair.isLab && <span className="text-xs ml-1">(Lab)</span>}
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

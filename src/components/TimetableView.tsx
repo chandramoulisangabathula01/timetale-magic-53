@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Timetable, Day, TimeSlot } from '@/utils/types';
 import {
@@ -17,6 +18,14 @@ interface TimetableViewProps {
 
 const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter, printMode = false }) => {
   const days: Day[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const shortDays: Record<Day, string> = {
+    'Monday': 'MON',
+    'Tuesday': 'TUE',
+    'Wednesday': 'WED',
+    'Thursday': 'THU',
+    'Friday': 'FRI',
+    'Saturday': 'SAT'
+  };
   
   // Regular time slots (including breaks and lunch)
   const timeSlots: TimeSlot[] = [
@@ -78,15 +87,15 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
     if (!entry) return null;
     
     if (entry.isBreak) {
-      return <div className="text-sm italic">Break</div>;
+      return <div className="text-sm italic text-center">Break</div>;
     }
     
     if (entry.isLunch) {
-      return <div className="text-sm italic">Lunch</div>;
+      return <div className="text-sm italic text-center">Lunch</div>;
     }
     
     if (entry.isFree && entry.freeType) {
-      return <div className="text-sm italic">{entry.freeType}</div>;
+      return <div className="text-sm italic text-center">{entry.freeType}</div>;
     }
     
     if (entry.subjectName && entry.teacherName) {
@@ -103,13 +112,13 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
           const lastTimeSlot = allTimeSlots[allTimeSlots.length - 1];
           
           return (
-            <div className="font-medium">
-              <div className="border-b pb-1 mb-1">{firstTimeSlot} - {lastTimeSlot}</div>
+            <div className="font-medium text-center">
               <div>{entry.subjectName}</div>
               <div className="text-xs text-muted-foreground mt-1">
                 {entry.teacherName}
-                {entry.batchNumber && <span className="font-semibold"> ({entry.batchNumber})</span>}
+                {entry.batchNumber && <span> ({entry.batchNumber})</span>}
               </div>
+              <div className="text-xs mt-1 font-normal">{firstTimeSlot} - {lastTimeSlot}</div>
             </div>
           );
         } else {
@@ -120,7 +129,7 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
       
       // Regular subject entry
       return (
-        <div className={`text-sm ${entry.isLab ? 'font-medium' : ''}`}>
+        <div className={`text-sm ${entry.isLab ? 'font-medium' : ''} text-center`}>
           <div>{entry.subjectName}</div>
           <div className="text-xs text-muted-foreground mt-1">
             {entry.teacherName}
@@ -130,7 +139,7 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
       );
     }
     
-    return <div className="text-sm text-muted-foreground">-</div>;
+    return null;
   };
   
   // Helper function to get cell class for styling
@@ -190,66 +199,128 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
     return !firstEntry || firstEntry.day === day && firstEntry.timeSlot === timeSlot;
   };
   
-  // Generate table rows based on time slots
-  const tableRows = timeSlots.map(timeSlot => (
-    <TableRow key={timeSlot}>
-      <TableCell className="border p-2 text-xs bg-gray-50 font-medium">
-        {timeSlot}
-      </TableCell>
-      {days.map(day => {
-        const rowSpan = getCellRowSpan(day, timeSlot);
-        
-        if (rowSpan === 0) {
-          // Skip this cell as it's part of a lab group and not the first cell
-          return null;
-        }
-        
-        return (
-          <TableCell 
-            key={`${day}-${timeSlot}`} 
-            className={`border p-2 ${getCellClass(day, timeSlot)}`}
-            rowSpan={rowSpan}
-          >
-            {getCellContent(day, timeSlot)}
-          </TableCell>
-        );
-      })}
-    </TableRow>
-  ));
-  
-  return (
-    <div className={printMode ? "print-timetable" : ""}>
-      <div className="overflow-x-auto timetable-container">
-        <Table className="w-full border-collapse">
-          <TableHeader>
-            <TableRow>
-              <TableHead className="border p-2 bg-gray-50 font-bold">Time / Day</TableHead>
-              {days.map(day => (
-                <TableHead key={day} className="border p-2 bg-gray-50 font-bold">{day}</TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {tableRows}
-          </TableBody>
-        </Table>
-      </div>
-      
-      {/* Subject and Teacher List */}
-      {subjectTeacherList.length > 0 && (
-        <div className="mt-6 border-t pt-4">
-          <h4 className="font-semibold mb-2">Subject Details</h4>
-          <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
-            {subjectTeacherList.map(pair => (
-              <div key={pair.id} className="text-sm">
-                <span className="font-medium">{pair.subjectName}</span>
-                {pair.isLab && <span className="text-xs ml-1">(Lab)</span>}
-                <span> - {pair.teacherName}</span>
-              </div>
-            ))}
-          </div>
+  // Generate table for printMode=false (normal view)
+  if (!printMode) {
+    // Generate table rows based on time slots
+    const tableRows = timeSlots.map(timeSlot => (
+      <TableRow key={timeSlot}>
+        <TableCell className="border p-2 text-xs bg-gray-50 font-medium">
+          {timeSlot}
+        </TableCell>
+        {days.map(day => {
+          const rowSpan = getCellRowSpan(day, timeSlot);
+          
+          if (rowSpan === 0) {
+            // Skip this cell as it's part of a lab group and not the first cell
+            return null;
+          }
+          
+          return (
+            <TableCell 
+              key={`${day}-${timeSlot}`} 
+              className={`border p-2 ${getCellClass(day, timeSlot)}`}
+              rowSpan={rowSpan}
+            >
+              {getCellContent(day, timeSlot)}
+            </TableCell>
+          );
+        })}
+      </TableRow>
+    ));
+    
+    return (
+      <div className={printMode ? "print-timetable" : ""}>
+        <div className="overflow-x-auto timetable-container">
+          <Table className="w-full border-collapse">
+            <TableHeader>
+              <TableRow>
+                <TableHead className="border p-2 bg-gray-50 font-bold text-center">Time / Day</TableHead>
+                {days.map(day => (
+                  <TableHead key={day} className="border p-2 bg-gray-50 font-bold text-center">{day}</TableHead>
+                ))}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {tableRows}
+            </TableBody>
+          </Table>
         </div>
-      )}
+        
+        {/* Subject and Teacher List */}
+        {subjectTeacherList.length > 0 && (
+          <div className="mt-6 border-t pt-4">
+            <h4 className="font-semibold mb-2">Subject Details</h4>
+            <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
+              {subjectTeacherList.map(pair => (
+                <div key={pair.id} className="text-sm">
+                  <span className="font-medium">{pair.subjectName}</span>
+                  {pair.isLab && <span className="text-xs ml-1">(Lab)</span>}
+                  <span> - {pair.teacherName}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+  
+  // Generate printable table that matches the requested format for printMode=true
+  return (
+    <div className="print-timetable">
+      <Table className="w-full border-collapse border table-fixed">
+        <TableHeader>
+          <TableRow>
+            <TableHead className="border p-2 bg-gray-50 font-bold text-center">DAY</TableHead>
+            {timeSlots.map(slot => (
+              <TableHead key={slot} className="border p-2 bg-gray-50 font-bold text-center">
+                {slot}
+              </TableHead>
+            ))}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {days.map(day => (
+            <TableRow key={day}>
+              <TableCell className="border p-2 text-center font-bold bg-gray-50">
+                {shortDays[day]}
+              </TableCell>
+              {timeSlots.map(timeSlot => {
+                const entry = filteredEntries.find(e => e.day === day && e.timeSlot === timeSlot);
+                let content = '';
+                let teacher = '';
+                
+                if (entry) {
+                  if (entry.isBreak) {
+                    content = 'Break';
+                  } else if (entry.isLunch) {
+                    content = 'Lunch';
+                  } else if (entry.subjectName) {
+                    content = entry.subjectName;
+                    teacher = entry.teacherName || '';
+                  } else if (entry.isFree && entry.freeType) {
+                    content = entry.freeType;
+                  }
+                }
+                
+                return (
+                  <TableCell 
+                    key={`${day}-${timeSlot}`} 
+                    className={`border p-1 text-center ${getCellClass(day, timeSlot)}`}
+                  >
+                    {content && (
+                      <>
+                        <div className="font-medium text-sm">{content}</div>
+                        {teacher && <div className="text-xs text-muted-foreground">{teacher}</div>}
+                      </>
+                    )}
+                  </TableCell>
+                );
+              })}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 };
