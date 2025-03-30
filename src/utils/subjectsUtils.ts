@@ -1,6 +1,4 @@
 
-import { supabase } from '@/lib/supabase';
-import { v4 as uuidv4 } from 'uuid';
 import { YearType, BranchType } from '@/utils/types';
 
 export interface SubjectData {
@@ -11,113 +9,55 @@ export interface SubjectData {
   isLab: boolean;
 }
 
-// Get all subjects from Supabase
-export const getSubjects = async (): Promise<SubjectData[]> => {
-  const { data, error } = await supabase
-    .from('subjects')
-    .select('*');
-  
-  if (error) {
-    console.error('Error fetching subjects:', error);
-    return [];
-  }
-  
-  return data.map(item => ({
-    id: item.id,
-    name: item.name,
-    year: item.year as YearType,
-    branch: item.branch as BranchType,
-    isLab: item.is_lab
-  }));
+const SUBJECTS_STORAGE_KEY = 'timetable_subjects';
+
+// Get all subjects from local storage
+export const getSubjects = (): SubjectData[] => {
+  const storedSubjects = localStorage.getItem(SUBJECTS_STORAGE_KEY);
+  return storedSubjects ? JSON.parse(storedSubjects) : [];
 };
 
 // Add a new subject
-export const addSubject = async (subject: SubjectData): Promise<void> => {
-  const { error } = await supabase
-    .from('subjects')
-    .insert({
-      id: subject.id || uuidv4(),
-      name: subject.name,
-      year: subject.year,
-      branch: subject.branch,
-      is_lab: subject.isLab,
-      created_at: new Date().toISOString()
-    });
-  
-  if (error) {
-    console.error('Error adding subject:', error);
-    throw error;
-  }
+export const addSubject = (subject: SubjectData): void => {
+  const subjects = getSubjects();
+  subjects.push(subject);
+  localStorage.setItem(SUBJECTS_STORAGE_KEY, JSON.stringify(subjects));
 };
 
 // Update an existing subject
-export const updateSubject = async (updatedSubject: SubjectData): Promise<void> => {
-  const { error } = await supabase
-    .from('subjects')
-    .update({
-      name: updatedSubject.name,
-      year: updatedSubject.year,
-      branch: updatedSubject.branch,
-      is_lab: updatedSubject.isLab
-    })
-    .eq('id', updatedSubject.id);
+export const updateSubject = (updatedSubject: SubjectData): void => {
+  const subjects = getSubjects();
+  const index = subjects.findIndex(subject => subject.id === updatedSubject.id);
   
-  if (error) {
-    console.error('Error updating subject:', error);
-    throw error;
+  if (index !== -1) {
+    subjects[index] = updatedSubject;
+    localStorage.setItem(SUBJECTS_STORAGE_KEY, JSON.stringify(subjects));
   }
 };
 
 // Delete a subject
-export const deleteSubject = async (id: string): Promise<void> => {
-  const { error } = await supabase
-    .from('subjects')
-    .delete()
-    .eq('id', id);
-  
-  if (error) {
-    console.error('Error deleting subject:', error);
-    throw error;
-  }
+export const deleteSubject = (id: string): void => {
+  const subjects = getSubjects();
+  const filteredSubjects = subjects.filter(subject => subject.id !== id);
+  localStorage.setItem(SUBJECTS_STORAGE_KEY, JSON.stringify(filteredSubjects));
 };
 
 // Get subjects filtered by year and branch
-export const getFilteredSubjects = async (year: YearType, branch: BranchType): Promise<SubjectData[]> => {
-  const { data, error } = await supabase
-    .from('subjects')
-    .select('*')
-    .eq('year', year)
-    .eq('branch', branch);
-  
-  if (error) {
-    console.error('Error filtering subjects:', error);
-    return [];
-  }
-  
-  return data.map(item => ({
-    id: item.id,
-    name: item.name,
-    year: item.year as YearType,
-    branch: item.branch as BranchType,
-    isLab: item.is_lab
-  }));
+export const getFilteredSubjects = (year: YearType, branch: BranchType): SubjectData[] => {
+  const subjects = getSubjects();
+  return subjects.filter(subject => 
+    subject.year === year && subject.branch === branch
+  );
 };
 
 // Check if a subject exists
-export const subjectExists = async (name: string, year: YearType, branch: BranchType): Promise<boolean> => {
-  const { data, error } = await supabase
-    .from('subjects')
-    .select('id')
-    .eq('year', year)
-    .eq('branch', branch)
-    .ilike('name', name);
-  
-  if (error) {
-    console.error('Error checking if subject exists:', error);
-    return false;
-  }
-  
-  return data.length > 0;
+export const subjectExists = (name: string, year: YearType, branch: BranchType): boolean => {
+  const subjects = getSubjects();
+  return subjects.some(subject => 
+    subject.name.toLowerCase() === name.toLowerCase() &&
+    subject.year === year &&
+    subject.branch === branch
+  );
 };
 
 // Check if subject-teacher pair already exists

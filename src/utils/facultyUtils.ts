@@ -1,128 +1,61 @@
 
-import { supabase } from '@/lib/supabase';
-import { v4 as uuidv4 } from 'uuid';
-
 export interface FacultyData {
   id: string;
   name: string;
   shortName: string;
 }
 
-// Get all faculty from Supabase
-export const getFaculty = async (): Promise<FacultyData[]> => {
-  const { data, error } = await supabase
-    .from('faculty')
-    .select('*');
-  
-  if (error) {
-    console.error('Error fetching faculty:', error);
-    return [];
-  }
-  
-  return data.map(item => ({
-    id: item.id,
-    name: item.name,
-    shortName: item.short_name
-  }));
+const FACULTY_STORAGE_KEY = 'timetable_faculty';
+
+// Get all faculty from local storage
+export const getFaculty = (): FacultyData[] => {
+  const storedFaculty = localStorage.getItem(FACULTY_STORAGE_KEY);
+  return storedFaculty ? JSON.parse(storedFaculty) : [];
 };
 
 // Add a new faculty member
-export const addFaculty = async (faculty: FacultyData): Promise<void> => {
-  const { error } = await supabase
-    .from('faculty')
-    .insert({
-      id: faculty.id || uuidv4(),
-      name: faculty.name,
-      short_name: faculty.shortName,
-      created_at: new Date().toISOString()
-    });
-  
-  if (error) {
-    console.error('Error adding faculty:', error);
-    throw error;
-  }
+export const addFaculty = (faculty: FacultyData): void => {
+  const facultyList = getFaculty();
+  facultyList.push(faculty);
+  localStorage.setItem(FACULTY_STORAGE_KEY, JSON.stringify(facultyList));
 };
 
 // Update an existing faculty member
-export const updateFaculty = async (updatedFaculty: FacultyData): Promise<void> => {
-  const { error } = await supabase
-    .from('faculty')
-    .update({
-      name: updatedFaculty.name,
-      short_name: updatedFaculty.shortName
-    })
-    .eq('id', updatedFaculty.id);
+export const updateFaculty = (updatedFaculty: FacultyData): void => {
+  const facultyList = getFaculty();
+  const index = facultyList.findIndex(faculty => faculty.id === updatedFaculty.id);
   
-  if (error) {
-    console.error('Error updating faculty:', error);
-    throw error;
+  if (index !== -1) {
+    facultyList[index] = updatedFaculty;
+    localStorage.setItem(FACULTY_STORAGE_KEY, JSON.stringify(facultyList));
   }
 };
 
 // Delete a faculty member
-export const deleteFaculty = async (id: string): Promise<void> => {
-  const { error } = await supabase
-    .from('faculty')
-    .delete()
-    .eq('id', id);
-  
-  if (error) {
-    console.error('Error deleting faculty:', error);
-    throw error;
-  }
+export const deleteFaculty = (id: string): void => {
+  const facultyList = getFaculty();
+  const filteredFaculty = facultyList.filter(faculty => faculty.id !== id);
+  localStorage.setItem(FACULTY_STORAGE_KEY, JSON.stringify(filteredFaculty));
 };
 
 // Check if a faculty exists
-export const facultyExists = async (name: string): Promise<boolean> => {
-  const { data, error } = await supabase
-    .from('faculty')
-    .select('id')
-    .ilike('name', name);
-  
-  if (error) {
-    console.error('Error checking if faculty exists:', error);
-    return false;
-  }
-  
-  return data.length > 0;
+export const facultyExists = (name: string): boolean => {
+  const facultyList = getFaculty();
+  return facultyList.some(faculty => 
+    faculty.name.toLowerCase() === name.toLowerCase()
+  );
 };
 
 // Get faculty by ID
-export const getFacultyById = async (id: string): Promise<FacultyData | undefined> => {
-  const { data, error } = await supabase
-    .from('faculty')
-    .select('*')
-    .eq('id', id)
-    .single();
-  
-  if (error) {
-    console.error('Error fetching faculty by ID:', error);
-    return undefined;
-  }
-  
-  return {
-    id: data.id,
-    name: data.name,
-    shortName: data.short_name
-  };
+export const getFacultyById = (id: string): FacultyData | undefined => {
+  const facultyList = getFaculty();
+  return facultyList.find(faculty => faculty.id === id);
 };
 
 // Get faculty by name
-export const getFacultyByName = async (name: string): Promise<FacultyData | undefined> => {
-  const { data, error } = await supabase
-    .from('faculty')
-    .select('*')
-    .ilike('name', name)
-    .single();
-  
-  if (error) {
-    console.error('Error fetching faculty by name:', error);
-    return undefined;
-  }
-  
-  return {
-    id: data.id,
-    name: data.name,
-    shortName: data.short_name
-  };
+export const getFacultyByName = (name: string): FacultyData | undefined => {
+  const facultyList = getFaculty();
+  return facultyList.find(faculty => 
+    faculty.name.toLowerCase() === name.toLowerCase()
+  );
 };
