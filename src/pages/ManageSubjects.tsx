@@ -54,11 +54,11 @@ const ManageSubjects = () => {
     let filtered = [...subjects];
     
     if (filterYear !== 'all') {
-      filtered = filtered.filter(subject => subject.year === filterYear);
+      filtered = filtered.filter(subject => subject.years.includes(filterYear));
     }
     
     if (filterBranch !== 'all') {
-      filtered = filtered.filter(subject => subject.branch === filterBranch);
+      filtered = filtered.filter(subject => subject.branches.includes(filterBranch));
     }
     
     setFilteredSubjects(filtered);
@@ -78,8 +78,8 @@ const ManageSubjects = () => {
     const isDuplicate = subjects.some(
       subject => 
         subject.name.toLowerCase() === newSubject.toLowerCase() && 
-        subject.year === subjectYear && 
-        subject.branch === subjectBranch
+        subject.years.includes(subjectYear) && 
+        subject.branches.includes(subjectBranch)
     );
     
     if (isDuplicate) {
@@ -94,8 +94,10 @@ const ManageSubjects = () => {
     const newSubjectData: SubjectData = {
       id: Date.now().toString(),
       name: newSubject,
-      year: subjectYear,
-      branch: subjectBranch,
+      code: '',
+      credits: 0,
+      years: [subjectYear],
+      branches: [subjectBranch],
       isLab: newSubject.toLowerCase().includes('lab')
     };
     
@@ -127,14 +129,14 @@ const ManageSubjects = () => {
       subject => 
         subject.id !== editingSubject.id &&
         subject.name.toLowerCase() === editingSubject.name.toLowerCase() && 
-        subject.year === editingSubject.year && 
-        subject.branch === editingSubject.branch
+        subject.years.some(y => editingSubject.years.includes(y)) && 
+        subject.branches.some(b => editingSubject.branches.includes(b))
     );
     
     if (isDuplicate) {
       toast({
         title: "Duplicate subject",
-        description: `"${editingSubject.name}" already exists for ${editingSubject.year}, ${editingSubject.branch}`,
+        description: `"${editingSubject.name}" already exists for the selected years and branches`,
         variant: "destructive",
       });
       return;
@@ -346,10 +348,10 @@ const ManageSubjects = () => {
                               <div className="space-y-2">
                                 <Label htmlFor={`edit-year-${subject.id}`}>Year</Label>
                                 <Select 
-                                  value={editingSubject.year} 
+                                  value={editingSubject.years[0]} 
                                   onValueChange={(value) => setEditingSubject({
                                     ...editingSubject,
-                                    year: value as YearType
+                                    years: [value as YearType]
                                   })}
                                 >
                                   <SelectTrigger id={`edit-year-${subject.id}`}>
@@ -367,10 +369,10 @@ const ManageSubjects = () => {
                               <div className="space-y-2">
                                 <Label htmlFor={`edit-branch-${subject.id}`}>Branch</Label>
                                 <Select 
-                                  value={editingSubject.branch} 
+                                  value={editingSubject.branches[0]} 
                                   onValueChange={(value) => setEditingSubject({
                                     ...editingSubject,
-                                    branch: value as BranchType
+                                    branches: [value as BranchType]
                                   })}
                                 >
                                   <SelectTrigger id={`edit-branch-${subject.id}`}>
@@ -411,7 +413,7 @@ const ManageSubjects = () => {
                             <div>
                               <div className="font-medium">{subject.name}</div>
                               <div className="text-sm text-muted-foreground">
-                                {subject.year}, {subject.branch}
+                                {subject.years[0]}, {subject.branches[0]}
                                 {subject.isLab && <span className="ml-2 text-primary">Lab</span>}
                               </div>
                             </div>
