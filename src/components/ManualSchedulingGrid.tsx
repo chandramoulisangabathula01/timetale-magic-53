@@ -179,9 +179,9 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
     setEntries(initialEntries);
   }, [existingEntries, days, year, dayOptions]);
   
+  // Save entries only when they've been fully initialized or deliberately changed
   useEffect(() => {
     if (entries.length > 0) {
-      // Save entries immediately after they're changed
       onSave(entries);
     }
   }, [entries, onSave]);
@@ -206,6 +206,8 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
   };
   
   const handleCellChange = (day: Day, timeSlot: TimeSlot, value: string, type: 'subject' | 'free') => {
+    console.log("Handling cell change:", { day, timeSlot, value, type });
+    
     if (type === 'subject') {
       const [subjectId, teacherName] = value.split('|');
       const subject = subjectTeacherPairs.find(s => s.id === subjectId);
@@ -222,7 +224,7 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
         }
         
         setEntries(prevEntries => {
-          return prevEntries.map(entry => {
+          const newEntries = prevEntries.map(entry => {
             if (entry.day === day && entry.timeSlot === timeSlot) {
               return {
                 ...entry,
@@ -236,18 +238,22 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
             }
             return entry;
           });
-        });
-        
-        // Show success toast for feedback
-        toast({
-          title: "Subject Assigned",
-          description: `${subject.subjectName} with ${subject.teacherName} has been assigned to this slot.`,
-          variant: "default"
+          
+          // Show success toast for feedback
+          setTimeout(() => {
+            toast({
+              title: "Subject Assigned",
+              description: `${subject.subjectName} with ${subject.teacherName} has been assigned to this slot.`,
+              variant: "default"
+            });
+          }, 100);
+          
+          return newEntries;
         });
       }
     } else if (type === 'free') {
       setEntries(prevEntries => {
-        return prevEntries.map(entry => {
+        const newEntries = prevEntries.map(entry => {
           if (entry.day === day && entry.timeSlot === timeSlot) {
             return {
               ...entry,
@@ -261,18 +267,24 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
           }
           return entry;
         });
-      });
-      
-      // Show success toast for feedback
-      toast({
-        title: "Free Hour Added",
-        description: `${value} has been added to this slot.`,
-        variant: "default"
+        
+        // Show success toast for feedback
+        setTimeout(() => {
+          toast({
+            title: "Free Hour Added",
+            description: `${value} has been added to this slot.`,
+            variant: "default"
+          });
+        }, 100);
+        
+        return newEntries;
       });
     }
   };
   
   const clearCell = (day: Day, timeSlot: TimeSlot) => {
+    console.log("Clearing cell:", { day, timeSlot });
+    
     setEntries(prevEntries => {
       const updatedEntries = prevEntries.map(entry => {
         if (entry.day === day && entry.timeSlot === timeSlot) {
@@ -292,11 +304,13 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
       });
       
       // Show success toast for feedback
-      toast({
-        title: "Cell Cleared",
-        description: "The time slot has been cleared.",
-        variant: "default"
-      });
+      setTimeout(() => {
+        toast({
+          title: "Cell Cleared",
+          description: "The time slot has been cleared.",
+          variant: "default"
+        });
+      }, 100);
       
       return updatedEntries;
     });
@@ -327,7 +341,11 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
             variant="ghost" 
             size="sm" 
             className="w-full h-6 text-xs mt-2"
-            onClick={() => clearCell(day, timeSlot)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              clearCell(day, timeSlot);
+            }}
           >
             Clear
           </Button>
@@ -343,7 +361,11 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
             variant="ghost" 
             size="sm" 
             className="w-full h-6 text-xs mt-2"
-            onClick={() => clearCell(day, timeSlot)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              clearCell(day, timeSlot);
+            }}
           >
             Clear
           </Button>
@@ -404,7 +426,11 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
           variant="ghost" 
           size="sm" 
           className="w-full h-6 text-xs"
-          onClick={() => clearCell(day, timeSlot)}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            clearCell(day, timeSlot);
+          }}
         >
           Clear
         </Button>

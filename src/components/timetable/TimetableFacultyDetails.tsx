@@ -8,6 +8,7 @@ interface TimetableFacultyDetailsProps {
 }
 
 const TimetableFacultyDetails: React.FC<TimetableFacultyDetailsProps> = ({ timetable, printMode = false }) => {
+  // Only render this component in print mode to avoid duplication
   if (!printMode) return null;
   
   return (
