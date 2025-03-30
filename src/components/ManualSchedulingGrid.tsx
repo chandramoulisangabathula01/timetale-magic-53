@@ -1,5 +1,5 @@
+
 import React, { useState, useEffect } from 'react';
-import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
@@ -9,6 +9,8 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { getTimetables } from "@/utils/timetableUtils";
 import { 
   TimetableEntry, 
   SubjectTeacherPair, 
@@ -43,8 +45,14 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
   existingEntries = []
 }) => {
   const [entries, setEntries] = useState<TimetableEntry[]>([]);
+  const { toast } = useToast();
   
-  const days: Day[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  // Determine which days to show based on dayOptions
+  const days: Day[] = dayOptions.useCustomDays 
+    ? dayOptions.selectedDays
+    : dayOptions.fourContinuousDays 
+      ? ['Monday', 'Tuesday', 'Wednesday', 'Thursday'] as Day[]
+      : ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as Day[];
     
   const timeSlots: TimeSlot[] = [
     '9:30-10:20', 
@@ -88,13 +96,40 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
     });
     
     setEntries(initialEntries);
-  }, [existingEntries]);
+  }, [existingEntries, days]);
   
   useEffect(() => {
     if (entries.length > 0) {
       onSave(entries);
     }
   }, [entries, onSave]);
+
+  // Check for teacher conflicts across timetables
+  const checkTeacherConflicts = (day: Day, timeSlot: TimeSlot, teacherName: string): boolean => {
+    // Get all existing timetables
+    const allTimetables = getTimetables();
+    
+    // Skip checking the current timetable (we're editing it)
+    for (const timetable of allTimetables) {
+      // Skip if this is for the same year/branch (same timetable)
+      if (timetable.formData.year === year && timetable.formData.branch === branch) {
+        continue;
+      }
+      
+      // Check if teacher has another class at this time
+      const hasConflict = timetable.entries.some(entry => 
+        entry.day === day && 
+        entry.timeSlot === timeSlot && 
+        entry.teacherName === teacherName
+      );
+      
+      if (hasConflict) {
+        return true;
+      }
+    }
+    
+    return false;
+  };
   
   const handleCellChange = (day: Day, timeSlot: TimeSlot, value: string, type: 'subject' | 'free') => {
     setEntries(prevEntries => {
@@ -105,6 +140,16 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
             const subject = subjectTeacherPairs.find(s => s.id === subjectId);
             
             if (subject) {
+              // Check for teacher conflicts
+              if (checkTeacherConflicts(day, timeSlot, subject.teacherName)) {
+                toast({
+                  title: "Scheduling Conflict",
+                  description: `${subject.teacherName} already has a class scheduled at this time slot in another class.`,
+                  variant: "destructive"
+                });
+                return entry;
+              }
+              
               return {
                 ...entry,
                 subjectName: subject.subjectName,

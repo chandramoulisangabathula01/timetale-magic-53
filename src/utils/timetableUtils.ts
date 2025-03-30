@@ -43,8 +43,67 @@ export const getTimetables = (): Timetable[] => {
   return JSON.parse(timetablesString);
 };
 
+// Check if a timetable with the same year, branch, and semester already exists
+export const doesTimetableExist = (formData: TimetableFormData, currentId?: string): boolean => {
+  const timetables = getTimetables();
+  return timetables.some(t => 
+    t.formData.year === formData.year && 
+    t.formData.branch === formData.branch && 
+    t.formData.semester === formData.semester &&
+    (currentId ? t.id !== currentId : true) // Skip the current timetable if editing
+  );
+};
+
+// Check for teacher conflicts between timetables
+export const hasTeacherConflicts = (entries: TimetableEntry[], year: YearType, branch: BranchType): {
+  hasConflict: boolean;
+  conflictDetails?: {
+    teacherName: string;
+    day: Day;
+    timeSlot: TimeSlot;
+    otherClass: string;
+  }
+} => {
+  const timetables = getTimetables();
+  
+  for (const entry of entries) {
+    // Skip breaks, lunch, and free hours
+    if (entry.isBreak || entry.isLunch || entry.isFree || !entry.teacherName) {
+      continue;
+    }
+    
+    for (const timetable of timetables) {
+      // Skip the same timetable (same year and branch)
+      if (timetable.formData.year === year && timetable.formData.branch === branch) {
+        continue;
+      }
+      
+      // Check for conflicts
+      const conflictingEntry = timetable.entries.find(e => 
+        e.day === entry.day && 
+        e.timeSlot === entry.timeSlot && 
+        e.teacherName === entry.teacherName
+      );
+      
+      if (conflictingEntry) {
+        return {
+          hasConflict: true,
+          conflictDetails: {
+            teacherName: entry.teacherName,
+            day: entry.day,
+            timeSlot: entry.timeSlot,
+            otherClass: `${timetable.formData.year} Year ${timetable.formData.branch}`
+          }
+        };
+      }
+    }
+  }
+  
+  return { hasConflict: false };
+};
+
 // Save a timetable to localStorage
-export const saveTimetable = (timetable: Timetable): void => {
+export const saveTimetable = (timetable: Timetable): { success: boolean; message?: string } => {
   const timetables = getTimetables();
   const existingIndex = timetables.findIndex(t => t.id === timetable.id);
   
@@ -53,6 +112,29 @@ export const saveTimetable = (timetable: Timetable): void => {
     ...timetable,
     updatedAt: new Date().toISOString()
   };
+  
+  // Check for duplicate timetable (same year, branch, semester)
+  if (existingIndex === -1 && doesTimetableExist(timetable.formData)) {
+    return { 
+      success: false, 
+      message: `A timetable for ${timetable.formData.year} Year ${timetable.formData.branch} ${timetable.formData.semester} already exists.`
+    };
+  }
+  
+  // Check for teacher conflicts
+  const conflictCheck = hasTeacherConflicts(
+    timetable.entries, 
+    timetable.formData.year, 
+    timetable.formData.branch
+  );
+  
+  if (conflictCheck.hasConflict && conflictCheck.conflictDetails) {
+    const details = conflictCheck.conflictDetails;
+    return {
+      success: false,
+      message: `Conflict: ${details.teacherName} is already teaching in ${details.otherClass} on ${details.day} at ${details.timeSlot}`
+    };
+  }
   
   if (existingIndex !== -1) {
     // Update existing timetable
@@ -63,6 +145,7 @@ export const saveTimetable = (timetable: Timetable): void => {
   }
   
   localStorage.setItem(TIMETABLES_STORAGE_KEY, JSON.stringify(timetables));
+  return { success: true };
 };
 
 // Get a timetable by ID

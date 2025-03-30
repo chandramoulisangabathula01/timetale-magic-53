@@ -94,7 +94,7 @@ const EditTimetable = () => {
     <DashboardLayout>
       <div className="container mx-auto py-8 px-4">
         <h1 className="text-2xl font-bold mb-6">Edit Timetable</h1>
-        {timetable && <CreateTimetableForm existingTimetable={timetable} />}
+        {timetable && <CreateTimetableForm existingTimetable={timetable} initialMode="manual" />}
       </div>
     </DashboardLayout>
   );
