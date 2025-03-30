@@ -1,4 +1,3 @@
-
 import { v4 as uuidv4 } from 'uuid';
 import { 
   Timetable, 
@@ -45,6 +44,11 @@ export const getTimetables = (): Timetable[] => {
 
 // Check if a timetable with the same year, branch, and semester already exists
 export const doesTimetableExist = (formData: TimetableFormData, currentId?: string): boolean => {
+  // Skip check if missing required fields
+  if (!formData.year || !formData.branch || !formData.semester) {
+    return false;
+  }
+  
   const timetables = getTimetables();
   return timetables.some(t => 
     t.formData.year === formData.year && 
@@ -91,7 +95,7 @@ export const hasTeacherConflicts = (entries: TimetableEntry[], year: YearType, b
           conflictDetails: {
             teacherName: entry.teacherName,
             day: entry.day,
-            timeSlot: entry.timeSlot,
+            timeSlot: entry.timeSlot as TimeSlot,
             otherClass: `${timetable.formData.year} Year ${timetable.formData.branch}`
           }
         };
@@ -218,11 +222,21 @@ export const countNonLabSubjectsForTeacher = (
 // Generate a timetable based on form data
 export const generateTimetable = (formData: TimetableFormData): Timetable => {
   const timetableEntries: TimetableEntry[] = [];
-  const days = formData.dayOptions.useCustomDays
-    ? formData.dayOptions.selectedDays
-    : formData.dayOptions.fourContinuousDays
-      ? ['Monday', 'Tuesday', 'Wednesday', 'Thursday'] as Day[]
-      : ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as Day[];
+  
+  // Determine which days to use based on year and options
+  let days: Day[];
+  
+  if (formData.year === '4th Year') {
+    // For 4th year, use the selected day options
+    days = formData.dayOptions.useCustomDays
+      ? formData.dayOptions.selectedDays
+      : formData.dayOptions.fourContinuousDays
+        ? ['Monday', 'Tuesday', 'Wednesday', 'Thursday'] as Day[]
+        : ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as Day[];
+  } else {
+    // For 1st to 3rd year, always use all 6 days
+    days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as Day[];
+  }
   
   const timeSlots: TimeSlot[] = [
     '9:30-10:20', 

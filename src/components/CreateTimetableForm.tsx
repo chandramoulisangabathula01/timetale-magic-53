@@ -31,21 +31,22 @@ import {
   TimetableFormData,
   Timetable
 } from '@/utils/types';
-import { generateTimetable, saveTimetable, countNonLabSubjectsForTeacher } from '@/utils/timetableUtils';
+import { generateTimetable, saveTimetable, countNonLabSubjectsForTeacher, doesTimetableExist } from '@/utils/timetableUtils';
 import { getFaculty } from '@/utils/facultyUtils';
 import { getFilteredSubjects, subjectTeacherPairExists } from '@/utils/subjectsUtils';
 import ManualSchedulingGrid from '@/components/ManualSchedulingGrid';
 
 interface CreateTimetableFormProps {
   existingTimetable?: Timetable;
+  initialMode?: 'auto' | 'manual';
 }
 
-const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimetable }) => {
+const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimetable, initialMode = 'auto' }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const isEditMode = !!existingTimetable;
   
-  const [schedulingMode, setSchedulingMode] = useState<'auto' | 'manual'>('auto');
+  const [schedulingMode, setSchedulingMode] = useState<'auto' | 'manual'>(initialMode);
   
   const [formData, setFormData] = useState<TimetableFormData>(
     existingTimetable?.formData || {
@@ -64,7 +65,7 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
         { type: 'Library' as FreeHourType }
       ],
       dayOptions: {
-        fourContinuousDays: true,
+        fourContinuousDays: false,
         useCustomDays: false,
         selectedDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday'] as Day[]
       }
@@ -133,6 +134,34 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
         delete newErrors[name];
         return newErrors;
       });
+    }
+    
+    if (name === 'year' || name === 'branch' || name === 'semester') {
+      const currentFormData = { ...formData, [name]: value };
+      
+      if (currentFormData.year && currentFormData.branch && currentFormData.semester) {
+        const existingId = isEditMode && existingTimetable ? existingTimetable.id : undefined;
+        const duplicateExists = doesTimetableExist(currentFormData, existingId);
+        
+        if (duplicateExists) {
+          toast({
+            title: "Duplicate Timetable",
+            description: `A timetable for ${currentFormData.year} Year ${currentFormData.branch} ${currentFormData.semester} already exists.`,
+            variant: "destructive",
+          });
+          
+          setErrors(prev => ({
+            ...prev,
+            duplicateTimetable: `A timetable for ${currentFormData.year} Year ${currentFormData.branch} ${currentFormData.semester} already exists.`
+          }));
+        } else if (errors.duplicateTimetable) {
+          setErrors(prev => {
+            const newErrors = { ...prev };
+            delete newErrors.duplicateTimetable;
+            return newErrors;
+          });
+        }
+      }
     }
   };
 
@@ -278,6 +307,11 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
         newErrors.mobileNumber = "Mobile number must be at least 10 digits";
       }
       if (!formData.date) newErrors.date = "Date is required";
+      
+      const existingId = isEditMode && existingTimetable ? existingTimetable.id : undefined;
+      if (doesTimetableExist(formData, existingId)) {
+        newErrors.duplicateTimetable = `A timetable for ${formData.year} Year ${formData.branch} ${formData.semester} already exists.`;
+      }
     }
     else if (currentStep === 1) {
       if (formData.subjectTeacherPairs.length === 0) {
@@ -341,7 +375,16 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
         newTimetable.createdAt = existingTimetable.createdAt;
       }
       
-      saveTimetable(newTimetable);
+      const saveResult = saveTimetable(newTimetable);
+      
+      if (!saveResult.success) {
+        toast({
+          title: "Error",
+          description: saveResult.message || "An error occurred while saving the timetable.",
+          variant: "destructive",
+        });
+        return;
+      }
       
       toast({
         title: isEditMode ? "Timetable updated" : "Timetable created",
@@ -363,16 +406,16 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">
-          {isEditMode ? 'Edit Timetable' : 'Create New Timetable'}
-        </h1>
-        <p className="text-muted-foreground">
-          {isEditMode 
-            ? 'Update the timetable details below' 
-            : 'Fill in the required information to generate a new timetable'}
-        </p>
-      </div>
+      {!isEditMode && (
+        <div>
+          <h1 className="text-2xl font-bold">
+            Create New Timetable
+          </h1>
+          <p className="text-muted-foreground">
+            Fill in the required information to generate a new timetable
+          </p>
+        </div>
+      )}
       
       <div className="space-y-8">
         <Tabs value={currentStep.toString()} onValueChange={(value) => setCurrentStep(parseInt(value))}>
@@ -397,6 +440,16 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                {errors.duplicateTimetable && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Duplicate Timetable</AlertTitle>
+                    <AlertDescription>
+                      {errors.duplicateTimetable}
+                    </AlertDescription>
+                  </Alert>
+                )}
+                
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="year">Year</Label>
@@ -831,7 +884,7 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
                   <div>
                     <h3 className="font-medium mb-3">Day Options</h3>
                     
-                    {formData.year === '4th Year' && (
+                    {formData.year === '4th Year' ? (
                       <div className="space-y-4">
                         <Alert variant="default" className="bg-muted/50">
                           <AlertTriangle className="h-4 w-4" />
@@ -882,9 +935,7 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
                           </div>
                         )}
                       </div>
-                    )}
-                    
-                    {formData.year !== '4th Year' && (
+                    ) : (
                       <p className="text-muted-foreground">
                         Standard 6-day schedule (Monday to Saturday) will be used for {formData.year} timetables.
                       </p>

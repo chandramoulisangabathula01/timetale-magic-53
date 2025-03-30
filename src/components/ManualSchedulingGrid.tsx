@@ -47,12 +47,20 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
   const [entries, setEntries] = useState<TimetableEntry[]>([]);
   const { toast } = useToast();
   
-  // Determine which days to show based on dayOptions
-  const days: Day[] = dayOptions.useCustomDays 
-    ? dayOptions.selectedDays
-    : dayOptions.fourContinuousDays 
-      ? ['Monday', 'Tuesday', 'Wednesday', 'Thursday'] as Day[]
-      : ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as Day[];
+  // Determine which days to show based on year and dayOptions
+  let days: Day[];
+  
+  if (year === '4th Year') {
+    // For 4th year, use the selected day options
+    days = dayOptions.useCustomDays 
+      ? dayOptions.selectedDays
+      : dayOptions.fourContinuousDays 
+        ? ['Monday', 'Tuesday', 'Wednesday', 'Thursday'] as Day[]
+        : ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as Day[];
+  } else {
+    // For 1st to 3rd year, always use all 6 days
+    days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as Day[];
+  }
     
   const timeSlots: TimeSlot[] = [
     '9:30-10:20', 
@@ -67,7 +75,64 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
   useEffect(() => {
     if (existingEntries && existingEntries.length > 0) {
       console.log("Using existing entries:", existingEntries.length);
-      setEntries(existingEntries);
+      
+      // Filter the existing entries to only include the days we're showing
+      const filteredEntries = existingEntries.filter(entry => days.includes(entry.day));
+      
+      // If we're missing any days/timeslots, add empty entries for them
+      const initialEntries: TimetableEntry[] = [];
+      
+      days.forEach(day => {
+        timeSlots.forEach(timeSlot => {
+          // Check if this day/timeSlot combination exists in the filtered entries
+          const existingEntry = filteredEntries.find(
+            entry => entry.day === day && entry.timeSlot === timeSlot
+          );
+          
+          if (existingEntry) {
+            initialEntries.push(existingEntry);
+          } else {
+            // Add a new empty entry
+            initialEntries.push({
+              day,
+              timeSlot,
+              // No subject assigned initially
+            });
+          }
+        });
+        
+        // Check if break exists for this day
+        const existingBreak = filteredEntries.find(
+          entry => entry.day === day && entry.timeSlot === '11:10-11:20' && entry.isBreak
+        );
+        
+        if (existingBreak) {
+          initialEntries.push(existingBreak);
+        } else {
+          initialEntries.push({
+            day,
+            timeSlot: '11:10-11:20',
+            isBreak: true
+          });
+        }
+        
+        // Check if lunch exists for this day
+        const existingLunch = filteredEntries.find(
+          entry => entry.day === day && entry.timeSlot === '1:00-2:00' && entry.isLunch
+        );
+        
+        if (existingLunch) {
+          initialEntries.push(existingLunch);
+        } else {
+          initialEntries.push({
+            day,
+            timeSlot: '1:00-2:00',
+            isLunch: true
+          });
+        }
+      });
+      
+      setEntries(initialEntries);
       return;
     }
     
@@ -96,7 +161,7 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
     });
     
     setEntries(initialEntries);
-  }, [existingEntries, days]);
+  }, [existingEntries, days, year, dayOptions]);
   
   useEffect(() => {
     if (entries.length > 0) {
@@ -184,6 +249,7 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
           return {
             day,
             timeSlot,
+            // Reset all fields
             subjectName: undefined,
             teacherName: undefined,
             isLab: false,
