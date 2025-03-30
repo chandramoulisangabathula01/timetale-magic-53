@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import Logo from '@/components/Logo';
 import { useAuth } from '@/contexts/AuthContext';
-import { FACULTY_LIST } from '@/utils/timetableUtils';
+import { getFacultyList } from '@/utils/timetableUtils';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -23,11 +23,20 @@ const Login = () => {
   
   // Faculty login state
   const [selectedFaculty, setSelectedFaculty] = useState('');
+  const [facultyList, setFacultyList] = useState<string[]>([]);
+  const [facultyInputMode, setFacultyInputMode] = useState<'select' | 'manual'>('select');
+  const [manualFacultyName, setManualFacultyName] = useState('');
   
   // Student login state
   const [studentYear, setStudentYear] = useState('');
   const [studentBranch, setStudentBranch] = useState('');
   const [studentSemester, setStudentSemester] = useState('');
+  
+  // Load faculty list on component mount
+  useEffect(() => {
+    const dynamicFacultyList = getFacultyList();
+    setFacultyList(dynamicFacultyList);
+  }, []);
   
   const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,21 +70,31 @@ const Login = () => {
   const handleFacultyLogin = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedFaculty) {
+    const facultyName = facultyInputMode === 'select' ? selectedFaculty : manualFacultyName;
+    
+    if (!facultyName) {
       toast({
-        title: "Selection required",
-        description: "Please select your name from the faculty list",
+        title: "Faculty name required",
+        description: facultyInputMode === 'select'
+          ? "Please select your name from the faculty list"
+          : "Please enter your full name",
         variant: "destructive",
       });
       return;
     }
     
-    const success = loginFaculty(selectedFaculty);
+    const success = loginFaculty(facultyName);
     
     if (success) {
       toast({
         title: "Login successful",
-        description: `Welcome, ${selectedFaculty}!`,
+        description: `Welcome, ${facultyName}!`,
+      });
+      navigate('/dashboard');
+    } else {
+      toast({
+        title: "Login note",
+        description: "You've been logged in, but we couldn't find any timetables assigned to you yet.",
       });
       navigate('/dashboard');
     }
@@ -102,6 +121,13 @@ const Login = () => {
       });
       navigate('/dashboard');
     }
+  };
+  
+  const toggleFacultyInputMode = () => {
+    setFacultyInputMode(prevMode => prevMode === 'select' ? 'manual' : 'select');
+    // Reset values when toggling
+    setSelectedFaculty('');
+    setManualFacultyName('');
   };
   
   return (
@@ -161,27 +187,51 @@ const Login = () => {
           <TabsContent value="faculty">
             <form onSubmit={handleFacultyLogin}>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="facultySelect">Select your name</Label>
-                  <Select value={selectedFaculty} onValueChange={setSelectedFaculty}>
-                    <SelectTrigger id="facultySelect">
-                      <SelectValue placeholder="Select Faculty Name" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {FACULTY_LIST.length === 0 ? (
-                        <SelectItem value="no-faculty-available" disabled>
-                          No faculty available
-                        </SelectItem>
-                      ) : (
-                        FACULTY_LIST.map((faculty) => (
-                          <SelectItem key={faculty} value={faculty}>
-                            {faculty}
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
+                <div className="flex justify-between items-center mb-2">
+                  <Label>Faculty Login Method</Label>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm"
+                    onClick={toggleFacultyInputMode}
+                  >
+                    {facultyInputMode === 'select' ? 'Enter manually' : 'Select from list'}
+                  </Button>
                 </div>
+                
+                {facultyInputMode === 'select' ? (
+                  <div className="space-y-2">
+                    <Label htmlFor="facultySelect">Select your name</Label>
+                    <Select value={selectedFaculty} onValueChange={setSelectedFaculty}>
+                      <SelectTrigger id="facultySelect">
+                        <SelectValue placeholder="Select Faculty Name" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {facultyList.length === 0 ? (
+                          <SelectItem value="no-faculty-available" disabled>
+                            No faculty available
+                          </SelectItem>
+                        ) : (
+                          facultyList.map((faculty) => (
+                            <SelectItem key={faculty} value={faculty}>
+                              {faculty}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Label htmlFor="manualFacultyName">Enter your full name</Label>
+                    <Input
+                      id="manualFacultyName"
+                      placeholder="e.g., Dr. John Smith"
+                      value={manualFacultyName}
+                      onChange={(e) => setManualFacultyName(e.target.value)}
+                    />
+                  </div>
+                )}
               </CardContent>
               <CardFooter>
                 <Button type="submit" className="w-full">View My Timetable</Button>

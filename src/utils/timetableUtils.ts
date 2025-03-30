@@ -12,8 +12,15 @@ import {
   TimeSlot,
   FreeHourType
 } from './types';
+import { getFaculty } from './facultyUtils';
 
-// Faculty list for selection in the login form
+// Get faculty list dynamically from facultyUtils
+export const getFacultyList = () => {
+  const facultyData = getFaculty();
+  return facultyData.map(faculty => faculty.name);
+};
+
+// Legacy faculty list - kept for backward compatibility if needed
 export const FACULTY_LIST = [
   "Dr. Smith",
   "Prof. Johnson",
