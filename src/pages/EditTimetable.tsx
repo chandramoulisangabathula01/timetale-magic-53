@@ -7,13 +7,15 @@ import { getTimetableById } from '@/utils/timetableUtils';
 import { Timetable } from '@/utils/types';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button'; // Add Button import
+import { Button } from '@/components/ui/button';
 import { AlertCircle } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const EditTimetable = () => {
   const { isAuthenticated, userRole } = useAuth();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const { toast } = useToast();
   const [timetable, setTimetable] = useState<Timetable | undefined>(undefined);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   
@@ -35,12 +37,17 @@ const EditTimetable = () => {
       if (existingTimetable) {
         setTimetable(existingTimetable);
       } else {
+        toast({
+          title: "Error",
+          description: "Timetable not found. Redirecting to dashboard.",
+          variant: "destructive",
+        });
         navigate('/dashboard');
       }
     }
     
     setIsLoading(false);
-  }, [isAuthenticated, userRole, navigate, id]);
+  }, [isAuthenticated, userRole, navigate, id, toast]);
   
   if (isLoading) {
     return (

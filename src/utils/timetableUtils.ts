@@ -73,16 +73,28 @@ export const deleteTimetable = (id: string): void => {
 
 // Get timetables for a specific faculty member
 export const getTimetablesForFaculty = (facultyName: string): Timetable[] => {
+  console.log("Looking for timetables with faculty:", facultyName);
   const timetables = getTimetables();
   
   // Find timetables where this faculty teaches at least one subject
-  return timetables.filter(timetable => {
+  const matchingTimetables = timetables.filter(timetable => {
+    // Check subject-teacher pairs
     const hasSubjectAssigned = timetable.formData.subjectTeacherPairs.some(pair => 
       pair.teacherName === facultyName
     );
     
-    return hasSubjectAssigned;
+    // Check entries
+    const hasEntriesAssigned = timetable.entries.some(entry => 
+      entry.teacherName === facultyName
+    );
+    
+    console.log(`Timetable ${timetable.id}: hasSubjectAssigned=${hasSubjectAssigned}, hasEntriesAssigned=${hasEntriesAssigned}`);
+    
+    return hasSubjectAssigned || hasEntriesAssigned;
   });
+  
+  console.log("Found matching timetables:", matchingTimetables.length);
+  return matchingTimetables;
 };
 
 // Filter timetables by year, branch, and semester

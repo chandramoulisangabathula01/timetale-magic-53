@@ -8,17 +8,30 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getTimetablesForFaculty } from '@/utils/timetableUtils';
 import { Timetable } from '@/utils/types';
 import TimetableView from './TimetableView';
+import { useToast } from '@/hooks/use-toast';
 
 const FacultyDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { username } = useAuth();
+  const { toast } = useToast();
   const [timetables, setTimetables] = useState<Timetable[]>([]);
   const [selectedTimetable, setSelectedTimetable] = useState<Timetable | null>(null);
   
   useEffect(() => {
     if (username) {
+      console.log("Fetching timetables for faculty:", username);
       // Force a fresh fetch of timetables for this faculty member
       const facultyTimetables = getTimetablesForFaculty(username);
+      console.log("Found timetables:", facultyTimetables);
+      
+      if (facultyTimetables.length === 0) {
+        toast({
+          title: "No timetables found",
+          description: `No timetables were found for faculty: ${username}`,
+          variant: "default",
+        });
+      }
+      
       setTimetables(facultyTimetables);
       
       // Set the first timetable as selected by default
@@ -28,7 +41,7 @@ const FacultyDashboard: React.FC = () => {
         setSelectedTimetable(null);
       }
     }
-  }, [username]);
+  }, [username, toast]);
   
   const handleSelectTimetable = (timetable: Timetable) => {
     setSelectedTimetable(timetable);

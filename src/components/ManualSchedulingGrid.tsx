@@ -136,7 +136,12 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
           return {
             day,
             timeSlot,
-            // Clear all other properties
+            subjectName: undefined,
+            teacherName: undefined,
+            isLab: false,
+            batchNumber: undefined,
+            isFree: false,
+            freeType: undefined
           };
         }
         return entry;
@@ -193,7 +198,7 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
                 </SelectItem>
               ) : (
                 subjectTeacherPairs.map((pair) => (
-                  <SelectItem key={pair.id} value={pair.id}>
+                  <SelectItem key={pair.id} value={`${pair.id}|${pair.teacherName}`}>
                     {pair.subjectName} - {pair.teacherName}
                   </SelectItem>
                 ))
