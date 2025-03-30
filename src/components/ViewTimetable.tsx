@@ -30,9 +30,7 @@ const ViewTimetable: React.FC = () => {
       />
       
       <div className="border rounded-lg p-6 print:border-none" ref={printRef}>
-        <TimetableHeaderInfo timetable={timetable} printMode={true} />
-        
-        <div className="mb-6 no-print">
+        <div className="mb-6 print:hidden">
           <TimetableHeaderInfo timetable={timetable} />
         </div>
         
@@ -41,7 +39,9 @@ const ViewTimetable: React.FC = () => {
           printMode={true}
         />
 
-        <TimetableFacultyDetails timetable={timetable} printMode={true} />
+        <div className="mt-8">
+          <TimetableFacultyDetails timetable={timetable} />
+        </div>
       </div>
     </div>
   );

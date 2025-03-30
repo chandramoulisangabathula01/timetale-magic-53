@@ -1,3 +1,4 @@
+
 import { v4 as uuidv4 } from 'uuid';
 import { 
   Timetable, 
@@ -174,8 +175,11 @@ export const generateTimetable = (formData: TimetableFormData): Timetable => {
     if (formData.year !== '4th Year' && days.includes('Saturday')) {
       // Allocate free hours on Saturday
       timeSlots.forEach(timeSlot => {
-        const freeType = formData.freeHours[0].type;
-        const customType = formData.freeHours[0].customType;
+        // Randomly select a free hour type from the available options
+        const randomIndex = Math.floor(Math.random() * formData.freeHours.length);
+        const freeHour = formData.freeHours[randomIndex];
+        const freeType = freeHour.type;
+        const customType = freeHour.customType;
         
         entries.push({
           day: 'Saturday',
@@ -188,8 +192,12 @@ export const generateTimetable = (formData: TimetableFormData): Timetable => {
       // For 4th Year or if Saturday is not available, distribute free hours
       // throughout the week
       const lastDay = days[days.length - 1];
-      const freeType = formData.freeHours[0].type;
-      const customType = formData.freeHours[0].customType;
+      
+      // Randomly select a free hour type from the available options
+      const randomIndex = Math.floor(Math.random() * formData.freeHours.length);
+      const freeHour = formData.freeHours[randomIndex];
+      const freeType = freeHour.type;
+      const customType = freeHour.customType;
       
       // Allocate some free slots on the last day
       const freeTimeSlots: TimeSlot[] = ['11:20-12:10', '12:10-1:00', '2:00-2:50'];
@@ -223,9 +231,9 @@ export const generateTimetable = (formData: TimetableFormData): Timetable => {
       
       // Check if morning slots are available
       const morningSlotsFree = !isSlotFilled(day, '9:30-10:20') && 
-                               !isSlotFilled(day, '10:20-11:10') && 
-                               !isSlotFilled(day, '11:20-12:10') && 
-                               !isSlotFilled(day, '12:10-1:00');
+                             !isSlotFilled(day, '10:20-11:10') && 
+                             !isSlotFilled(day, '11:20-12:10') && 
+                             !isSlotFilled(day, '12:10-1:00');
       
       // Check if teacher is available for all these slots
       const teacherAvailable = isTeacherAvailable(labSubject.teacherName, day, '9:30-10:20') &&
@@ -457,8 +465,9 @@ export const generateTimetable = (formData: TimetableFormData): Timetable => {
   days.forEach(day => {
     timeSlots.forEach(timeSlot => {
       if (!isSlotFilled(day, timeSlot)) {
-        // Get the first free hour type
-        const freeHour = formData.freeHours[0];
+        // Randomly select a free hour type from the available options
+        const randomIndex = Math.floor(Math.random() * formData.freeHours.length);
+        const freeHour = formData.freeHours[randomIndex];
         const freeType = freeHour.type;
         const customType = freeHour.customType;
         

@@ -136,17 +136,6 @@ const TimetablePDFExport: React.FC<TimetablePDFExportProps> = ({ timetable, prin
 
           ${content.innerHTML}
           
-          <div class="faculty-details">
-            <h3>FACULTY DETAILS:</h3>
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
-              ${timetable?.formData.subjectTeacherPairs.map(pair => `
-                <div class="subject-item">
-                  ${pair.subjectName} - ${pair.teacherName} ${pair.isLab ? '(Lab)' : ''}
-                </div>
-              `).join('')}
-            </div>
-          </div>
-          
           <button class="print-button" onclick="window.print(); setTimeout(() => window.close(), 500);">
             Print Timetable
           </button>

@@ -206,6 +206,7 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
   
   const handleCellChange = (day: Day, timeSlot: TimeSlot, value: string, type: 'subject' | 'free') => {
     setEntries(prevEntries => {
+      // Create a new array of entries to update state properly
       return prevEntries.map(entry => {
         if (entry.day === day && entry.timeSlot === timeSlot) {
           if (type === 'subject') {
@@ -223,6 +224,7 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
                 return entry;
               }
               
+              // Create a new entry object with the subject details
               return {
                 ...entry,
                 subjectName: subject.subjectName,
@@ -234,6 +236,7 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
               };
             }
           } else if (type === 'free') {
+            // Create a new entry object with the free hour details
             return {
               ...entry,
               subjectName: undefined,
@@ -252,8 +255,10 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
   
   const clearCell = (day: Day, timeSlot: TimeSlot) => {
     setEntries(prevEntries => {
+      // Create a new array with the updated entry
       return prevEntries.map(entry => {
         if (entry.day === day && entry.timeSlot === timeSlot) {
+          // Return a new entry object with cleared fields
           return {
             day,
             timeSlot,
@@ -322,7 +327,7 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
     
     return (
       <div className="p-2">
-        <div className="flex gap-2 mb-2">
+        <div className="flex flex-col gap-2 mb-2">
           <Select 
             onValueChange={(value) => handleCellChange(day, timeSlot, value, 'subject')}
           >
@@ -392,7 +397,7 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
         </div>
         
         {[...timeSlots, '11:10-11:20', '1:00-2:00'].sort((a, b) => {
-          return timeOrder[a] - timeOrder[b];
+          return timeOrder[a as TimeSlot] - timeOrder[b as TimeSlot];
         }).map((timeSlot) => (
           <div key={timeSlot} className="grid grid-cols-[100px_repeat(auto-fill,minmax(120px,1fr))] gap-1 mb-1">
             <div className="p-2 font-medium flex items-center">{timeSlot}</div>
