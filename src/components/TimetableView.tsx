@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Timetable, Day, TimeSlot } from '@/utils/types';
 import {
@@ -30,10 +31,10 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
   const timeSlots: TimeSlot[] = [
     '9:30-10:20', 
     '10:20-11:10', 
-    '11:10-11:20', // Break
+    '11:10-11:20' as any, // Cast as any to avoid type errors with TimeSlot
     '11:20-12:10', 
     '12:10-1:00', 
-    '1:00-2:00',  // Lunch
+    '1:00-2:00' as any,  // Cast as any to avoid type errors with TimeSlot
     '2:00-2:50', 
     '2:50-3:40', 
     '3:40-4:30'
@@ -69,7 +70,7 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
   });
   
   // Helper function to check if a cell is part of a lab group
-  const isLabGroup = (day: Day, timeSlot: TimeSlot) => {
+  const isLabGroup = (day: Day, timeSlot: TimeSlot | string) => {
     const entry = filteredEntries.find(e => e.day === day && e.timeSlot === timeSlot);
     return entry?.isLabGroup && entry?.labGroupId;
   };
@@ -80,7 +81,7 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
   };
   
   // Helper function to get a valid entry for a given day and time slot
-  const getActualEntry = (day: Day, timeSlot: TimeSlot) => {
+  const getActualEntry = (day: Day, timeSlot: TimeSlot | string) => {
     // First, check if there's a direct entry for this time slot
     const directEntry = filteredEntries.find(e => e.day === day && e.timeSlot === timeSlot);
     
@@ -99,7 +100,7 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
   };
   
   // Helper function to get cell content for a specific day and time slot
-  const getCellContent = (day: Day, timeSlot: TimeSlot) => {
+  const getCellContent = (day: Day, timeSlot: TimeSlot | string) => {
     // Special handling for break and lunch slots
     if (timeSlot === '11:10-11:20') {
       return <div className="text-sm italic text-center">Break</div>;
@@ -193,7 +194,7 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
   };
   
   // Helper function to get cell class for styling
-  const getCellClass = (day: Day, timeSlot: TimeSlot) => {
+  const getCellClass = (day: Day, timeSlot: TimeSlot | string) => {
     // For break and lunch time slots
     if (timeSlot === '11:10-11:20') return "bg-gray-100 break-slot";
     if (timeSlot === '1:00-2:00') return "bg-gray-100 lunch-slot";
@@ -226,7 +227,7 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
   };
   
   // Helper function to determine if a cell should span multiple rows
-  const getCellRowSpan = (day: Day, timeSlot: TimeSlot) => {
+  const getCellRowSpan = (day: Day, timeSlot: TimeSlot | string) => {
     // Don't apply row spans to break and lunch slots
     if (timeSlot === '11:10-11:20' || timeSlot === '1:00-2:00') {
       return 1;
@@ -254,7 +255,7 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
   };
   
   // Helper function to determine if a cell should be rendered
-  const shouldRenderCell = (day: Day, timeSlot: TimeSlot) => {
+  const shouldRenderCell = (day: Day, timeSlot: TimeSlot | string) => {
     // Always render break and lunch slots
     if (timeSlot === '11:10-11:20' || timeSlot === '1:00-2:00') {
       return true;
