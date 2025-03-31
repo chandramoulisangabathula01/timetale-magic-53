@@ -8,7 +8,7 @@ import { Timetable } from '@/utils/types';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const EditTimetable = () => {
@@ -93,7 +93,17 @@ const EditTimetable = () => {
   return (
     <DashboardLayout>
       <div className="container mx-auto py-8 px-4">
-        <h1 className="text-2xl font-bold mb-6">Edit Timetable</h1>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">Edit Timetable</h1>
+          <Button 
+            variant="outline" 
+            onClick={() => navigate('/dashboard')}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Dashboard
+          </Button>
+        </div>
         {timetable && <CreateTimetableForm existingTimetable={timetable} initialMode="manual" />}
       </div>
     </DashboardLayout>

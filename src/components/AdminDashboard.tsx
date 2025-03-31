@@ -3,19 +3,51 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, Users, Book, Settings, Edit, Eye, Trash2 } from 'lucide-react';
-import { getTimetables } from '@/utils/timetableUtils';
+import { Calendar, Users, Book, Settings, Edit, Eye, Trash2, AlertTriangle } from 'lucide-react';
+import { getTimetables, deleteTimetable } from '@/utils/timetableUtils';
 import { Timetable } from '@/utils/types';
+import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [timetables, setTimetables] = useState<Timetable[]>([]);
+  const { toast } = useToast();
+  const [timetableToDelete, setTimetableToDelete] = useState<string | null>(null);
   
   useEffect(() => {
     // Load timetables when component mounts
     const loadedTimetables = getTimetables();
     setTimetables(loadedTimetables);
   }, []);
+  
+  const handleDeleteTimetable = (id: string) => {
+    try {
+      deleteTimetable(id);
+      setTimetables(prevTimetables => prevTimetables.filter(t => t.id !== id));
+      toast({
+        title: "Timetable deleted",
+        description: "The timetable has been successfully deleted.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete the timetable. Please try again.",
+        variant: "destructive",
+      });
+    }
+    setTimetableToDelete(null);
+  };
   
   return (
     <div className="space-y-6">
@@ -135,6 +167,39 @@ const AdminDashboard: React.FC = () => {
                           <Edit className="h-3 w-3" />
                           Edit
                         </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="flex items-center gap-1 text-red-500 hover:text-red-700 hover:bg-red-50"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setTimetableToDelete(timetable.id);
+                              }}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                              Delete
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will permanently delete the timetable for {timetable.formData.year}, {timetable.formData.branch}, Semester {timetable.formData.semester}. This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction 
+                                className="bg-red-500 hover:bg-red-600"
+                                onClick={() => handleDeleteTimetable(timetable.id)}
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     </td>
                   </tr>

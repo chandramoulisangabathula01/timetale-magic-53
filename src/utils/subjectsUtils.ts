@@ -10,7 +10,8 @@ export interface SubjectData {
   credits: number;
   isLab: boolean;
   years: YearType[];
-  branches: BranchType[];
+  branches: (BranchType | string)[];
+  customBranches?: string[];
 }
 
 // Get all subjects from local storage
@@ -26,7 +27,8 @@ export const getSubjects = (): Subject[] => {
     credits: subject.credits || 0,
     isLab: subject.isLab || false,
     years: Array.isArray(subject.years) ? subject.years : (subject.year ? [subject.year] : ['1st Year']),
-    branches: Array.isArray(subject.branches) ? subject.branches : (subject.branch ? [subject.branch] : ['CSE'])
+    branches: Array.isArray(subject.branches) ? subject.branches : (subject.branch ? [subject.branch] : ['CSE']),
+    customBranches: Array.isArray(subject.customBranches) ? subject.customBranches : []
   }));
   
   return subjects;
@@ -46,6 +48,16 @@ export const getSubjectById = (id: string): Subject | null => {
 // Add a new subject
 export const addSubject = (subjectData: SubjectData): void => {
   const subjects = getSubjects();
+  
+  // Process custom branches if applicable
+  if (subjectData.branches.includes('Other') && subjectData.customBranches) {
+    // Replace 'Other' with actual custom branch names
+    const otherIndex = subjectData.branches.indexOf('Other');
+    if (otherIndex !== -1) {
+      subjectData.branches.splice(otherIndex, 1, ...subjectData.customBranches);
+    }
+  }
+  
   subjects.push(subjectData as Subject);
   saveSubjects(subjects);
 };
@@ -54,6 +66,16 @@ export const addSubject = (subjectData: SubjectData): void => {
 export const updateSubject = (subjectData: SubjectData): void => {
   const subjects = getSubjects();
   const index = subjects.findIndex(s => s.id === subjectData.id);
+  
+  // Process custom branches if applicable
+  if (subjectData.branches.includes('Other') && subjectData.customBranches) {
+    // Replace 'Other' with actual custom branch names
+    const otherIndex = subjectData.branches.indexOf('Other');
+    if (otherIndex !== -1) {
+      subjectData.branches.splice(otherIndex, 1, ...subjectData.customBranches);
+    }
+  }
+  
   if (index !== -1) {
     subjects[index] = subjectData as Subject;
     saveSubjects(subjects);
@@ -82,7 +104,7 @@ export const deleteSubject = (id: string): void => {
 };
 
 // Get subjects filtered by year and branch
-export const getFilteredSubjects = (year: YearType, branch: BranchType): Subject[] => {
+export const getFilteredSubjects = (year: YearType, branch: BranchType | string): Subject[] => {
   const subjects = getSubjects();
   // Safely filter subjects with proper checks
   return subjects.filter(subject => {
@@ -93,7 +115,8 @@ export const getFilteredSubjects = (year: YearType, branch: BranchType): Subject
            subject.branches && 
            Array.isArray(subject.branches) && 
            subject.years.includes(year) && 
-           subject.branches.includes(branch);
+           (subject.branches.includes(branch as BranchType) || 
+            subject.branches.some(b => b === branch));
   });
 };
 
@@ -182,4 +205,22 @@ export const initializeDefaultSubjects = (): void => {
     
     saveSubjects(defaultSubjects);
   }
+};
+
+// Get all unique branches from subjects
+export const getAllBranches = (): (BranchType | string)[] => {
+  const subjects = getSubjects();
+  const branchSet = new Set<string>();
+  
+  // Collect all branch values
+  subjects.forEach(subject => {
+    if (Array.isArray(subject.branches)) {
+      subject.branches.forEach(branch => {
+        branchSet.add(branch);
+      });
+    }
+  });
+  
+  // Convert to array and sort
+  return Array.from(branchSet).sort();
 };
