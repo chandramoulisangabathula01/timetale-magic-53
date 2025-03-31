@@ -1,3 +1,4 @@
+
 import { v4 as uuidv4 } from 'uuid';
 import { 
   Timetable, 
@@ -151,22 +152,36 @@ const organizeLabsForBatchRotation = (
     return [];
   }
   
+  console.log("Organizing labs for batch rotation with subjects:", labSubjects);
+  
   // Group lab subjects by batch
   const batch1Labs = labSubjects.filter(lab => lab.batchNumber === 'B1');
   const batch2Labs = labSubjects.filter(lab => lab.batchNumber === 'B2');
   
+  console.log("B1 Labs:", batch1Labs);
+  console.log("B2 Labs:", batch2Labs);
+  
   // Create matched lab pairs
   const labPairs: LabBatchPair[] = [];
   
-  // Find matching lab pairs (same subject name but different batches)
+  // Find matching lab pairs with different teachers
+  // We'll try to match labs with the same subject name first
+  const matchedB1Labs = new Set<string>();
+  const matchedB2Labs = new Set<string>();
+  
+  // First pass - try to match exact same subject names across batches
   for (const b1Lab of batch1Labs) {
-    // Find corresponding B2 batch for the same subject
+    // Find a B2 lab with the same subject name
     const matchingB2Lab = batch2Labs.find(b2Lab => 
-      b2Lab.subjectName.toLowerCase().replace(' lab', '') === 
-      b1Lab.subjectName.toLowerCase().replace(' lab', '')
+      b2Lab.subjectName.toLowerCase() === b1Lab.subjectName.toLowerCase() &&
+      !matchedB2Labs.has(b2Lab.id)
     );
     
     if (matchingB2Lab) {
+      // Mark these labs as matched
+      matchedB1Labs.add(b1Lab.id);
+      matchedB2Labs.add(matchingB2Lab.id);
+      
       // Find available days for lab rotation
       const availableDays = days.filter(day => day !== 'Saturday'); // Skip Saturday for labs
       
@@ -175,10 +190,10 @@ const organizeLabsForBatchRotation = (
         const day1 = availableDays[0];
         const day2 = availableDays[1];
         
-        // Randomly select a lab time slot
-        const timeSlot = allowedLabTimeSlots[Math.floor(Math.random() * allowedLabTimeSlots.length)] as TimeSlot;
+        // We need to use the first lab slot for now
+        const timeSlot = allowedLabTimeSlots[0] as TimeSlot;
         
-        // Create the first lab pair
+        // Create the first lab pair (day 1)
         labPairs.push({
           day: day1,
           timeSlot,
@@ -195,7 +210,7 @@ const organizeLabsForBatchRotation = (
           labGroupId: uuidv4()
         });
         
-        // Create the second lab pair with batches swapped
+        // Create the second lab pair (day 2) with batches swapped
         labPairs.push({
           day: day2,
           timeSlot,
@@ -215,6 +230,63 @@ const organizeLabsForBatchRotation = (
     }
   }
   
+  // Second pass - try to match any remaining unmatched labs
+  // If we still have unmatched B1 and B2 labs, we'll pair them regardless of subject name
+  const unmatchedB1Labs = batch1Labs.filter(lab => !matchedB1Labs.has(lab.id));
+  const unmatchedB2Labs = batch2Labs.filter(lab => !matchedB2Labs.has(lab.id));
+  
+  for (let i = 0; i < Math.min(unmatchedB1Labs.length, unmatchedB2Labs.length); i++) {
+    const b1Lab = unmatchedB1Labs[i];
+    const b2Lab = unmatchedB2Labs[i];
+    
+    // Find available days for lab rotation
+    const availableDays = days.filter(day => day !== 'Saturday'); // Skip Saturday for labs
+    
+    if (availableDays.length >= 2) {
+      // Use the first two available days for rotation
+      const day1 = availableDays[0];
+      const day2 = availableDays[1];
+      
+      // We need to use the first lab slot for now
+      const timeSlot = allowedLabTimeSlots[0] as TimeSlot;
+      
+      // Create the first lab pair (day 1)
+      labPairs.push({
+        day: day1,
+        timeSlot,
+        batch1: {
+          subjectName: b1Lab.subjectName,
+          teacherName: b1Lab.teacherName,
+          batchNumber: 'B1'
+        },
+        batch2: {
+          subjectName: b2Lab.subjectName,
+          teacherName: b2Lab.teacherName,
+          batchNumber: 'B2'
+        },
+        labGroupId: uuidv4()
+      });
+      
+      // Create the second lab pair (day 2) with batches swapped
+      labPairs.push({
+        day: day2,
+        timeSlot,
+        batch1: {
+          subjectName: b2Lab.subjectName,
+          teacherName: b2Lab.teacherName,
+          batchNumber: 'B1'
+        },
+        batch2: {
+          subjectName: b1Lab.subjectName,
+          teacherName: b1Lab.teacherName,
+          batchNumber: 'B2'
+        },
+        labGroupId: uuidv4()
+      });
+    }
+  }
+  
+  console.log("Generated lab pairs:", labPairs);
   return labPairs;
 };
 
@@ -262,6 +334,9 @@ export const generateTimetable = (formData: TimetableFormData): Timetable => {
   
   // Get lab subjects
   const labSubjects = formData.subjectTeacherPairs.filter(pair => pair.isLab);
+  
+  console.log("Non-lab subjects:", nonLabSubjects);
+  console.log("Lab subjects:", labSubjects);
   
   // Utility function to check if a slot is already filled
   const isSlotFilled = (day: Day, timeSlot: TimeSlot): boolean => {
@@ -323,21 +398,32 @@ export const generateTimetable = (formData: TimetableFormData): Timetable => {
     
     // Add the batch rotation lab entries
     for (const labPair of labBatchPairs) {
-      // Create a single entry that represents both batches in the same time slot
-      const labEntry: TimetableEntry = {
-        day: labPair.day,
-        timeSlot: labPair.timeSlot,
-        isLab: true,
-        isLabGroup: true,
-        labGroupId: labPair.labGroupId,
-        isBatchRotationLab: true,
-        batch1Subject: labPair.batch1.subjectName,
-        batch1Teacher: labPair.batch1.teacherName,
-        batch2Subject: labPair.batch2.subjectName,
-        batch2Teacher: labPair.batch2.teacherName
-      };
+      // Determine appropriate time slots based on the merged time slot
+      let individualTimeSlots: TimeSlot[] = [];
       
-      entries.push(labEntry);
+      if (labPair.timeSlot === '10:20-1:00') {
+        individualTimeSlots = ['10:20-11:10', '11:20-12:10', '12:10-1:00'] as TimeSlot[];
+      } else if (labPair.timeSlot === '2:00-4:30') {
+        individualTimeSlots = ['2:00-2:50', '2:50-3:40', '3:40-4:30'] as TimeSlot[];
+      }
+      
+      // Create a batch rotation lab entry for each individual time slot
+      for (const timeSlot of individualTimeSlots) {
+        const labEntry: TimetableEntry = {
+          day: labPair.day,
+          timeSlot,
+          isLab: true,
+          isLabGroup: true,
+          labGroupId: labPair.labGroupId,
+          isBatchRotationLab: true,
+          batch1Subject: labPair.batch1.subjectName,
+          batch1Teacher: labPair.batch1.teacherName,
+          batch2Subject: labPair.batch2.subjectName,
+          batch2Teacher: labPair.batch2.teacherName
+        };
+        
+        entries.push(labEntry);
+      }
     }
     
     // Mark the processed lab subjects as allocated
@@ -495,12 +581,43 @@ export const generateTimetable = (formData: TimetableFormData): Timetable => {
       
       // If not allocated in morning, try afternoon slots (2:00-4:30)
       if (!allocated) {
-        // ... keep existing code for allocating labs in the afternoon slots
-      }
-      
-      // If still not allocated, try to find any available consecutive slots
-      if (!allocated) {
-        // ... keep existing code for finding any available consecutive slots
+        for (const day of days) {
+          // Skip Saturday for lab allocation
+          if (day === 'Saturday') continue;
+          
+          // Check if afternoon slots are available
+          const afternoonSlotsFree = !isSlotFilled(day, '2:00-2:50') && 
+                                    !isSlotFilled(day, '2:50-3:40') && 
+                                    !isSlotFilled(day, '3:40-4:30');
+          
+          // Check if teacher is available for all these slots
+          const teacherAvailable = isTeacherAvailable(labSubject.teacherName, day, '2:00-2:50') &&
+                                  isTeacherAvailable(labSubject.teacherName, day, '2:50-3:40') &&
+                                  isTeacherAvailable(labSubject.teacherName, day, '3:40-4:30');
+          
+          if (afternoonSlotsFree && teacherAvailable) {
+            // Create a lab group ID to associate these entries
+            const labGroupId = uuidv4();
+            
+            // Allocate the lab in merged slots from 2:00 to 4:30
+            const afternoonLabSlots: TimeSlot[] = ['2:00-2:50', '2:50-3:40', '3:40-4:30'];
+            afternoonLabSlots.forEach(timeSlot => {
+              entries.push({
+                day,
+                timeSlot,
+                subjectName: labSubject.subjectName,
+                teacherName: labSubject.teacherName,
+                isLab: true,
+                batchNumber: labSubject.batchNumber,
+                isLabGroup: true,
+                labGroupId
+              });
+            });
+            
+            allocated = true;
+            break;
+          }
+        }
       }
     }
   }
