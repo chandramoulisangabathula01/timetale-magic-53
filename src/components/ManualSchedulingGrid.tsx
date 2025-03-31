@@ -65,8 +65,10 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
   const timeSlots: TimeSlot[] = [
     '9:30-10:20', 
     '10:20-11:10', 
+    '11:10-11:20', // Break
     '11:20-12:10', 
     '12:10-1:00', 
+    '1:00-2:00',  // Lunch
     '2:00-2:50', 
     '2:50-3:40', 
     '3:40-4:30'
@@ -116,36 +118,6 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
             });
           }
         });
-        
-        // Check if break exists for this day
-        const existingBreak = filteredEntries.find(
-          entry => entry.day === day && entry.timeSlot === '11:10-11:20' && entry.isBreak
-        );
-        
-        if (existingBreak) {
-          initialEntries.push(existingBreak);
-        } else {
-          initialEntries.push({
-            day,
-            timeSlot: '11:10-11:20',
-            isBreak: true
-          });
-        }
-        
-        // Check if lunch exists for this day
-        const existingLunch = filteredEntries.find(
-          entry => entry.day === day && entry.timeSlot === '1:00-2:00' && entry.isLunch
-        );
-        
-        if (existingLunch) {
-          initialEntries.push(existingLunch);
-        } else {
-          initialEntries.push({
-            day,
-            timeSlot: '1:00-2:00',
-            isLunch: true
-          });
-        }
       });
       
       setEntries(initialEntries);
@@ -161,18 +133,6 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
           timeSlot,
           // No subject assigned initially
         });
-      });
-      
-      initialEntries.push({
-        day,
-        timeSlot: '11:10-11:20',
-        isBreak: true
-      });
-      
-      initialEntries.push({
-        day,
-        timeSlot: '1:00-2:00',
-        isLunch: true
       });
     });
     
@@ -282,191 +242,150 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
     }
   };
   
-  const clearCell = (day: Day, timeSlot: TimeSlot) => {
-    console.log("Clearing cell:", { day, timeSlot });
-    
+  const handleClearCell = (day: Day, timeSlot: TimeSlot) => {
     setEntries(prevEntries => {
-      const updatedEntries = prevEntries.map(entry => {
+      const newEntries = prevEntries.map(entry => {
         if (entry.day === day && entry.timeSlot === timeSlot) {
           return {
             day,
             timeSlot,
-            // Reset all fields
-            subjectName: undefined,
-            teacherName: undefined,
-            isLab: false,
-            batchNumber: undefined,
-            isFree: false,
-            freeType: undefined
+            // Clear all properties
           };
         }
         return entry;
       });
       
-      // Show success toast for feedback
-      setTimeout(() => {
-        toast({
-          title: "Cell Cleared",
-          description: "The time slot has been cleared.",
-          variant: "default"
-        });
-      }, 100);
+      toast({
+        title: "Cell Cleared",
+        description: "This time slot has been cleared.",
+        variant: "default"
+      });
       
-      return updatedEntries;
+      return newEntries;
     });
   };
   
-  const getCellContent = (day: Day, timeSlot: TimeSlot) => {
-    const entry = entries.find(e => e.day === day && e.timeSlot === timeSlot);
-    
-    if (!entry) return null;
-    
-    if (entry.isBreak) {
-      return <div className="text-center py-2 bg-gray-100 text-sm">Break</div>;
-    }
-    
-    if (entry.isLunch) {
-      return <div className="text-center py-2 bg-gray-100 text-sm">Lunch</div>;
-    }
-    
-    if (entry.subjectName) {
-      return (
-        <div className={`p-2 ${entry.isLab ? 'bg-green-50' : 'bg-blue-50'} rounded`}>
-          <div className="font-medium">{entry.subjectName}</div>
-          <div className="text-xs text-gray-600">{entry.teacherName}</div>
-          {entry.isLab && entry.batchNumber && 
-            <div className="text-xs text-green-600">Batch: {entry.batchNumber}</div>
-          }
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="w-full h-6 text-xs mt-2"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              clearCell(day, timeSlot);
-            }}
-          >
-            Clear
-          </Button>
-        </div>
-      );
-    }
-    
-    if (entry.isFree && entry.freeType) {
-      return (
-        <div className="p-2 bg-gray-50 rounded">
-          <div className="text-sm text-gray-600">{entry.freeType}</div>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="w-full h-6 text-xs mt-2"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              clearCell(day, timeSlot);
-            }}
-          >
-            Clear
-          </Button>
-        </div>
-      );
-    }
-    
-    return (
-      <div className="p-2">
-        <div className="flex flex-col gap-2 mb-2">
-          <Select 
-            onValueChange={(value) => handleCellChange(day, timeSlot, value, 'subject')}
-          >
-            <SelectTrigger className="h-8 text-xs">
-              <SelectValue placeholder="Subject" />
-            </SelectTrigger>
-            <SelectContent>
-              {subjectTeacherPairs.length === 0 ? (
-                <SelectItem value="no-subjects-available" disabled>
-                  No subjects available
-                </SelectItem>
-              ) : (
-                subjectTeacherPairs.map((pair) => (
-                  <SelectItem key={pair.id} value={`${pair.id}|${pair.teacherName}`}>
-                    {pair.subjectName} - {pair.teacherName} {pair.isLab && "(Lab)"}
-                  </SelectItem>
-                ))
-              )}
-            </SelectContent>
-          </Select>
-          
-          <Select 
-            onValueChange={(value) => handleCellChange(day, timeSlot, value, 'free')}
-          >
-            <SelectTrigger className="h-8 text-xs">
-              <SelectValue placeholder="Free" />
-            </SelectTrigger>
-            <SelectContent>
-              {freeHours.length === 0 ? (
-                <SelectItem value="no-free-hours-available" disabled>
-                  No free hours available
-                </SelectItem>
-              ) : (
-                freeHours.map((free, index) => (
-                  <SelectItem 
-                    key={index} 
-                    value={free.type === 'Others' && free.customType ? free.customType : free.type}
-                  >
-                    {free.type === 'Others' && free.customType ? free.customType : free.type}
-                  </SelectItem>
-                ))
-              )}
-            </SelectContent>
-          </Select>
-        </div>
-        
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="w-full h-6 text-xs"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            clearCell(day, timeSlot);
-          }}
-        >
-          Clear
-        </Button>
-      </div>
-    );
+  const getEntry = (day: Day, timeSlot: TimeSlot): TimetableEntry | undefined => {
+    return entries.find(entry => entry.day === day && entry.timeSlot === timeSlot);
+  };
+  
+  const isSpecialTimeSlot = (timeSlot: TimeSlot): boolean => {
+    return timeSlot === '11:10-11:20' || timeSlot === '1:00-2:00';
   };
   
   return (
     <div className="overflow-x-auto">
-      <div className="min-w-[900px]">
-        <div className="grid grid-cols-[100px_repeat(auto-fill,minmax(120px,1fr))] gap-1 mb-4">
-          <div className="p-2 font-medium">Time / Day</div>
-          {days.map((day) => (
-            <div key={day} className="p-2 font-medium text-center">{day}</div>
-          ))}
-        </div>
-        
-        {[...timeSlots, '11:10-11:20', '1:00-2:00'].sort((a, b) => {
-          return timeOrder[a as TimeSlot] - timeOrder[b as TimeSlot];
-        }).map((timeSlot) => (
-          <div key={timeSlot} className="grid grid-cols-[100px_repeat(auto-fill,minmax(120px,1fr))] gap-1 mb-1">
-            <div className="p-2 font-medium flex items-center">{timeSlot}</div>
-            {days.map((day) => (
-              <div key={`${day}-${timeSlot}`} className="border rounded">
-                {getCellContent(day, timeSlot as TimeSlot)}
-              </div>
+      <table className="min-w-full border-collapse border">
+        <thead>
+          <tr className="bg-muted">
+            <th className="border p-2 text-sm font-medium">Time / Day</th>
+            {days.map(day => (
+              <th key={day} className="border p-2 text-sm font-medium">
+                {day}
+              </th>
             ))}
-          </div>
-        ))}
-      </div>
-      
-      <div className="mt-6">
-        <p className="text-sm text-muted-foreground mb-2">
-          Manual scheduling for {year} {branch}. Select subjects or free hours for each cell.
-        </p>
-      </div>
+          </tr>
+        </thead>
+        <tbody>
+          {timeSlots.map((timeSlot) => (
+            <tr 
+              key={timeSlot} 
+              className={`
+                ${timeSlot === '11:10-11:20' ? 'bg-gray-100' : ''} 
+                ${timeSlot === '1:00-2:00' ? 'bg-gray-100' : ''}
+              `}
+            >
+              <td className="border p-2 text-sm font-medium whitespace-nowrap">
+                {timeSlot}
+              </td>
+              {days.map(day => (
+                <td key={`${day}-${timeSlot}`} className="border p-2">
+                  {timeSlot === '11:10-11:20' ? (
+                    <div className="text-center text-sm font-medium text-muted-foreground italic">Break</div>
+                  ) : timeSlot === '1:00-2:00' ? (
+                    <div className="text-center text-sm font-medium text-muted-foreground italic">Lunch</div>
+                  ) : (
+                    <div className="space-y-2">
+                      {/* Display selected subject/free hour */}
+                      {getEntry(day, timeSlot)?.subjectName && (
+                        <div className={`p-1 rounded text-sm ${getEntry(day, timeSlot)?.isLab ? 'bg-green-50' : ''}`}>
+                          <div className="font-medium">{getEntry(day, timeSlot)?.subjectName}</div>
+                          <div className="text-xs text-muted-foreground">{getEntry(day, timeSlot)?.teacherName}</div>
+                          {getEntry(day, timeSlot)?.batchNumber && (
+                            <div className="text-xs text-primary">({getEntry(day, timeSlot)?.batchNumber})</div>
+                          )}
+                        </div>
+                      )}
+                      
+                      {getEntry(day, timeSlot)?.isFree && getEntry(day, timeSlot)?.freeType && (
+                        <div className="p-1 rounded bg-blue-50 text-sm">
+                          <div className="italic text-blue-600">{getEntry(day, timeSlot)?.freeType}</div>
+                        </div>
+                      )}
+                      
+                      {/* Subject dropdown */}
+                      <Select
+                        onValueChange={(value) => handleCellChange(day, timeSlot, value, 'subject')}
+                        value=""
+                      >
+                        <SelectTrigger className="text-xs h-8">
+                          <SelectValue placeholder="Assign subject" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {subjectTeacherPairs.map((pair) => (
+                            <SelectItem key={pair.id} value={`${pair.id}|${pair.teacherName}`}>
+                              {pair.subjectName} ({pair.teacherName})
+                              {pair.isLab && pair.batchNumber && ` (${pair.batchNumber})`}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      
+                      {/* Free hour dropdown */}
+                      <Select
+                        onValueChange={(value) => handleCellChange(day, timeSlot, value, 'free')}
+                        value=""
+                      >
+                        <SelectTrigger className="text-xs h-8">
+                          <SelectValue placeholder="Assign free hour" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {freeHours.map((freeHour, index) => (
+                            <SelectItem 
+                              key={index} 
+                              value={freeHour.type === 'Others' && freeHour.customType 
+                                ? freeHour.customType 
+                                : freeHour.type
+                              }
+                            >
+                              {freeHour.type === 'Others' && freeHour.customType 
+                                ? freeHour.customType 
+                                : freeHour.type
+                              }
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      
+                      {/* Clear button */}
+                      {(getEntry(day, timeSlot)?.subjectName || getEntry(day, timeSlot)?.isFree) && (
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="w-full h-6 text-xs"
+                          onClick={() => handleClearCell(day, timeSlot)}
+                        >
+                          Clear
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 };
