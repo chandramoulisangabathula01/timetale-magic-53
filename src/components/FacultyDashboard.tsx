@@ -1,9 +1,8 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, FileDown, Info } from 'lucide-react';
+import { Calendar, FileDown, Info, Printer } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { getTimetablesForFaculty } from '@/utils/timetableUtils';
 import { Timetable } from '@/utils/types';
@@ -14,6 +13,7 @@ const FacultyDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { username } = useAuth();
   const { toast } = useToast();
+  const printRef = useRef<HTMLDivElement>(null);
   const [timetables, setTimetables] = useState<Timetable[]>([]);
   const [selectedTimetable, setSelectedTimetable] = useState<Timetable | null>(null);
   
@@ -47,9 +47,97 @@ const FacultyDashboard: React.FC = () => {
     setSelectedTimetable(timetable);
   };
   
-  const handleDownloadPDF = () => {
-    // This is a placeholder - in a real app, this would trigger PDF generation
-    window.print();
+  const handlePrint = () => {
+    if (!selectedTimetable || !printRef.current) return;
+    
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      toast({
+        title: "Error",
+        description: "Could not open print window. Please check your popup settings.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Create a simplified and clean printable view
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Faculty Timetable - ${username}</title>
+          <style>
+            @page {
+              size: landscape;
+              margin: 1cm;
+            }
+            body {
+              font-family: Arial, sans-serif;
+              padding: 20px;
+              margin: 0;
+            }
+            .print-header {
+              text-align: center;
+              margin-bottom: 20px;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 20px;
+            }
+            th, td {
+              border: 1px solid #000;
+              padding: 8px;
+              text-align: center;
+            }
+            th {
+              background-color: #f2f2f2;
+              font-weight: bold;
+            }
+            .break-slot, .lunch-slot {
+              background-color: #f5f5f5;
+              font-style: italic;
+            }
+            .free-slot {
+              background-color: #e6f7ff;
+            }
+            .lab-slot {
+              background-color: #e6ffe6;
+              font-weight: 500;
+            }
+            .print-button {
+              display: block;
+              margin: 20px auto;
+              padding: 8px 16px;
+              background-color: #4f46e5;
+              color: white;
+              border: none;
+              border-radius: 4px;
+              cursor: pointer;
+            }
+            @media print {
+              .print-button {
+                display: none;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="print-header">
+            <h2>Faculty Timetable</h2>
+            <p>Faculty: ${username}</p>
+            <p>${selectedTimetable.formData.academicYear}</p>
+          </div>
+
+          ${printRef.current.innerHTML}
+          
+          <button class="print-button" onclick="window.print(); setTimeout(() => window.close(), 500);">
+            Print Timetable
+          </button>
+        </body>
+      </html>
+    `);
+    
+    printWindow.document.close();
   };
   
   return (
@@ -121,14 +209,14 @@ const FacultyDashboard: React.FC = () => {
                     variant="outline" 
                     size="sm"
                     className="flex items-center gap-1"
-                    onClick={handleDownloadPDF}
+                    onClick={handlePrint}
                   >
-                    <FileDown className="h-4 w-4" />
-                    Download PDF
+                    <Printer className="h-4 w-4" />
+                    Print Timetable
                   </Button>
                 </div>
                 
-                <div className="border rounded-lg p-4 print:border-none">
+                <div className="border rounded-lg p-4 print:border-none" ref={printRef}>
                   <div className="mb-4 print:mb-6">
                     <h3 className="font-bold text-center text-lg">
                       {selectedTimetable.formData.courseName} - {selectedTimetable.formData.year} - {selectedTimetable.formData.branch} - Semester {selectedTimetable.formData.semester}

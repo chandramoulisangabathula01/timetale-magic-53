@@ -25,9 +25,10 @@ The College Timetable Management System is a comprehensive web application desig
 - **Conflict Detection**: Automatically detect and prevent faculty scheduling conflicts
 - **Multiple User Roles**: Admin, Faculty, and Student views with appropriate permissions
 - **Free Period Management**: Designate slots for library, sports, projects, etc.
-- **PDF Export**: Print or download timetables in PDF format
+- **PDF Export**: Print or download timetables in PDF format from any dashboard
 - **Faculty Workload Management**: Track and balance faculty workload
 - **Multi-Department Support**: Create timetables for various departments and years
+- **Custom Branch Management**: Create and assign custom branches for specialized departments
 - **User-Friendly Interface**: Intuitive design with responsive layout
 
 ## Technology Stack
@@ -45,7 +46,7 @@ The College Timetable Management System is a comprehensive web application desig
 
 ### Admin
 - Create, edit, and delete timetables
-- Manage faculty and subjects
+- Manage faculty and subjects, including custom branches
 - Override scheduling conflicts
 - Update admin credentials
 - View all timetables
@@ -53,11 +54,11 @@ The College Timetable Management System is a comprehensive web application desig
 ### Faculty
 - View assigned classes and schedules
 - View personal timetable filtered by faculty name
-- Download timetable as PDF
+- Print personalized timetable with clean formatting
 
 ### Student
 - View class timetable based on year, branch, and semester
-- Download timetable as PDF
+- Print class timetable with appropriate formatting
 
 ## System Modules
 
@@ -95,7 +96,7 @@ Administrators can add, edit, and delete faculty records, including:
 ### Subject Management
 The subject management module allows administrators to:
 - Add new subjects with credit hours
-- Assign subjects to specific years and branches
+- Assign subjects to specific years and branches, including custom branches
 - Mark subjects as theory or lab
 - Map subjects to qualified faculty members
 
@@ -125,12 +126,12 @@ For fine-tuning, the system provides a grid interface where administrators can:
 - Manually resolve conflicts
 - Clear individual slots
 
-### Lab Sessions
-Lab sessions require special handling:
-- Multiple continuous periods (typically 3-4)
-- Batch assignments
-- Specific lab room allocation
-- Special display in the timetable view
+### Printing and Exporting
+Each user role has access to specialized printing functionality:
+- Faculty can print their personalized teaching schedule
+- Students can print their class timetable
+- Admins can print any timetable with complete details
+- All printed timetables are formatted for clean and professional presentation
 
 ## Database Structure
 
@@ -185,7 +186,7 @@ interface TimetableEntry {
 6. **Generate/Schedule**: Either auto-generate or manually schedule
 7. **Review and Adjust**: Fine-tune the timetable as needed
 8. **Save Timetable**: Store the completed timetable
-9. **Student/Faculty Access**: Users can view relevant timetables
+9. **Student/Faculty Access**: Users can view and print relevant timetables
 
 ## Installation and Setup
 

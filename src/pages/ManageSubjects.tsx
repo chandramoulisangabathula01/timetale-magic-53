@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -36,9 +35,9 @@ const ManageSubjects = () => {
   const [subjectYear, setSubjectYear] = useState<YearType>('1st Year');
   const [subjectBranch, setSubjectBranch] = useState<BranchType>('CSE');
   const [customBranch, setCustomBranch] = useState<string>('');
+  const [editCustomBranch, setEditCustomBranch] = useState<string>('');
   
   useEffect(() => {
-    // Make sure we have default subjects
     initializeDefaultSubjects();
     
     if (!isAuthenticated) {
@@ -51,12 +50,10 @@ const ManageSubjects = () => {
       return;
     }
     
-    // Load subjects from storage
     setSubjects(getSubjects());
   }, [isAuthenticated, userRole, navigate]);
   
   useEffect(() => {
-    // Apply filters
     let filtered = [...subjects];
     
     if (filterYear !== 'all') {
@@ -94,7 +91,6 @@ const ManageSubjects = () => {
       return;
     }
     
-    // Check for duplicate subject name in the same year and branch
     const branchToCheck = subjectBranch === 'Other' ? customBranch : subjectBranch;
     
     const isDuplicate = subjects.some(
@@ -126,10 +122,8 @@ const ManageSubjects = () => {
       isLab: newSubject.toLowerCase().includes('lab')
     };
     
-    // Add subject to storage
     addSubject(newSubjectData);
     
-    // Update state
     setSubjects(getSubjects());
     setNewSubject('');
     setCustomBranch('');
@@ -150,50 +144,56 @@ const ManageSubjects = () => {
       return;
     }
     
-    // Check for duplicate subject name in the same year and branch
+    const finalEditingSubject = { ...editingSubject };
+    
+    if (editingSubject.branches && editingSubject.branches[0] === 'Other') {
+      finalEditingSubject.branches = [];
+      finalEditingSubject.customBranch = editCustomBranch;
+    } else if (editingSubject.customBranch && (!editingSubject.branches || editingSubject.branches.length === 0)) {
+    } else {
+      finalEditingSubject.customBranch = undefined;
+    }
+    
     const isDuplicate = subjects.some(
       subject => 
-        subject.id !== editingSubject.id &&
-        subject.name.toLowerCase() === editingSubject.name.toLowerCase() && 
+        subject.id !== finalEditingSubject.id &&
+        subject.name.toLowerCase() === finalEditingSubject.name.toLowerCase() && 
         subject.years &&
         Array.isArray(subject.years) &&
-        editingSubject.years &&
-        Array.isArray(editingSubject.years) &&
-        subject.years.some(y => editingSubject.years.includes(y)) && 
+        finalEditingSubject.years &&
+        Array.isArray(finalEditingSubject.years) &&
+        subject.years.some(y => finalEditingSubject.years.includes(y)) && 
         ((subject.branches && Array.isArray(subject.branches) &&
-         editingSubject.branches && Array.isArray(editingSubject.branches) &&
-         subject.branches.some(b => editingSubject.branches.includes(b))) ||
-         (subject.customBranch === editingSubject.customBranch &&
+         finalEditingSubject.branches && Array.isArray(finalEditingSubject.branches) &&
+         subject.branches.some(b => finalEditingSubject.branches.includes(b))) ||
+         (subject.customBranch === finalEditingSubject.customBranch &&
           subject.customBranch !== undefined))
     );
     
     if (isDuplicate) {
       toast({
         title: "Duplicate subject",
-        description: `"${editingSubject.name}" already exists for the selected years and branches`,
+        description: `"${finalEditingSubject.name}" already exists for the selected years and branches`,
         variant: "destructive",
       });
       return;
     }
     
-    // Update subject in storage
-    updateSubject(editingSubject);
+    updateSubject(finalEditingSubject);
     
-    // Update state
     setSubjects(getSubjects());
     setEditingSubject(null);
+    setEditCustomBranch('');
     
     toast({
       title: "Subject updated",
-      description: `"${editingSubject.name}" has been updated successfully`,
+      description: `"${finalEditingSubject.name}" has been updated successfully`,
     });
   };
   
   const handleDeleteSubject = (id: string) => {
-    // Delete subject from storage
     deleteSubject(id);
     
-    // Update state
     setSubjects(getSubjects());
     
     toast({
@@ -204,10 +204,17 @@ const ManageSubjects = () => {
   
   const handleEditSubject = (subject: SubjectData) => {
     setEditingSubject(subject);
+    
+    if (subject.customBranch) {
+      setEditCustomBranch(subject.customBranch);
+    } else {
+      setEditCustomBranch('');
+    }
   };
   
   const handleCancelEdit = () => {
     setEditingSubject(null);
+    setEditCustomBranch('');
   };
   
   return (
@@ -417,11 +424,25 @@ const ManageSubjects = () => {
                               <div className="space-y-2">
                                 <Label htmlFor={`edit-branch-${subject.id}`}>Branch</Label>
                                 <Select 
-                                  value={editingSubject.branches && editingSubject.branches.length > 0 ? editingSubject.branches[0] : 'CSE'} 
-                                  onValueChange={(value) => setEditingSubject({
-                                    ...editingSubject,
-                                    branches: [value as BranchType]
-                                  })}
+                                  value={
+                                    subject.customBranch ? 'Other' : 
+                                    (editingSubject.branches && editingSubject.branches.length > 0 ? 
+                                      editingSubject.branches[0] : 'CSE')
+                                  } 
+                                  onValueChange={(value) => {
+                                    if (value === 'Other') {
+                                      setEditingSubject({
+                                        ...editingSubject,
+                                        branches: ['Other']
+                                      });
+                                    } else {
+                                      setEditingSubject({
+                                        ...editingSubject,
+                                        branches: [value as BranchType],
+                                        customBranch: undefined
+                                      });
+                                    }
+                                  }}
                                 >
                                   <SelectTrigger id={`edit-branch-${subject.id}`}>
                                     <SelectValue />
@@ -433,11 +454,23 @@ const ManageSubjects = () => {
                                     <SelectItem value="EEE">EEE</SelectItem>
                                     <SelectItem value="CSD">CSD</SelectItem>
                                     <SelectItem value="AI & ML">AI & ML</SelectItem>
-                                    <SelectItem value="Other">Other</SelectItem>
+                                    <SelectItem value="Other">Custom Branch</SelectItem>
                                   </SelectContent>
                                 </Select>
                               </div>
                             </div>
+                            
+                            {editingSubject.branches && editingSubject.branches[0] === 'Other' && (
+                              <div className="space-y-2">
+                                <Label htmlFor={`edit-custom-branch-${subject.id}`}>Custom Branch Name</Label>
+                                <Input
+                                  id={`edit-custom-branch-${subject.id}`}
+                                  value={editCustomBranch}
+                                  onChange={(e) => setEditCustomBranch(e.target.value)}
+                                  placeholder="e.g., MECH, AERO, BIOTECH"
+                                />
+                              </div>
+                            )}
                             
                             <div className="flex justify-end gap-2 mt-2">
                               <Button 

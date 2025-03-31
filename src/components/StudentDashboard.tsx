@@ -1,16 +1,17 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Search, AlertCircle } from 'lucide-react';
+import { Search, AlertCircle, Printer } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { filterTimetables, getTimetables } from '@/utils/timetableUtils';
+import { filterTimetables } from '@/utils/timetableUtils';
 import { Timetable, YearType, BranchType, SemesterType } from '@/utils/types';
 import TimetableView from './TimetableView';
-import TimetableDownloadButton from './timetable/TimetableDownloadButton';
+import { useToast } from '@/hooks/use-toast';
 
 const StudentDashboard: React.FC = () => {
   const { studentFilters } = useAuth();
+  const { toast } = useToast();
   const [timetable, setTimetable] = useState<Timetable | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const printRef = useRef<HTMLDivElement>(null);
@@ -33,6 +34,124 @@ const StudentDashboard: React.FC = () => {
       setLoading(false);
     }
   }, [studentFilters]);
+
+  const handlePrint = () => {
+    if (!timetable || !printRef.current) return;
+    
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      toast({
+        title: "Error",
+        description: "Could not open print window. Please check your popup settings.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Create a simplified and clean printable view
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Class Timetable - ${timetable.formData.year} ${timetable.formData.branch}</title>
+          <style>
+            @page {
+              size: landscape;
+              margin: 1cm;
+            }
+            body {
+              font-family: Arial, sans-serif;
+              padding: 20px;
+              margin: 0;
+            }
+            .print-header {
+              text-align: center;
+              margin-bottom: 20px;
+            }
+            .logo-container {
+              text-align: center;
+              margin-bottom: 10px;
+            }
+            .logo {
+              width: 80px;
+              height: 80px;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 20px;
+            }
+            th, td {
+              border: 1px solid #000;
+              padding: 8px;
+              text-align: center;
+            }
+            th {
+              background-color: #f2f2f2;
+              font-weight: bold;
+            }
+            .break-slot, .lunch-slot {
+              background-color: #f5f5f5;
+              font-style: italic;
+            }
+            .free-slot {
+              background-color: #e6f7ff;
+            }
+            .lab-slot {
+              background-color: #e6ffe6;
+              font-weight: 500;
+            }
+            .details-row {
+              display: flex;
+              justify-content: space-between;
+              margin-bottom: 10px;
+            }
+            .faculty-details {
+              margin-top: 20px;
+              border-top: 1px solid #ddd;
+              padding-top: 10px;
+            }
+            .print-button {
+              display: block;
+              margin: 20px auto;
+              padding: 8px 16px;
+              background-color: #4f46e5;
+              color: white;
+              border: none;
+              border-radius: 4px;
+              cursor: pointer;
+            }
+            @media print {
+              .print-button {
+                display: none;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="print-header">
+            <div class="logo-container">
+              <img src="/lovable-uploads/eb4f9a1c-adf2-4f9d-b5b7-86a8c285a2ec.png" class="logo" alt="College Logo">
+            </div>
+            <h2 style="margin-bottom: 5px;">University College of Engineering & Technology</h2>
+            <h3 style="margin-top: 5px; margin-bottom: 10px;">
+              ${timetable.formData.courseName} - ${timetable.formData.year} - ${timetable.formData.branch} - Semester ${timetable.formData.semester}
+            </h3>
+            <p style="margin-top: 0; margin-bottom: 15px;">
+              Academic Year: ${timetable.formData.academicYear} | Room: ${timetable.formData.roomNumber}
+            </p>
+          </div>
+
+          ${printRef.current.innerHTML}
+          
+          <button class="print-button" onclick="window.print(); setTimeout(() => window.close(), 500);">
+            Print Timetable
+          </button>
+        </body>
+      </html>
+    `);
+    
+    printWindow.document.close();
+  };
 
   if (loading) {
     return (
@@ -81,7 +200,15 @@ const StudentDashboard: React.FC = () => {
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <h2 className="text-lg font-medium">Your Class Timetable</h2>
-            {timetable && <TimetableDownloadButton timetable={timetable} />}
+            <Button 
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-1"
+              onClick={handlePrint}
+            >
+              <Printer className="h-4 w-4" />
+              Print Timetable
+            </Button>
           </div>
           
           <div className="border rounded-lg p-4 print:border-none" ref={printRef}>

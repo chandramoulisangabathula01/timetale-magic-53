@@ -39,21 +39,7 @@ const ViewTimetable: React.FC = () => {
           printMode={false}
         />
 
-        {/* Always show faculty details in the timetable view */}
-        <div className="mt-8">
-          <h4 className="font-semibold mb-2">Faculty Details</h4>
-          <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
-            {timetable.formData.subjectTeacherPairs.map((pair) => (
-              <div key={pair.id} className="text-sm">
-                <span className="font-medium">{pair.subjectName}</span>
-                {pair.isLab && <span className="text-xs ml-1">(Lab)</span>}
-                <span> - {pair.teacherName}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-        
-        {/* Include the TimetableFacultyDetails component for print mode only */}
+        {/* Faculty details shown only in the printable view */}
         <TimetableFacultyDetails timetable={timetable} printMode={true} />
       </div>
     </div>
