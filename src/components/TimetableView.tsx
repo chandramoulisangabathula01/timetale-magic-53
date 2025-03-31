@@ -75,19 +75,6 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
       return <div className="italic text-blue-600">{freeType}</div>;
     }
     
-    // For regular subjects
-    if (entry.subjectName && entry.teacherName && !entry.isLabGroup) {
-      return (
-        <div>
-          <div className="font-medium">{entry.subjectName}</div>
-          <div className="text-xs text-muted-foreground">{entry.teacherName}</div>
-          {entry.batchNumber && (
-            <div className="text-xs text-primary">({entry.batchNumber})</div>
-          )}
-        </div>
-      );
-    }
-    
     // For lab rotation display (showing both lab options)
     if (entry.isLabGroup && entry.labGroupId) {
       const labEntries = getLabEntries(entry.labGroupId);
@@ -111,6 +98,17 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
     // For direct lab entries (non-grouped)
     if (entry.isLab) {
       return (
+        <div className="text-sm bg-green-50 p-1 rounded">
+          <div className="font-medium">{entry.subjectName}</div>
+          <div className="text-xs text-muted-foreground">{entry.teacherName}</div>
+          {entry.batchNumber && <div className="text-xs text-primary">({entry.batchNumber})</div>}
+        </div>
+      );
+    }
+    
+    // For regular subjects
+    if (entry.subjectName && entry.teacherName) {
+      return (
         <div>
           <div className="font-medium">{entry.subjectName}</div>
           <div className="text-xs text-muted-foreground">{entry.teacherName}</div>
@@ -124,6 +122,17 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
     // Empty cell
     return null;
   };
+  
+  // Debug function to check if there are lab entries
+  const debugLabEntries = () => {
+    const labEntries = entries.filter(entry => entry.isLab || entry.isLabGroup);
+    console.log('Lab entries found:', labEntries.length, labEntries);
+  };
+  
+  // Call the debug function
+  React.useEffect(() => {
+    debugLabEntries();
+  }, [entries]);
 
   return (
     <div className="overflow-x-auto">
@@ -150,19 +159,23 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
               <td className="border p-2 text-sm font-medium whitespace-nowrap">
                 {timeSlot}
               </td>
-              {visibleDays.map(day => (
-                <td 
-                  key={`${day}-${timeSlot}`} 
-                  className={`
-                    border p-2 text-center 
-                    ${getEntry(day, timeSlot)?.isLab ? 'bg-green-50' : ''}
-                    ${getEntry(day, timeSlot)?.isLabGroup ? 'bg-green-50' : ''}
-                    ${getEntry(day, timeSlot)?.isFree ? 'bg-blue-50' : ''}
-                  `}
-                >
-                  {renderCellContent(day, timeSlot)}
-                </td>
-              ))}
+              {visibleDays.map(day => {
+                const entry = getEntry(day, timeSlot);
+                
+                return (
+                  <td 
+                    key={`${day}-${timeSlot}`} 
+                    className={`
+                      border p-2 text-center 
+                      ${entry?.isLab ? 'bg-green-50' : ''}
+                      ${entry?.isLabGroup ? 'bg-green-50' : ''}
+                      ${entry?.isFree ? 'bg-blue-50' : ''}
+                    `}
+                  >
+                    {renderCellContent(day, timeSlot)}
+                  </td>
+                );
+              })}
             </tr>
           ))}
         </tbody>
