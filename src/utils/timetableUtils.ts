@@ -1,3 +1,4 @@
+
 import { v4 as uuidv4 } from 'uuid';
 import { 
   Timetable, 
@@ -6,7 +7,10 @@ import {
   Day, 
   TimeSlot, 
   FreeHourType,
-  SubjectTeacherPair 
+  SubjectTeacherPair,
+  YearType,
+  BranchType,
+  SemesterType
 } from './types';
 
 // Get all timetables from localStorage
