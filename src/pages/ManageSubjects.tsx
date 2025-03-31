@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -67,9 +66,8 @@ const ManageSubjects = () => {
     
     if (filterBranch !== 'all') {
       filtered = filtered.filter(subject => 
-        subject.branches && Array.isArray(subject.branches) && 
-        (subject.branches.includes(filterBranch as BranchType) || 
-         (filterBranch === 'Other' && subject.customBranch))
+        (subject.branches && Array.isArray(subject.branches) && subject.branches.includes(filterBranch as BranchType)) ||
+        (filterBranch === 'Other' && subject.customBranch)
       );
     }
     
@@ -137,7 +135,7 @@ const ManageSubjects = () => {
     
     toast({
       title: "Subject added",
-      description: `"${newSubject}" has been added successfully`,
+      description: `"${newSubject}" has been added successfully",
     });
   };
   
@@ -186,7 +184,7 @@ const ManageSubjects = () => {
     
     toast({
       title: "Subject updated",
-      description: `"${editingSubject.name}" has been updated successfully`,
+      description: `"${editingSubject.name}" has been updated successfully",
     });
   };
   
@@ -463,7 +461,9 @@ const ManageSubjects = () => {
                               <div className="font-medium">{subject.name}</div>
                               <div className="text-sm text-muted-foreground">
                                 {subject.years && subject.years.length > 0 ? subject.years[0] : 'N/A'}, 
-                                {subject.branches && subject.branches.length > 0 ? subject.branches[0] : 'N/A'}
+                                {subject.branches && subject.branches.length > 0 
+                                  ? subject.branches[0] 
+                                  : (subject.customBranch ? subject.customBranch : 'N/A')}
                                 {subject.isLab && <span className="ml-2 text-primary">Lab</span>}
                               </div>
                             </div>

@@ -1,214 +1,264 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Calendar, Users, Book, Settings, Edit, Eye, Trash2, AlertTriangle } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Plus, FileDown, Edit, Trash2, AlertCircle } from 'lucide-react';
 import { getTimetables, deleteTimetable } from '@/utils/timetableUtils';
-import { Timetable } from '@/utils/types';
+import { Timetable, YearType, BranchType, SemesterType } from '@/utils/types';
 import { useToast } from '@/hooks/use-toast';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import TimetableDownloadButton from './timetable/TimetableDownloadButton';
 
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const [timetables, setTimetables] = useState<Timetable[]>([]);
   const { toast } = useToast();
-  const [timetableToDelete, setTimetableToDelete] = useState<string | null>(null);
+  
+  const [timetables, setTimetables] = useState<Timetable[]>([]);
+  const [filterYear, setFilterYear] = useState<string>('all');
+  const [filterBranch, setFilterBranch] = useState<string>('all');
+  const [filterSemester, setFilterSemester] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [filteredTimetables, setFilteredTimetables] = useState<Timetable[]>([]);
   
   useEffect(() => {
-    // Load timetables when component mounts
+    // Load timetables
     const loadedTimetables = getTimetables();
     setTimetables(loadedTimetables);
   }, []);
   
-  const handleDeleteTimetable = (id: string) => {
-    try {
-      deleteTimetable(id);
-      setTimetables(prevTimetables => prevTimetables.filter(t => t.id !== id));
-      toast({
-        title: "Timetable deleted",
-        description: "The timetable has been successfully deleted.",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete the timetable. Please try again.",
-        variant: "destructive",
-      });
+  useEffect(() => {
+    // Apply filters
+    let filtered = [...timetables];
+    
+    if (filterYear !== 'all') {
+      filtered = filtered.filter(t => t.formData.year === filterYear);
     }
-    setTimetableToDelete(null);
+    
+    if (filterBranch !== 'all') {
+      filtered = filtered.filter(t => t.formData.branch === filterBranch);
+    }
+    
+    if (filterSemester !== 'all') {
+      filtered = filtered.filter(t => t.formData.semester === filterSemester);
+    }
+    
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(t => 
+        t.formData.branch.toLowerCase().includes(query) || 
+        t.formData.year.toLowerCase().includes(query) ||
+        t.formData.academicYear.toLowerCase().includes(query) ||
+        t.formData.classInchargeName.toLowerCase().includes(query)
+      );
+    }
+    
+    // Sort by creation date (newest first)
+    filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    
+    setFilteredTimetables(filtered);
+  }, [timetables, filterYear, filterBranch, filterSemester, searchQuery]);
+  
+  const handleDeleteTimetable = (id: string) => {
+    deleteTimetable(id);
+    setTimetables(getTimetables());
+    
+    toast({
+      title: "Timetable deleted",
+      description: "The timetable has been permanently deleted.",
+    });
   };
   
+  const navigateToCreateTimetable = () => {
+    navigate('/create-timetable');
+  };
+  
+  const navigateToEditTimetable = (id: string) => {
+    navigate(`/edit-timetable/${id}`);
+  };
+  
+  const navigateToViewTimetable = (id: string) => {
+    navigate(`/view-timetable/${id}`);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+        <Button onClick={navigateToCreateTimetable} className="flex items-center gap-2">
+          <Plus className="h-4 w-4" />
+          Create New Timetable
+        </Button>
       </div>
       
-      <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-        <Card className="cursor-pointer hover:shadow-md transition-shadow duration-200" onClick={() => navigate('/create-timetable')}>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 mr-2" />
-              Create Timetable
-            </CardTitle>
-            <CardDescription>Generate a new timetable for a class.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Quickly create a timetable for any year, branch, and semester.
-            </p>
-          </CardContent>
-        </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Manage System</CardTitle>
+          <CardDescription>Access admin controls to manage the timetable system</CardDescription>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Button variant="outline" className="h-24 flex flex-col items-center justify-center gap-2" onClick={() => navigate('/manage-subjects')}>
+            <div className="text-lg font-medium">Manage Subjects</div>
+            <div className="text-xs text-muted-foreground">Add, edit and delete subjects</div>
+          </Button>
+          
+          <Button variant="outline" className="h-24 flex flex-col items-center justify-center gap-2" onClick={() => navigate('/manage-faculty')}>
+            <div className="text-lg font-medium">Manage Faculty</div>
+            <div className="text-xs text-muted-foreground">Add, edit and delete faculty members</div>
+          </Button>
+          
+          <Button variant="outline" className="h-24 flex flex-col items-center justify-center gap-2" onClick={() => navigate('/admin-settings')}>
+            <div className="text-lg font-medium">Settings</div>
+            <div className="text-xs text-muted-foreground">Configure system settings</div>
+          </Button>
+        </CardContent>
+      </Card>
+
+      <div>
+        <h2 className="text-xl font-semibold mb-4">Available Timetables</h2>
         
-        <Card className="cursor-pointer hover:shadow-md transition-shadow duration-200" onClick={() => navigate('/manage-faculty')}>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-4 w-4 mr-2" />
-              Manage Faculty
-            </CardTitle>
-            <CardDescription>Add, edit, or remove faculty members.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Manage faculty details, departments, and assigned subjects.
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card className="cursor-pointer hover:shadow-md transition-shadow duration-200" onClick={() => navigate('/manage-subjects')}>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Book className="h-4 w-4 mr-2" />
-              Manage Subjects
-            </CardTitle>
-            <CardDescription>Add, edit, or remove subjects.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Maintain a comprehensive list of subjects and their details.
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card className="cursor-pointer hover:shadow-md transition-shadow duration-200" onClick={() => navigate('/admin-settings')}>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Settings className="h-4 w-4 mr-2" />
-              Admin Settings
-            </CardTitle>
-            <CardDescription>Change username and password.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Update your admin credentials.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-      
-      {/* Available Timetables Section */}
-      {timetables.length > 0 && (
-        <div className="mt-8">
-          <h2 className="text-xl font-semibold mb-4">Available Timetables</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse border rounded-md">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="p-2 text-left border">Year</th>
-                  <th className="p-2 text-left border">Branch</th>
-                  <th className="p-2 text-left border">Semester</th>
-                  <th className="p-2 text-left border">Room</th>
-                  <th className="p-2 text-left border">Academic Year</th>
-                  <th className="p-2 text-left border">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {timetables.map(timetable => (
-                  <tr key={timetable.id} className="border-b hover:bg-gray-50">
-                    <td className="p-2 border">{timetable.formData.year}</td>
-                    <td className="p-2 border">{timetable.formData.branch}</td>
-                    <td className="p-2 border">{timetable.formData.semester}</td>
-                    <td className="p-2 border">{timetable.formData.roomNumber}</td>
-                    <td className="p-2 border">{timetable.formData.academicYear}</td>
-                    <td className="p-2 border">
-                      <div className="flex space-x-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="flex items-center gap-1"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/view-timetable/${timetable.id}`);
-                          }}
-                        >
-                          <Eye className="h-3 w-3" />
-                          View
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="flex items-center gap-1"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/edit-timetable/${timetable.id}`);
-                          }}
-                        >
-                          <Edit className="h-3 w-3" />
-                          Edit
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="flex items-center gap-1 text-red-500 hover:text-red-700 hover:bg-red-50"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setTimetableToDelete(timetable.id);
-                              }}
-                            >
-                              <Trash2 className="h-3 w-3" />
-                              Delete
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This will permanently delete the timetable for {timetable.formData.year}, {timetable.formData.branch}, Semester {timetable.formData.semester}. This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction 
-                                className="bg-red-500 hover:bg-red-600"
-                                onClick={() => handleDeleteTimetable(timetable.id)}
-                              >
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <Select value={filterYear} onValueChange={setFilterYear}>
+            <SelectTrigger>
+              <SelectValue placeholder="Filter by Year" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Years</SelectItem>
+              <SelectItem value="1st Year">1st Year</SelectItem>
+              <SelectItem value="2nd Year">2nd Year</SelectItem>
+              <SelectItem value="3rd Year">3rd Year</SelectItem>
+              <SelectItem value="4th Year">4th Year</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          <Select value={filterBranch} onValueChange={setFilterBranch}>
+            <SelectTrigger>
+              <SelectValue placeholder="Filter by Branch" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Branches</SelectItem>
+              <SelectItem value="CSE">CSE</SelectItem>
+              <SelectItem value="IT">IT</SelectItem>
+              <SelectItem value="ECE">ECE</SelectItem>
+              <SelectItem value="EEE">EEE</SelectItem>
+              <SelectItem value="CSD">CSD</SelectItem>
+              <SelectItem value="AI & ML">AI & ML</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          <Select value={filterSemester} onValueChange={setFilterSemester}>
+            <SelectTrigger>
+              <SelectValue placeholder="Filter by Semester" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Semesters</SelectItem>
+              <SelectItem value="I">Semester I</SelectItem>
+              <SelectItem value="II">Semester II</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          <Input 
+            type="search" 
+            placeholder="Search timetables..." 
+            value={searchQuery} 
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
-      )}
+        
+        {filteredTimetables.length === 0 ? (
+          <div className="text-center py-12 border rounded-lg">
+            <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground" />
+            <h3 className="mt-4 text-lg font-medium">No timetables found</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Try changing your filters or create a new timetable.
+            </p>
+            <Button onClick={navigateToCreateTimetable} className="mt-4">
+              Create New Timetable
+            </Button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredTimetables.map((timetable) => (
+              <Card key={timetable.id} className="overflow-hidden">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg">
+                    {timetable.formData.year} {timetable.formData.branch}
+                  </CardTitle>
+                  <CardDescription>
+                    Semester {timetable.formData.semester} | {timetable.formData.academicYear}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="text-sm pb-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <span className="text-muted-foreground">Room:</span> {timetable.formData.roomNumber}
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Course:</span> {timetable.formData.courseName}
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">In-charge:</span> {timetable.formData.classInchargeName}
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Created:</span> {new Date(timetable.createdAt).toLocaleDateString()}
+                    </div>
+                  </div>
+                </CardContent>
+                <CardFooter className="flex justify-between pt-2">
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => navigateToViewTimetable(timetable.id)}
+                    >
+                      View
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => navigateToEditTimetable(timetable.id)}
+                    >
+                      <Edit className="h-4 w-4 mr-1" />
+                      Edit
+                    </Button>
+                  </div>
+                  <div className="flex gap-2">
+                    <TimetableDownloadButton timetable={timetable} />
+                    
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" size="sm" className="text-destructive border-destructive hover:bg-destructive/10">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Timetable</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete this timetable? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction 
+                            onClick={() => handleDeleteTimetable(timetable.id)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
