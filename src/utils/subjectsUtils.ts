@@ -13,6 +13,18 @@ export const saveSubject = (subject: Subject) => {
   const subjects = getSubjects();
   const existingIndex = subjects.findIndex(s => s.id === subject.id);
   
+  // Check for duplicate subject name
+  const duplicateNameSubject = subjects.find(s => 
+    s.name.toLowerCase() === subject.name.toLowerCase() && 
+    s.year === subject.year && 
+    s.branch === subject.branch && 
+    s.id !== subject.id
+  );
+  
+  if (duplicateNameSubject) {
+    throw new Error(`Subject '${subject.name}' already exists for ${subject.year}, ${subject.branch}`);
+  }
+  
   if (existingIndex >= 0) {
     subjects[existingIndex] = subject;
   } else {

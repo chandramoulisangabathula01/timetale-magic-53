@@ -118,35 +118,44 @@ const ManageSubjects: React.FC = () => {
         return;
       }
       
-      const savedSubject = saveSubject({
-        ...subjectToSave,
-        id: subjectToSave.id || uuidv4()
-      });
-      
-      toast({
-        title: isEditing ? "Subject updated" : "Subject added",
-        description: isEditing 
-          ? `Subject "${savedSubject.name}" has been updated` 
-          : `Subject "${savedSubject.name}" has been added`,
-        variant: "default",
-      });
-      
-      // Reset form
-      setNewSubject({
-        id: '',
-        name: '',
-        year: '1st Year',
-        branch: 'CSE',
-        customBranch: '',
-        isLab: false,
-        creditHours: 3
-      });
-      
-      setIsEditing(false);
-      setEditingSubject(null);
-      
-      // Reload subjects
-      loadSubjects();
+      try {
+        const savedSubject = saveSubject({
+          ...subjectToSave,
+          id: subjectToSave.id || uuidv4()
+        });
+        
+        toast({
+          title: isEditing ? "Subject updated" : "Subject added",
+          description: isEditing 
+            ? `Subject "${savedSubject.name}" has been updated` 
+            : `Subject "${savedSubject.name}" has been added`,
+          variant: "default",
+        });
+        
+        // Reset form
+        setNewSubject({
+          id: '',
+          name: '',
+          year: '1st Year',
+          branch: 'CSE',
+          customBranch: '',
+          isLab: false,
+          creditHours: 3
+        });
+        
+        setIsEditing(false);
+        setEditingSubject(null);
+        
+        // Reload subjects
+        loadSubjects();
+      } catch (error) {
+        // Handle subject duplicate error
+        toast({
+          title: "Duplicate Subject",
+          description: error instanceof Error ? error.message : "This subject already exists",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       toast({
         title: "Error",

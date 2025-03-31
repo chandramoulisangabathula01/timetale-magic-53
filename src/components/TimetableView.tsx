@@ -139,7 +139,7 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
     if (entry.isBatchRotationLab) {
       return (
         <div className="font-medium text-center">
-          <div className="text-xs">&#8592;--- {entry.batch1Subject} (B1 - {entry.batch1Teacher}) / {entry.batch2Subject} (B2 - {entry.batch2Teacher}) ---&#8594;</div>
+          <div className="text-xs">{entry.batch1Subject} ({entry.batch1Teacher}) (B1) / {entry.batch2Subject} ({entry.batch2Teacher}) (B2)</div>
         </div>
       );
     }
