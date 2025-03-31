@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { Plus, Pencil, Trash2, Save } from 'lucide-react';
+import { Plus, Pencil, Trash2, Save, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { 
   getSubjects, 
@@ -35,6 +35,7 @@ const ManageSubjects = () => {
   const [filterBranch, setFilterBranch] = useState<BranchType | 'all'>('all');
   const [subjectYear, setSubjectYear] = useState<YearType>('1st Year');
   const [subjectBranch, setSubjectBranch] = useState<BranchType>('CSE');
+  const [customBranch, setCustomBranch] = useState<string>('');
   
   useEffect(() => {
     // Make sure we have default subjects
@@ -66,7 +67,9 @@ const ManageSubjects = () => {
     
     if (filterBranch !== 'all') {
       filtered = filtered.filter(subject => 
-        subject.branches && Array.isArray(subject.branches) && subject.branches.includes(filterBranch)
+        subject.branches && Array.isArray(subject.branches) && 
+        (subject.branches.includes(filterBranch as BranchType) || 
+         (filterBranch === 'Other' && subject.customBranch))
       );
     }
     
@@ -83,20 +86,31 @@ const ManageSubjects = () => {
       return;
     }
     
+    if (subjectBranch === 'Other' && !customBranch.trim()) {
+      toast({
+        title: "Custom branch required",
+        description: "Please enter a custom branch name",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     // Check for duplicate subject name in the same year and branch
+    const branchToCheck = subjectBranch === 'Other' ? customBranch : subjectBranch;
+    
     const isDuplicate = subjects.some(
       subject => 
         subject.name.toLowerCase() === newSubject.toLowerCase() && 
         subject.years && 
         subject.years.includes(subjectYear) && 
-        subject.branches &&
-        subject.branches.includes(subjectBranch)
+        ((subject.branches && subject.branches.includes(branchToCheck as any)) ||
+         (subject.customBranch && subject.customBranch === customBranch))
     );
     
     if (isDuplicate) {
       toast({
         title: "Duplicate subject",
-        description: `"${newSubject}" already exists for ${subjectYear}, ${subjectBranch}`,
+        description: `"${newSubject}" already exists for ${subjectYear}, ${branchToCheck}`,
         variant: "destructive",
       });
       return;
@@ -108,7 +122,8 @@ const ManageSubjects = () => {
       code: '',
       credits: 0,
       years: [subjectYear],
-      branches: [subjectBranch],
+      branches: subjectBranch === 'Other' ? [] : [subjectBranch],
+      customBranch: subjectBranch === 'Other' ? customBranch : undefined,
       isLab: newSubject.toLowerCase().includes('lab')
     };
     
@@ -118,6 +133,7 @@ const ManageSubjects = () => {
     // Update state
     setSubjects(getSubjects());
     setNewSubject('');
+    setCustomBranch('');
     
     toast({
       title: "Subject added",
@@ -145,11 +161,11 @@ const ManageSubjects = () => {
         editingSubject.years &&
         Array.isArray(editingSubject.years) &&
         subject.years.some(y => editingSubject.years.includes(y)) && 
-        subject.branches &&
-        Array.isArray(subject.branches) &&
-        editingSubject.branches &&
-        Array.isArray(editingSubject.branches) &&
-        subject.branches.some(b => editingSubject.branches.includes(b))
+        ((subject.branches && Array.isArray(subject.branches) &&
+         editingSubject.branches && Array.isArray(editingSubject.branches) &&
+         subject.branches.some(b => editingSubject.branches.includes(b))) ||
+         (subject.customBranch === editingSubject.customBranch &&
+          subject.customBranch !== undefined))
     );
     
     if (isDuplicate) {
@@ -203,7 +219,9 @@ const ManageSubjects = () => {
           <Button 
             onClick={() => navigate('/dashboard')}
             variant="outline"
+            className="flex items-center gap-2"
           >
+            <ArrowLeft className="h-4 w-4" />
             Back to Dashboard
           </Button>
         </div>
@@ -264,10 +282,22 @@ const ManageSubjects = () => {
                     <SelectItem value="EEE">EEE</SelectItem>
                     <SelectItem value="CSD">CSD</SelectItem>
                     <SelectItem value="AI & ML">AI & ML</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
+                    <SelectItem value="Other">Custom Branch</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+              
+              {subjectBranch === 'Other' && (
+                <div className="space-y-2">
+                  <Label htmlFor="customBranch">Custom Branch Name</Label>
+                  <Input
+                    id="customBranch"
+                    value={customBranch}
+                    onChange={(e) => setCustomBranch(e.target.value)}
+                    placeholder="e.g., MECH, AERO, BIOTECH"
+                  />
+                </div>
+              )}
               
               <Button 
                 onClick={handleAddSubject}

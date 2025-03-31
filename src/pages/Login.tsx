@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import Logo from '@/components/Logo';
 import { useAuth } from '@/contexts/AuthContext';
 import { getFacultyList } from '@/utils/facultyHelpers';
+import { Eye, EyeOff } from 'lucide-react';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ const Login = () => {
   // Admin login state
   const [adminUsername, setAdminUsername] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
+  const [showAdminPassword, setShowAdminPassword] = useState(false);
   
   // Faculty login state
   const [selectedFaculty, setSelectedFaculty] = useState('');
@@ -64,6 +66,10 @@ const Login = () => {
         variant: "destructive",
       });
     }
+  };
+  
+  const togglePasswordVisibility = () => {
+    setShowAdminPassword(!showAdminPassword);
   };
   
   const handleFacultyLogin = (e: React.FormEvent) => {
@@ -124,7 +130,6 @@ const Login = () => {
   
   const toggleFacultyInputMode = () => {
     setFacultyInputMode(prevMode => prevMode === 'select' ? 'manual' : 'select');
-    // Reset values when toggling
     setSelectedFaculty('');
     setManualFacultyName('');
   };
@@ -168,13 +173,24 @@ const Login = () => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="adminPassword">Password</Label>
-                  <Input 
-                    id="adminPassword" 
-                    type="password" 
-                    placeholder="Enter password" 
-                    value={adminPassword}
-                    onChange={(e) => setAdminPassword(e.target.value)}
-                  />
+                  <div className="relative">
+                    <Input 
+                      id="adminPassword" 
+                      type={showAdminPassword ? "text" : "password"}
+                      placeholder="Enter password" 
+                      value={adminPassword}
+                      onChange={(e) => setAdminPassword(e.target.value)}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-2 top-0 h-full"
+                      onClick={togglePasswordVisibility}
+                    >
+                      {showAdminPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
               <CardFooter>

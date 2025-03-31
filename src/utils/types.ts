@@ -81,6 +81,7 @@ export interface Subject {
   isLab: boolean;
   years: YearType[];
   branches: BranchType[];
+  customBranch?: string;
 }
 
 // Faculty model
