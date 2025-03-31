@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -135,7 +136,7 @@ const ManageSubjects = () => {
     
     toast({
       title: "Subject added",
-      description: `"${newSubject}" has been added successfully",
+      description: `"${newSubject}" has been added successfully`,
     });
   };
   
