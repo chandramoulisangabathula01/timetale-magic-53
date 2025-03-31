@@ -8,6 +8,7 @@ export type Day = 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | '
 export type TimeSlot = '9:30-10:20' | '10:20-11:10' | '11:10-11:20' | '11:20-12:10' | '12:10-1:00' | '1:00-2:00' | '2:00-2:50' | '2:50-3:40' | '3:40-4:30' | '9:30-1:00' | '10:20-1:00' | '2:00-4:30';
 export type FreeHourType = 'Library' | 'Sports' | 'Project' | 'Others' | string;
 export type UserRole = 'admin' | 'faculty' | 'student';
+export type BatchType = 'B1' | 'B2';
 
 // Subject definitions
 export interface Subject {
@@ -39,6 +40,23 @@ export interface SubjectTeacherPair {
   batchNumber?: string;
 }
 
+// Lab pairing for batch rotation
+export interface LabBatchPair {
+  day: Day;
+  timeSlot: TimeSlot;
+  batch1: {
+    subjectName: string;
+    teacherName: string;
+    batchNumber: string;
+  };
+  batch2: {
+    subjectName: string;
+    teacherName: string;
+    batchNumber: string;
+  };
+  labGroupId: string;
+}
+
 // Timetable entries - individual cells in the timetable
 export interface TimetableEntry {
   day: Day;
@@ -53,6 +71,12 @@ export interface TimetableEntry {
   isLunch?: boolean;
   isLabGroup?: boolean;
   labGroupId?: string;
+  // For batch rotation labs
+  isBatchRotationLab?: boolean;
+  batch1Subject?: string;
+  batch1Teacher?: string;
+  batch2Subject?: string;
+  batch2Teacher?: string;
 }
 
 // Form data for creating a timetable
@@ -74,6 +98,7 @@ export interface TimetableFormData {
     useCustomDays: boolean;
     selectedDays: Day[];
   };
+  enableBatchRotation?: boolean;
 }
 
 // Complete timetable definition

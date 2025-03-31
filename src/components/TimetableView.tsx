@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Timetable, Day, TimeSlot } from '@/utils/types';
 import {
@@ -42,7 +43,9 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
   // Filter timetable entries based on faculty name if provided
   const filteredEntries = facultyFilter
     ? timetable.entries.map(entry => {
-        if (entry.teacherName === facultyFilter) {
+        if (entry.teacherName === facultyFilter || 
+            entry.batch1Teacher === facultyFilter || 
+            entry.batch2Teacher === facultyFilter) {
           return entry;
         } else {
           // Keep break and lunch slots
@@ -56,7 +59,12 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
             teacherName: undefined,
             isLab: undefined,
             isFree: undefined,
-            freeType: undefined
+            freeType: undefined,
+            isBatchRotationLab: undefined,
+            batch1Subject: undefined,
+            batch1Teacher: undefined,
+            batch2Subject: undefined,
+            batch2Teacher: undefined
           };
         }
       })
@@ -127,6 +135,15 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
       return <div className="text-sm italic text-center">{entry.freeType}</div>;
     }
     
+    // Special handling for batch rotation labs
+    if (entry.isBatchRotationLab) {
+      return (
+        <div className="font-medium text-center">
+          <div className="text-xs">&#8592;--- {entry.batch1Subject} (B1 - {entry.batch1Teacher}) / {entry.batch2Subject} (B2 - {entry.batch2Teacher}) ---&#8594;</div>
+        </div>
+      );
+    }
+    
     if (entry.subjectName && entry.teacherName) {
       // Special handling for lab entries
       if (entry.isLab && entry.isLabGroup && entry.labGroupId) {
@@ -172,6 +189,11 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
     if (entry.isLunch) return "bg-gray-100 lunch-slot";
     if (entry.isFree) return "bg-blue-50 free-slot";
     
+    // Special handling for batch rotation labs
+    if (entry.isBatchRotationLab) {
+      return "bg-green-50 lab-slot";
+    }
+    
     // Special handling for lab entries
     if (entry.isLab) {
       return "bg-green-50 lab-slot";
@@ -192,6 +214,13 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
     const entry = filteredEntries.find(e => e.day === day && e.timeSlot === timeSlot);
     
     if (!entry || !entry.isLabGroup || !entry.labGroupId) return 1;
+    
+    // For batch rotation labs, span the entire lab timeSlot
+    if (entry.isBatchRotationLab) {
+      if (timeSlot === '10:20-11:10') return 2; // spans 10:20-11:10 and 11:20-12:10
+      if (timeSlot === '2:00-2:50') return 3;  // spans 2:00-2:50, 2:50-3:40, and 3:40-4:30
+      return 1;
+    }
     
     const labGroupEntries = getLabGroupEntries(entry.labGroupId);
     
@@ -237,6 +266,19 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
     const entry = filteredEntries.find(e => e.day === day && e.timeSlot === timeSlot);
     
     if (!entry || !entry.isLabGroup || !entry.labGroupId) return true;
+    
+    // For batch rotation labs, only render at specific spots
+    if (entry.isBatchRotationLab) {
+      // For morning batch rotation labs
+      if (timeSlot === '10:20-11:10') return true;
+      if (timeSlot === '11:20-12:10' || timeSlot === '12:10-1:00') return false;
+      
+      // For afternoon batch rotation labs
+      if (timeSlot === '2:00-2:50') return true;
+      if (timeSlot === '2:50-3:40' || timeSlot === '3:40-4:30') return false;
+      
+      return true;
+    }
     
     // For lab groups, we need to check if this is the first slot in a consecutive series
     const slotIndex = timeSlots.indexOf(timeSlot);
@@ -351,6 +393,7 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
               {timeSlots.map(timeSlot => {
                 let content = '';
                 let teacher = '';
+                let batchInfo = '';
                 
                 // Special handling for breaks and lunch
                 if (timeSlot === '11:10-11:20') {
@@ -362,9 +405,13 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
                   const entry = getActualEntry(day, timeSlot);
                   
                   if (entry) {
-                    if (entry.subjectName) {
+                    if (entry.isBatchRotationLab) {
+                      content = `${entry.batch1Subject} (B1) / ${entry.batch2Subject} (B2)`;
+                      teacher = `${entry.batch1Teacher} / ${entry.batch2Teacher}`;
+                    } else if (entry.subjectName) {
                       content = entry.subjectName;
                       teacher = entry.teacherName || '';
+                      batchInfo = entry.batchNumber || '';
                     } else if (entry.isFree && entry.freeType) {
                       content = entry.freeType;
                     }
@@ -380,6 +427,7 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
                       <>
                         <div className="font-medium text-sm">{content}</div>
                         {teacher && <div className="text-xs text-muted-foreground">{teacher}</div>}
+                        {batchInfo && <div className="text-xs">({batchInfo})</div>}
                       </>
                     )}
                   </TableCell>

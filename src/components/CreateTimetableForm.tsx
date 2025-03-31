@@ -68,7 +68,8 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
         fourContinuousDays: false,
         useCustomDays: false,
         selectedDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday'] as Day[]
-      }
+      },
+      enableBatchRotation: true
     }
   );
   
@@ -651,6 +652,9 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
                         <li>
                           Each teacher can be assigned a maximum of 3 non-lab subjects.
                         </li>
+                        <li>
+                          To use batch rotation for labs, create lab subjects with matching names but different batch numbers (B1/B2).
+                        </li>
                       </ul>
                     </AlertDescription>
                   </Alert>
@@ -729,12 +733,18 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
                       {isLabSubject && (
                         <div className="space-y-2 mt-2">
                           <Label htmlFor="batchNumber">Batch Number</Label>
-                          <Input
-                            id="batchNumber"
-                            placeholder="e.g., B1"
+                          <Select
                             value={batchNumber}
-                            onChange={(e) => setBatchNumber(e.target.value)}
-                          />
+                            onValueChange={setBatchNumber}
+                          >
+                            <SelectTrigger id="batchNumber">
+                              <SelectValue placeholder="Select Batch" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="B1">B1</SelectItem>
+                              <SelectItem value="B2">B2</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
                       )}
                     </div>
@@ -962,6 +972,30 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
                         Standard 6-day schedule (Monday to Saturday) will be used for {formData.year} timetables.
                       </p>
                     )}
+                  </div>
+                  
+                  <Separator />
+                  
+                  <div>
+                    <h3 className="font-medium mb-3">Lab Scheduling Options</h3>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="enableBatchRotation" 
+                          checked={formData.enableBatchRotation} 
+                          onCheckedChange={(checked) => setFormData(prev => ({
+                            ...prev,
+                            enableBatchRotation: checked === true
+                          }))}
+                        />
+                        <Label htmlFor="enableBatchRotation">Enable Batch Rotation for Labs</Label>
+                      </div>
+                      <p className="text-sm text-muted-foreground pl-6">
+                        When enabled, labs with matching subjects but different batches (B1/B2) will be scheduled in 
+                        rotation, with both batches sharing the same lab slot. For example, Physics Lab (B1) and 
+                        Computer Lab (B2) would share the same timeslot on Monday, then swap on Wednesday.
+                      </p>
+                    </div>
                   </div>
                   
                   <Separator />
