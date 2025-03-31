@@ -46,6 +46,11 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
   const getEntry = (day: Day, timeSlot: TimeSlot): TimetableEntry | undefined => {
     return entries.find(entry => entry.day === day && entry.timeSlot === timeSlot);
   };
+
+  // Function to get lab entries by labGroupId
+  const getLabEntries = (labGroupId: string): TimetableEntry[] => {
+    return entries.filter(entry => entry.labGroupId === labGroupId);
+  }
   
   // Function to render cell content
   const renderCellContent = (day: Day, timeSlot: TimeSlot) => {
@@ -64,13 +69,14 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
     if (entry.isFree) {
       let freeType = entry.freeType;
       // Fix the customFreeType property access
-      if (entry.freeType === 'Others' && entry.freeType) {
-        freeType = entry.freeType;
+      if (entry.freeType === 'Others' && entry.customFreeType) {
+        freeType = entry.customFreeType;
       }
       return <div className="italic text-blue-600">{freeType}</div>;
     }
     
-    if (entry.subjectName && entry.teacherName) {
+    // For regular subjects
+    if (entry.subjectName && entry.teacherName && !entry.isLabGroup) {
       return (
         <div>
           <div className="font-medium">{entry.subjectName}</div>
@@ -84,7 +90,7 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
     
     // For lab rotation display (showing both lab options)
     if (entry.isLabGroup && entry.labGroupId) {
-      const labEntries = timetable.entries.filter(e => e.labGroupId === entry.labGroupId);
+      const labEntries = getLabEntries(entry.labGroupId);
       
       if (labEntries.length > 0) {
         return (
@@ -100,6 +106,19 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
           </div>
         );
       }
+    }
+    
+    // For direct lab entries (non-grouped)
+    if (entry.isLab) {
+      return (
+        <div>
+          <div className="font-medium">{entry.subjectName}</div>
+          <div className="text-xs text-muted-foreground">{entry.teacherName}</div>
+          {entry.batchNumber && (
+            <div className="text-xs text-primary">({entry.batchNumber})</div>
+          )}
+        </div>
+      );
     }
     
     // Empty cell
@@ -137,6 +156,7 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
                   className={`
                     border p-2 text-center 
                     ${getEntry(day, timeSlot)?.isLab ? 'bg-green-50' : ''}
+                    ${getEntry(day, timeSlot)?.isLabGroup ? 'bg-green-50' : ''}
                     ${getEntry(day, timeSlot)?.isFree ? 'bg-blue-50' : ''}
                   `}
                 >
