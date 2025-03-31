@@ -184,7 +184,7 @@ const ManageSubjects = () => {
     
     toast({
       title: "Subject updated",
-      description: `"${editingSubject.name}" has been updated successfully",
+      description: `"${editingSubject.name}" has been updated successfully`,
     });
   };
   
