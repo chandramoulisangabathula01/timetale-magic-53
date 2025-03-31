@@ -97,9 +97,13 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
 
   useEffect(() => {
     if (formData.year && formData.branch) {
-      setAvailableSubjects(getFilteredSubjects(formData.year, formData.branch));
+      setAvailableSubjects(getFilteredSubjects(
+        formData.year, 
+        formData.branch, 
+        formData.branch === 'Other' ? formData.customBranch : undefined
+      ));
     }
-  }, [formData.year, formData.branch]);
+  }, [formData.year, formData.branch, formData.customBranch]);
 
   useEffect(() => {
     if (isEditMode && existingTimetable && !manualEntriesInitialized) {
