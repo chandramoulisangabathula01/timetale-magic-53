@@ -8,33 +8,10 @@ export const getSubjects = (): Subject[] => {
   return subjects;
 };
 
-// Check if a subject with the same name already exists
-export const subjectNameExists = (name: string, year: YearType, branch: BranchType | 'All', id?: string): boolean => {
-  const subjects = getSubjects();
-  return subjects.some(s => 
-    s.name.toLowerCase() === name.toLowerCase() && 
-    s.year === year && 
-    s.branch === branch && 
-    s.id !== id // Exclude the current subject when updating
-  );
-};
-
 // Save a subject to localStorage
 export const saveSubject = (subject: Subject) => {
   const subjects = getSubjects();
   const existingIndex = subjects.findIndex(s => s.id === subject.id);
-  
-  // Before saving, make sure we don't have a duplicate name for the same year and branch
-  const isDuplicate = subjectNameExists(
-    subject.name, 
-    subject.year, 
-    subject.branch, 
-    subject.id
-  );
-  
-  if (isDuplicate) {
-    throw new Error('A subject with this name already exists for the selected year and branch.');
-  }
   
   if (existingIndex >= 0) {
     subjects[existingIndex] = subject;
