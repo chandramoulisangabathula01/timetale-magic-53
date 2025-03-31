@@ -50,38 +50,67 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
   // Function to get lab entries by labGroupId
   const getLabEntries = (labGroupId: string): TimetableEntry[] => {
     return entries.filter(entry => entry.labGroupId === labGroupId);
-  }
+  };
+
+  // Special helper to check if a time slot contains lab entries (for lab time slots like 9:30-1:00)
+  const getLabsForTimeSlot = (day: Day, timeSlot: TimeSlot): TimetableEntry[] => {
+    // First check for lab entries that span multiple slots (like 9:30-1:00)
+    const labEntries = entries.filter(entry => 
+      entry.day === day && 
+      (entry.timeSlot === '9:30-1:00' || entry.timeSlot === '2:00-4:30') &&
+      (entry.isLab || entry.isLabGroup) &&
+      // Check if the current timeSlot falls within the lab's time range
+      ((entry.timeSlot === '9:30-1:00' && 
+        ['9:30-10:20', '10:20-11:10', '11:20-12:10', '12:10-1:00'].includes(timeSlot)) ||
+       (entry.timeSlot === '2:00-4:30' && 
+        ['2:00-2:50', '2:50-3:40', '3:40-4:30'].includes(timeSlot)))
+    );
+    
+    return labEntries;
+  };
   
   // Function to render cell content
   const renderCellContent = (day: Day, timeSlot: TimeSlot) => {
-    const entry = getEntry(day, timeSlot);
-    
-    if (!entry) return null;
-    
-    if (entry.isBreak) {
+    // First check for breaks and lunch
+    if (timeSlot === '11:10-11:20') {
       return <div className="font-medium text-muted-foreground italic">Break</div>;
     }
     
-    if (entry.isLunch) {
+    if (timeSlot === '1:00-2:00') {
       return <div className="font-medium text-muted-foreground italic">Lunch</div>;
     }
     
-    if (entry.isFree) {
-      let freeType = entry.freeType;
-      // Fix the customFreeType property access
-      if (entry.freeType === 'Others' && entry.customFreeType) {
-        freeType = entry.customFreeType;
-      }
-      return <div className="italic text-blue-600">{freeType}</div>;
-    }
-    
-    // For lab rotation display (showing both lab options)
-    if (entry.isLabGroup && entry.labGroupId) {
-      const labEntries = getLabEntries(entry.labGroupId);
+    // Check for lab entries that span multiple time slots
+    const labEntries = getLabsForTimeSlot(day, timeSlot);
+    if (labEntries.length > 0) {
+      // Check if these are lab group entries (for batch rotation)
+      const labGroupIds = [...new Set(labEntries.map(entry => entry.labGroupId).filter(Boolean))];
       
-      if (labEntries.length > 0) {
+      if (labGroupIds.length > 0) {
+        // Display lab rotation (multiple batches in the same slot)
         return (
-          <div className="text-sm bg-green-50 p-1 rounded">
+          <div className="text-sm bg-green-100 p-1 rounded">
+            {labGroupIds.map(groupId => {
+              const groupEntries = getLabEntries(groupId!);
+              return (
+                <React.Fragment key={groupId}>
+                  {groupEntries.map((lab, idx) => (
+                    <React.Fragment key={idx}>
+                      {idx > 0 && <div className="my-1 border-t border-dashed" />}
+                      <div className="font-medium">{lab.subjectName}</div>
+                      <div className="text-xs text-muted-foreground">{lab.teacherName}</div>
+                      {lab.batchNumber && <div className="text-xs text-primary">({lab.batchNumber})</div>}
+                    </React.Fragment>
+                  ))}
+                </React.Fragment>
+              );
+            })}
+          </div>
+        );
+      } else {
+        // Display individual lab entries
+        return (
+          <div className="text-sm bg-green-100 p-1 rounded">
             {labEntries.map((lab, idx) => (
               <React.Fragment key={idx}>
                 {idx > 0 && <div className="my-1 border-t border-dashed" />}
@@ -95,15 +124,18 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
       }
     }
     
-    // For direct lab entries (non-grouped)
-    if (entry.isLab) {
-      return (
-        <div className="text-sm bg-green-50 p-1 rounded">
-          <div className="font-medium">{entry.subjectName}</div>
-          <div className="text-xs text-muted-foreground">{entry.teacherName}</div>
-          {entry.batchNumber && <div className="text-xs text-primary">({entry.batchNumber})</div>}
-        </div>
-      );
+    // Now check for normal entries
+    const entry = getEntry(day, timeSlot);
+    
+    if (!entry) return null;
+    
+    if (entry.isFree) {
+      let freeType = entry.freeType;
+      // Fix the customFreeType property access
+      if (entry.freeType === 'Others' && entry.customFreeType) {
+        freeType = entry.customFreeType;
+      }
+      return <div className="italic text-blue-600">{freeType}</div>;
     }
     
     // For regular subjects
@@ -148,36 +180,40 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
           </tr>
         </thead>
         <tbody>
-          {timeSlots.map((timeSlot) => (
-            <tr 
-              key={timeSlot} 
-              className={`
-                ${timeSlot === '11:10-11:20' ? 'bg-gray-100' : ''} 
-                ${timeSlot === '1:00-2:00' ? 'bg-gray-100' : ''}
-              `}
-            >
-              <td className="border p-2 text-sm font-medium whitespace-nowrap">
-                {timeSlot}
-              </td>
-              {visibleDays.map(day => {
-                const entry = getEntry(day, timeSlot);
-                
-                return (
-                  <td 
-                    key={`${day}-${timeSlot}`} 
-                    className={`
-                      border p-2 text-center 
-                      ${entry?.isLab ? 'bg-green-50' : ''}
-                      ${entry?.isLabGroup ? 'bg-green-50' : ''}
-                      ${entry?.isFree ? 'bg-blue-50' : ''}
-                    `}
-                  >
-                    {renderCellContent(day, timeSlot)}
-                  </td>
-                );
-              })}
-            </tr>
-          ))}
+          {timeSlots.map((timeSlot) => {
+            const isBreakOrLunch = timeSlot === '11:10-11:20' || timeSlot === '1:00-2:00';
+            
+            return (
+              <tr 
+                key={timeSlot} 
+                className={isBreakOrLunch ? 'bg-gray-100' : ''}
+              >
+                <td className="border p-2 text-sm font-medium whitespace-nowrap">
+                  {timeSlot}
+                </td>
+                {visibleDays.map(day => {
+                  const entry = getEntry(day, timeSlot);
+                  const labEntries = getLabsForTimeSlot(day, timeSlot);
+                  const hasLabEntries = labEntries.length > 0;
+                  
+                  return (
+                    <td 
+                      key={`${day}-${timeSlot}`} 
+                      className={`
+                        border p-2 text-center 
+                        ${hasLabEntries ? 'bg-green-50' : ''}
+                        ${entry?.isLab ? 'bg-green-50' : ''}
+                        ${entry?.isLabGroup ? 'bg-green-50' : ''}
+                        ${entry?.isFree ? 'bg-blue-50' : ''}
+                      `}
+                    >
+                      {renderCellContent(day, timeSlot)}
+                    </td>
+                  );
+                })}
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
