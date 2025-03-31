@@ -1,4 +1,3 @@
-
 import { v4 as uuidv4 } from 'uuid';
 import { 
   Timetable, 
@@ -68,6 +67,20 @@ export const deleteTimetable = (id: string): boolean => {
     console.error("Error deleting timetable:", error);
     return false;
   }
+};
+
+// Add the missing filterTimetables function
+export const filterTimetables = (
+  year: YearType,
+  branch: BranchType,
+  semester: SemesterType
+): Timetable[] => {
+  const timetables = getTimetables();
+  return timetables.filter(timetable => 
+    timetable.formData.year === year && 
+    timetable.formData.branch === branch && 
+    timetable.formData.semester === semester
+  );
 };
 
 // Generate a timetable based on form data

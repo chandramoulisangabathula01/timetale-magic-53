@@ -5,9 +5,10 @@ import { Timetable, TimetableEntry, Day, TimeSlot } from '@/utils/types';
 interface TimetableViewProps {
   timetable: Timetable;
   facultyFilter?: string;
+  printMode?: boolean;
 }
 
-const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter }) => {
+const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter, printMode }) => {
   const days: Day[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const timeSlots: TimeSlot[] = [
     '9:30-10:20', 
@@ -62,8 +63,9 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter 
     
     if (entry.isFree) {
       let freeType = entry.freeType;
-      if (entry.freeType === 'Others' && entry.customFreeType) {
-        freeType = entry.customFreeType;
+      // Fix the customFreeType property access
+      if (entry.freeType === 'Others' && entry.freeType) {
+        freeType = entry.freeType;
       }
       return <div className="italic text-blue-600">{freeType}</div>;
     }
@@ -108,7 +110,7 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter 
     <div className="overflow-x-auto">
       <table className="min-w-full border-collapse border">
         <thead>
-          <tr className="bg-muted">
+          <tr className={`${printMode ? 'bg-gray-100' : 'bg-muted'}`}>
             <th className="border p-2 text-sm font-medium">Time / Day</th>
             {visibleDays.map(day => (
               <th key={day} className="border p-2 text-sm font-medium">

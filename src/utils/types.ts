@@ -67,6 +67,8 @@ export interface TimetableEntry {
   batchNumber?: string;
   isFree?: boolean;
   freeType?: FreeHourType;
+  customFreeType?: string; // Add the missing property
+  mergeSlots?: boolean;    // Add this property as well
   isBreak?: boolean;
   isLunch?: boolean;
   isLabGroup?: boolean;

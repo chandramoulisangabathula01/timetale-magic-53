@@ -23,7 +23,7 @@ const StudentDashboard: React.FC = () => {
       const filteredTimetables = filterTimetables(
         studentFilters.year as YearType, 
         studentFilters.branch as BranchType, 
-        studentFilters.semester as SemesterType // Cast semester to SemesterType
+        studentFilters.semester as SemesterType
       );
 
       if (filteredTimetables.length > 0) {
