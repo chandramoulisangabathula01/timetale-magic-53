@@ -6,7 +6,8 @@ export type SemesterType = 'I' | 'II';
 export type BranchType = 'CSE' | 'IT' | 'ECE' | 'EEE' | 'CSD' | 'AI & ML' | 'Other';
 export type Day = 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday';
 export type TimeSlot = '9:30-10:20' | '10:20-11:10' | '11:10-11:20' | '11:20-12:10' | '12:10-1:00' | '1:00-2:00' | '2:00-2:50' | '2:50-3:40' | '3:40-4:30' | '9:30-1:00' | '10:20-1:00' | '2:00-4:30';
-export type FreeHourType = 'Library' | 'Sports' | 'Project' | 'Others';
+export type FreeHourType = 'Library' | 'Sports' | 'Project' | 'Others' | string;
+export type UserRole = 'admin' | 'faculty' | 'student';
 
 // Subject definitions
 export interface Subject {
