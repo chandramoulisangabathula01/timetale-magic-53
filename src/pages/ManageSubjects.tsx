@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +11,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Plus, ArrowLeft, Edit, Trash2, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { getSubjects, saveSubject, deleteSubject } from '@/utils/subjectsUtils';
+import { getSubjects, saveSubject, deleteSubject, subjectNameExists } from '@/utils/subjectsUtils';
 import { Subject, YearType, BranchType } from '@/utils/types';
 import DashboardLayout from '@/components/DashboardLayout';
 import { v4 as uuidv4 } from 'uuid';
@@ -118,6 +117,23 @@ const ManageSubjects: React.FC = () => {
         return;
       }
       
+      // Check for duplicate subject names
+      const isDuplicate = subjectNameExists(
+        subjectToSave.name,
+        subjectToSave.year as YearType,
+        subjectToSave.branch as BranchType,
+        subjectToSave.id
+      );
+      
+      if (isDuplicate) {
+        toast({
+          title: "Duplicate subject",
+          description: "A subject with this name already exists for the selected year and branch.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       const savedSubject = saveSubject({
         ...subjectToSave,
         id: subjectToSave.id || uuidv4()
@@ -147,10 +163,10 @@ const ManageSubjects: React.FC = () => {
       
       // Reload subjects
       loadSubjects();
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "An error occurred while saving the subject",
+        description: error.message || "An error occurred while saving the subject",
         variant: "destructive",
       });
     }
@@ -187,7 +203,6 @@ const ManageSubjects: React.FC = () => {
     }
   };
   
-  // Filter subjects based on selected filters and search query
   const filteredSubjects = subjects
     .filter(subject => filterYear === 'all' || subject.year === filterYear)
     .filter(subject => {
@@ -206,7 +221,6 @@ const ManageSubjects: React.FC = () => {
       );
     })
     .sort((a, b) => {
-      // Sort by year, then by branch, then by name
       if (a.year !== b.year) {
         return a.year.localeCompare(b.year);
       }

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,7 +17,8 @@ import {
   TimeSlot, 
   FreeHourType,
   YearType,
-  BranchType
+  BranchType,
+  LabBatchPair
 } from '@/utils/types';
 
 interface ManualSchedulingGridProps {
@@ -33,6 +33,7 @@ interface ManualSchedulingGridProps {
   branch: BranchType;
   onSave: (entries: TimetableEntry[]) => void;
   existingEntries?: TimetableEntry[];
+  enableBatchRotation?: boolean;
 }
 
 const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({ 
@@ -42,23 +43,21 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
   year,
   branch,
   onSave,
-  existingEntries = []
+  existingEntries = [],
+  enableBatchRotation = false
 }) => {
   const [entries, setEntries] = useState<TimetableEntry[]>([]);
   const { toast } = useToast();
   
-  // Determine which days to show based on year and dayOptions
   let days: Day[];
   
   if (year === '4th Year') {
-    // For 4th year, use the selected day options
     days = dayOptions.useCustomDays 
       ? dayOptions.selectedDays
       : dayOptions.fourContinuousDays 
         ? ['Monday', 'Tuesday', 'Wednesday', 'Thursday'] as Day[]
         : ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as Day[];
   } else {
-    // For 1st to 3rd year, always use all 6 days
     days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as Day[];
   }
     
@@ -75,32 +74,30 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
   const timeOrder: Record<TimeSlot, number> = {
     '9:30-10:20': 0,
     '10:20-11:10': 1,
-    '11:10-11:20': 2, // Break
+    '11:10-11:20': 2,
     '11:20-12:10': 3,
     '12:10-1:00': 4,
-    '1:00-2:00': 5,  // Lunch
+    '1:00-2:00': 5,
     '2:00-2:50': 6,
     '2:50-3:40': 7,
     '3:40-4:30': 8,
-    // Add lab time slots
     '9:30-1:00': 9,
     '10:20-1:00': 10,
     '2:00-4:30': 11
   };
   
+  const labSubjects = subjectTeacherPairs.filter(pair => pair.isLab);
+  
   useEffect(() => {
     if (existingEntries && existingEntries.length > 0) {
       console.log("Using existing entries:", existingEntries.length);
       
-      // Filter the existing entries to only include the days we're showing
       const filteredEntries = existingEntries.filter(entry => days.includes(entry.day));
       
-      // If we're missing any days/timeslots, add empty entries for them
       const initialEntries: TimetableEntry[] = [];
       
       days.forEach(day => {
         timeSlots.forEach(timeSlot => {
-          // Check if this day/timeSlot combination exists in the filtered entries
           const existingEntry = filteredEntries.find(
             entry => entry.day === day && entry.timeSlot === timeSlot
           );
@@ -108,16 +105,19 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
           if (existingEntry) {
             initialEntries.push(existingEntry);
           } else {
-            // Add a new empty entry
             initialEntries.push({
               day,
               timeSlot,
-              // No subject assigned initially
+              subjectName: undefined,
+              teacherName: undefined,
+              isLab: false,
+              batchNumber: undefined,
+              isFree: false,
+              freeType: undefined
             });
           }
         });
         
-        // Check if break exists for this day
         const existingBreak = filteredEntries.find(
           entry => entry.day === day && entry.timeSlot === '11:10-11:20' && entry.isBreak
         );
@@ -132,7 +132,6 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
           });
         }
         
-        // Check if lunch exists for this day
         const existingLunch = filteredEntries.find(
           entry => entry.day === day && entry.timeSlot === '1:00-2:00' && entry.isLunch
         );
@@ -159,7 +158,12 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
         initialEntries.push({
           day,
           timeSlot,
-          // No subject assigned initially
+          subjectName: undefined,
+          teacherName: undefined,
+          isLab: false,
+          batchNumber: undefined,
+          isFree: false,
+          freeType: undefined
         });
       });
       
@@ -179,16 +183,13 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
     setEntries(initialEntries);
   }, [existingEntries, days, year, dayOptions]);
   
-  // Save entries only when they've been fully initialized or deliberately changed
   useEffect(() => {
     if (entries.length > 0) {
       onSave(entries);
     }
   }, [entries, onSave]);
 
-  // Check for teacher conflicts across timetables
   const checkTeacherConflicts = (day: Day, timeSlot: TimeSlot, teacherName: string): boolean => {
-    // First check within this timetable being edited
     const conflictInCurrentTimetable = entries.some(entry => 
       entry.day === day && 
       entry.timeSlot === timeSlot && 
@@ -201,7 +202,6 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
       return true;
     }
     
-    // Check across all other timetables
     return !isTeacherAvailable(teacherName, day, timeSlot);
   };
   
@@ -213,7 +213,6 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
       const subject = subjectTeacherPairs.find(s => s.id === subjectId);
       
       if (subject) {
-        // Check for teacher conflicts
         if (checkTeacherConflicts(day, timeSlot, subject.teacherName)) {
           toast({
             title: "Scheduling Conflict",
@@ -239,7 +238,6 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
             return entry;
           });
           
-          // Show success toast for feedback
           setTimeout(() => {
             toast({
               title: "Subject Assigned",
@@ -268,7 +266,6 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
           return entry;
         });
         
-        // Show success toast for feedback
         setTimeout(() => {
           toast({
             title: "Free Hour Added",
@@ -291,7 +288,6 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
           return {
             day,
             timeSlot,
-            // Reset all fields
             subjectName: undefined,
             teacherName: undefined,
             isLab: false,
@@ -303,7 +299,6 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
         return entry;
       });
       
-      // Show success toast for feedback
       setTimeout(() => {
         toast({
           title: "Cell Cleared",
@@ -313,6 +308,75 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
       }, 100);
       
       return updatedEntries;
+    });
+  };
+  
+  const handleBatchRotationSelect = (day: Day, timeSlot: TimeSlot, batch1SubjectId: string, batch2SubjectId: string) => {
+    if (!enableBatchRotation) return;
+    
+    const batch1Subject = subjectTeacherPairs.find(s => s.id === batch1SubjectId);
+    const batch2Subject = subjectTeacherPairs.find(s => s.id === batch2SubjectId);
+    
+    if (!batch1Subject || !batch2Subject) {
+      toast({
+        title: "Selection Error",
+        description: "Please select valid subjects for both batches",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (batch1Subject.teacherName === batch2Subject.teacherName) {
+      toast({
+        title: "Teacher Conflict",
+        description: `${batch1Subject.teacherName} cannot teach both lab batches simultaneously`,
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (checkTeacherConflicts(day, timeSlot, batch1Subject.teacherName) || 
+        checkTeacherConflicts(day, timeSlot, batch2Subject.teacherName)) {
+      toast({
+        title: "Scheduling Conflict",
+        description: "One or both teachers already have a class scheduled at this time slot.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    const labGroupId = `lab-${day}-${timeSlot}`;
+    
+    setEntries(prevEntries => {
+      const newEntries = prevEntries.map(entry => {
+        if (entry.day === day && entry.timeSlot === timeSlot) {
+          return {
+            ...entry,
+            isBatchRotationLab: true,
+            batch1Subject: batch1Subject.subjectName,
+            batch1Teacher: batch1Subject.teacherName,
+            batch2Subject: batch2Subject.subjectName,
+            batch2Teacher: batch2Subject.teacherName,
+            labGroupId,
+            subjectName: undefined,
+            teacherName: undefined,
+            isLab: true,
+            isFree: false,
+            freeType: undefined
+          };
+        }
+        return entry;
+      });
+      
+      setTimeout(() => {
+        toast({
+          title: "Batch Rotation Lab Assigned",
+          description: `${batch1Subject.subjectName} (B1) and ${batch2Subject.subjectName} (B2) have been assigned to this slot.`,
+          variant: "default"
+        });
+      }, 100);
+      
+      return newEntries;
     });
   };
   
@@ -327,6 +391,31 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
     
     if (entry.isLunch) {
       return <div className="text-center py-2 bg-gray-100 text-sm">Lunch</div>;
+    }
+    
+    if (entry.isBatchRotationLab) {
+      return (
+        <div className="p-2 bg-green-50 rounded">
+          <div className="text-xs font-medium">
+            {entry.batch1Subject} (B1) / {entry.batch2Subject} (B2)
+          </div>
+          <div className="text-xs text-gray-600">
+            {entry.batch1Teacher} / {entry.batch2Teacher}
+          </div>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="w-full h-6 text-xs mt-2"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              clearCell(day, timeSlot);
+            }}
+          >
+            Clear
+          </Button>
+        </div>
+      );
     }
     
     if (entry.subjectName) {
@@ -361,6 +450,142 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
             variant="ghost" 
             size="sm" 
             className="w-full h-6 text-xs mt-2"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              clearCell(day, timeSlot);
+            }}
+          >
+            Clear
+          </Button>
+        </div>
+      );
+    }
+    
+    const isLabTimeSlot = timeSlot === '10:20-11:10' || timeSlot === '2:00-2:50';
+    
+    if (enableBatchRotation && isLabTimeSlot && labSubjects.length >= 2) {
+      return (
+        <div className="p-2">
+          <div className="text-xs font-medium mb-2">Batch Rotation Lab</div>
+          <div className="flex flex-col gap-2 mb-2">
+            <div>
+              <p className="text-xs mb-1">Batch 1 - Subject:</p>
+              <Select 
+                onValueChange={(batch1SubjectId) => {
+                  const batch2SubjectId = document.querySelector(`[data-batch2-select="${day}-${timeSlot}"]`)?.getAttribute('data-selected-value');
+                  if (batch2SubjectId) {
+                    handleBatchRotationSelect(day, timeSlot, batch1SubjectId, batch2SubjectId);
+                  }
+                }}
+              >
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="B1 Subject" />
+                </SelectTrigger>
+                <SelectContent>
+                  {labSubjects.length === 0 ? (
+                    <SelectItem value="no-labs-available" disabled>
+                      No lab subjects available
+                    </SelectItem>
+                  ) : (
+                    labSubjects.map((pair) => (
+                      <SelectItem key={`b1-${pair.id}`} value={pair.id}>
+                        {pair.subjectName} - {pair.teacherName}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <p className="text-xs mb-1">Batch 2 - Subject:</p>
+              <Select 
+                onValueChange={(batch2SubjectId) => {
+                  const selectElement = document.querySelector(`[data-batch2-select="${day}-${timeSlot}"]`);
+                  if (selectElement) {
+                    selectElement.setAttribute('data-selected-value', batch2SubjectId);
+                  }
+                  
+                  const batch1SubjectId = document.querySelector(`[data-batch1-select="${day}-${timeSlot}"]`)?.getAttribute('data-selected-value');
+                  if (batch1SubjectId) {
+                    handleBatchRotationSelect(day, timeSlot, batch1SubjectId, batch2SubjectId);
+                  }
+                }}
+                data-batch2-select={`${day}-${timeSlot}`}
+              >
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="B2 Subject" />
+                </SelectTrigger>
+                <SelectContent>
+                  {labSubjects.length === 0 ? (
+                    <SelectItem value="no-labs-available" disabled>
+                      No lab subjects available
+                    </SelectItem>
+                  ) : (
+                    labSubjects.map((pair) => (
+                      <SelectItem key={`b2-${pair.id}`} value={pair.id}>
+                        {pair.subjectName} - {pair.teacherName}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <div className="text-xs mb-1">Or select a regular subject/free hour:</div>
+          <div className="flex flex-col gap-2 mb-2">
+            <Select 
+              onValueChange={(value) => handleCellChange(day, timeSlot, value, 'subject')}
+            >
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="Subject" />
+              </SelectTrigger>
+              <SelectContent>
+                {subjectTeacherPairs.length === 0 ? (
+                  <SelectItem value="no-subjects-available" disabled>
+                    No subjects available
+                  </SelectItem>
+                ) : (
+                  subjectTeacherPairs.map((pair) => (
+                    <SelectItem key={pair.id} value={`${pair.id}|${pair.teacherName}`}>
+                      {pair.subjectName} - {pair.teacherName} {pair.isLab && "(Lab)"}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+            
+            <Select 
+              onValueChange={(value) => handleCellChange(day, timeSlot, value, 'free')}
+            >
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="Free" />
+              </SelectTrigger>
+              <SelectContent>
+                {freeHours.length === 0 ? (
+                  <SelectItem value="no-free-hours-available" disabled>
+                    No free hours available
+                  </SelectItem>
+                ) : (
+                  freeHours.map((free, index) => (
+                    <SelectItem 
+                      key={index} 
+                      value={free.type === 'Others' && free.customType ? free.customType : free.type}
+                    >
+                      {free.type === 'Others' && free.customType ? free.customType : free.type}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="w-full h-6 text-xs"
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
