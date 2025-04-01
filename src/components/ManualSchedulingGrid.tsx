@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -47,18 +46,15 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
   const [entries, setEntries] = useState<TimetableEntry[]>([]);
   const { toast } = useToast();
   
-  // Determine which days to show based on year and dayOptions
   let days: Day[];
   
   if (year === '4th Year') {
-    // For 4th year, use the selected day options
     days = dayOptions.useCustomDays 
       ? dayOptions.selectedDays
       : dayOptions.fourContinuousDays 
         ? ['Monday', 'Tuesday', 'Wednesday', 'Thursday'] as Day[]
         : ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as Day[];
   } else {
-    // For 1st to 3rd year, always use all 6 days
     days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as Day[];
   }
     
@@ -71,7 +67,8 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
     '1:00-2:00',  // Lunch
     '2:00-2:50', 
     '2:50-3:40', 
-    '3:40-4:30'
+    '3:40-4:30',
+    '4:30-5:20'
   ];
   
   const timeOrder: Record<TimeSlot, number> = {
@@ -84,25 +81,22 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
     '2:00-2:50': 6,
     '2:50-3:40': 7,
     '3:40-4:30': 8,
-    // Add lab time slots
-    '9:30-1:00': 9,
-    '10:20-1:00': 10,
-    '2:00-4:30': 11
+    '4:30-5:20': 9,
+    '9:30-1:00': 10,
+    '10:20-1:00': 11,
+    '2:00-4:30': 12
   };
   
   useEffect(() => {
     if (existingEntries && existingEntries.length > 0) {
       console.log("Using existing entries:", existingEntries.length);
       
-      // Filter the existing entries to only include the days we're showing
       const filteredEntries = existingEntries.filter(entry => days.includes(entry.day));
       
-      // If we're missing any days/timeslots, add empty entries for them
       const initialEntries: TimetableEntry[] = [];
       
       days.forEach(day => {
         timeSlots.forEach(timeSlot => {
-          // Check if this day/timeSlot combination exists in the filtered entries
           const existingEntry = filteredEntries.find(
             entry => entry.day === day && entry.timeSlot === timeSlot
           );
@@ -110,7 +104,6 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
           if (existingEntry) {
             initialEntries.push(existingEntry);
           } else {
-            // Add a new empty entry
             initialEntries.push({
               day,
               timeSlot,
@@ -139,16 +132,13 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
     setEntries(initialEntries);
   }, [existingEntries, days, year, dayOptions]);
   
-  // Save entries only when they've been fully initialized or deliberately changed
   useEffect(() => {
     if (entries.length > 0) {
       onSave(entries);
     }
   }, [entries, onSave]);
 
-  // Check for teacher conflicts across timetables
   const checkTeacherConflicts = (day: Day, timeSlot: TimeSlot, teacherName: string): boolean => {
-    // First check within this timetable being edited
     const conflictInCurrentTimetable = entries.some(entry => 
       entry.day === day && 
       entry.timeSlot === timeSlot && 
@@ -161,7 +151,6 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
       return true;
     }
     
-    // Check across all other timetables
     return !isTeacherAvailable(teacherName, day, timeSlot);
   };
   
@@ -173,7 +162,6 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
       const subject = subjectTeacherPairs.find(s => s.id === subjectId);
       
       if (subject) {
-        // Check for teacher conflicts
         if (checkTeacherConflicts(day, timeSlot, subject.teacherName)) {
           toast({
             title: "Scheduling Conflict",
@@ -199,7 +187,6 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
             return entry;
           });
           
-          // Show success toast for feedback
           setTimeout(() => {
             toast({
               title: "Subject Assigned",
@@ -228,7 +215,6 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
           return entry;
         });
         
-        // Show success toast for feedback
         setTimeout(() => {
           toast({
             title: "Free Hour Added",
@@ -306,7 +292,6 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
                     <div className="text-center text-sm font-medium text-muted-foreground italic">Lunch</div>
                   ) : (
                     <div className="space-y-2">
-                      {/* Display selected subject/free hour */}
                       {getEntry(day, timeSlot)?.subjectName && (
                         <div className={`p-1 rounded text-sm ${getEntry(day, timeSlot)?.isLab ? 'bg-green-50' : ''}`}>
                           <div className="font-medium">{getEntry(day, timeSlot)?.subjectName}</div>
@@ -323,7 +308,6 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
                         </div>
                       )}
                       
-                      {/* Subject dropdown */}
                       <Select
                         onValueChange={(value) => handleCellChange(day, timeSlot, value, 'subject')}
                         value=""
@@ -341,7 +325,6 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
                         </SelectContent>
                       </Select>
                       
-                      {/* Free hour dropdown */}
                       <Select
                         onValueChange={(value) => handleCellChange(day, timeSlot, value, 'free')}
                         value=""
@@ -367,7 +350,6 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
                         </SelectContent>
                       </Select>
                       
-                      {/* Clear button */}
                       {(getEntry(day, timeSlot)?.subjectName || getEntry(day, timeSlot)?.isFree) && (
                         <Button 
                           variant="outline" 

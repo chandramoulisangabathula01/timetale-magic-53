@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { useNavigate } from 'react-router-dom';
@@ -53,6 +54,9 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
       year: '1st Year' as YearType,
       semester: 'I' as SemesterType,
       branch: 'CSE' as BranchType,
+      department: 'Computer Science',
+      startDate: new Date().toISOString().split('T')[0],
+      endDate: new Date().toISOString().split('T')[0],
       customBranch: '',
       courseName: 'B.Tech',
       roomNumber: '',
@@ -69,7 +73,8 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
         useCustomDays: false,
         selectedDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday'] as Day[]
       },
-      enableBatchRotation: true
+      enableBatchRotation: true,
+      fourthYearSixDays: false
     }
   );
   

@@ -12,7 +12,8 @@ export type TimeSlot =
   | "11:10-11:20"  // Break
   | "1:00-2:00"    // Lunch
   | "9:30-1:00"    // Morning lab block
-  | "2:00-4:30";   // Afternoon lab block
+  | "2:00-4:30"    // Afternoon lab block
+  | "10:20-1:00";  // Another lab block
 
 export interface TimetableEntry {
   id?: string;
@@ -81,7 +82,7 @@ export interface TimetableFormData {
 }
 
 export type YearType = "1st Year" | "2nd Year" | "3rd Year" | "4th Year";
-export type BranchType = "CSE" | "IT" | "ECE" | "EEE" | "CSD" | "AI & ML" | "Other";
+export type BranchType = "CSE" | "IT" | "ECE" | "EEE" | "CSD" | "AI & ML" | "Other" | "All";
 export type SemesterType = "I" | "II";
 export type UserRole = "admin" | "faculty" | "student" | "guest";
 
@@ -113,5 +114,7 @@ export interface Subject {
   name: string;
   year: YearType;
   branch: BranchType;
+  customBranch?: string;
   isLab: boolean;
+  creditHours?: number;
 }
