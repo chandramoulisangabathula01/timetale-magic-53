@@ -136,13 +136,28 @@ const Login = () => {
   
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-4">
-      <div className="w-full max-w-md text-center mb-6">
-        <div className="flex justify-center mb-4">
-          <Logo />
+     <div
+        className="absolute inset-0 z-1000"
+        style={{
+          backgroundImage: "url('/images/bgphoto.jpg')",
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          backgroundAttachment: 'fixed',
+          opacity: 1,
+          
+        }}
+      />
+      <div className="w-full z-10 max-w-md text-center mb-6 flex items-center justify-between relative bg-white/80 p-4 rounded-lg shadow-sm">
+        <img src="/images/college logo.jpg" alt="College Logo" className="h-16 w-16 object-contain" />
+        <div>
+          <h1 className="text-2xl font-bold mb-1 text-slate-900">University College of Engineering & Technology for Women</h1>
+          <p className="text-slate-700">Kakatiya University, Warangal-506009</p>
         </div>
-        <h1 className="text-2xl font-bold mb-1">Automatic Timetable Generation</h1>
-        <p className="text-slate-600">College of Engineering</p>
+        <img src="/images/NAAC-Logo-250x250.png" alt="NAAC Logo" className="h-16 w-16 object-contain" />
       </div>
+     
+      
       
       <Card className="w-full max-w-md animate-fade-in">
         <CardHeader>

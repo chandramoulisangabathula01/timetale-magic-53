@@ -415,14 +415,14 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 ">
       {!isEditMode && (
-        <div>
-          <h1 className="text-2xl font-bold">
+        <div >
+          {/* <h1 className="text-2xl font-bold">
             Create New Timetable
-          </h1>
+          </h1> */}
           <p className="text-muted-foreground">
-            Fill in the required information to generate a new timetable
+            {/* Fill in the required information to generate a new timetable */}
           </p>
         </div>
       )}
@@ -444,6 +444,7 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
           <TabsContent value="0" className="pt-4">
             <Card>
               <CardHeader>
+                {/* <CardTitle>Academic Titailt</CardTitle> */}
                 <CardTitle>Academic Details</CardTitle>
                 <CardDescription>
                   Enter the basic information for this timetable
@@ -1066,7 +1067,8 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
           </TabsContent>
         </Tabs>
       </div>
-    </div>
+  
+  </div>
   );
 };
 

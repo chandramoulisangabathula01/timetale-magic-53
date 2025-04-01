@@ -167,8 +167,8 @@ const StudentDashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Student Dashboard</h1>
-        <div className="text-sm text-muted-foreground">
+        <h1 className="text-2xl bg-white p-4 rounded-full font-bold">Student Dashboard</h1>
+        <div className="text-sm  bg-white p-4 rounded-full text-muted-foreground">
           <span className="font-medium text-foreground">
             {studentFilters.year} | {studentFilters.branch} | Semester {studentFilters.semester}
           </span>

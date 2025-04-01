@@ -21,7 +21,7 @@ const ViewTimetable: React.FC = () => {
   }
   
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 b">
       <TimetableActions 
         timetable={timetable}
         printRef={printRef}
@@ -29,7 +29,7 @@ const ViewTimetable: React.FC = () => {
         timetableId={id}
       />
       
-      <div className="border rounded-lg p-6 print:border-none" ref={printRef}>
+      <div className="border rounded-lg p-6 bg-white print:border-none" ref={printRef}>
         <div className="mb-6">
           <TimetableHeaderInfo timetable={timetable} />
         </div>

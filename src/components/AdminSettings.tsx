@@ -109,7 +109,7 @@ const AdminSettings: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Admin Settings</h1>
+        <h1 className="text-2xl bg-white p-4 rounded-full font-bold">Admin Settings</h1>
         <Button 
           variant="outline" 
           onClick={() => navigate('/dashboard')}

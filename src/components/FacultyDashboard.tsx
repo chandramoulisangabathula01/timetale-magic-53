@@ -143,9 +143,9 @@ const FacultyDashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Faculty Dashboard</h1>
-        <div className="text-sm text-muted-foreground">
-          Logged in as: <span className="font-medium text-foreground">{username}</span>
+        <h1 className="text-2xl bg-white p-4 rounded-full font-bold">Faculty Dashboard</h1>
+        <div className="text-sm bg-white p-4 rounded-full">
+          Logged in as: <span className="font-medium  text-foreground">{username}</span>
         </div>
       </div>
       

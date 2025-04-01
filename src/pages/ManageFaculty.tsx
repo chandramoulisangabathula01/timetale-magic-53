@@ -16,6 +16,7 @@ import {
   deleteFaculty,
   FacultyData
 } from '@/utils/facultyUtils';
+import DashboardLayout from '@/components/DashboardLayout';
 
 const ManageFaculty = () => {
   const { isAuthenticated, userRole } = useAuth();
@@ -156,10 +157,12 @@ const ManageFaculty = () => {
   };
   
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto py-8 px-4">
+    <DashboardLayout>
+    
+      
+      <div className="container mx-auto py-8 px-4 relative z-10">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Manage Faculty</h1>
+          <h1 className="text-2xl bg-white p-4 rounded-full font-bold ">Manage Faculty</h1>
           <Button 
             onClick={() => navigate('/dashboard')}
             variant="outline"
@@ -326,7 +329,8 @@ const ManageFaculty = () => {
           </Card>
         </div>
       </div>
-    </div>
+    
+    </DashboardLayout>
   );
 };
 

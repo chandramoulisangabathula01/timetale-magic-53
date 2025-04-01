@@ -229,7 +229,7 @@ const ManageSubjects: React.FC = () => {
     <DashboardLayout>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold">Manage Subjects</h1>
+          <h1 className="text-2xl bg-white p-4 rounded-full font-bold">Manage Subjects</h1>
           <Button 
             variant="outline" 
             onClick={() => navigate('/dashboard')}
@@ -337,12 +337,12 @@ const ManageSubjects: React.FC = () => {
               </div>
               
               <div className="flex items-center space-x-2 pt-8">
-                <Checkbox 
+                {/* <Checkbox 
                   id="isLab" 
                   checked={isEditing && editingSubject ? editingSubject.isLab : newSubject.isLab}
                   onCheckedChange={(checked) => handleCheckboxChange('isLab', checked === true)}
                 />
-                <Label htmlFor="isLab">This is a lab subject</Label>
+                <Label htmlFor="isLab">This is a lab subject</Label> */}
               </div>
             </div>
             
@@ -362,7 +362,7 @@ const ManageSubjects: React.FC = () => {
           </CardContent>
         </Card>
         
-        <div>
+       <Card className='p-4'>
           <h2 className="text-xl font-semibold mb-4">Subject List</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -472,7 +472,7 @@ const ManageSubjects: React.FC = () => {
               ))}
             </div>
           )}
-        </div>
+        </Card>
       </div>
     </DashboardLayout>
   );

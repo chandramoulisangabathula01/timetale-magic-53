@@ -33,7 +33,7 @@ const TimetableActions: React.FC<TimetableActionsProps> = ({
   };
   
   return (
-    <div className="flex justify-between items-center">
+    <div className="flex justify-between  items-center">
       <div className="flex items-center gap-2">
         <Button 
           variant="outline" 
@@ -44,7 +44,7 @@ const TimetableActions: React.FC<TimetableActionsProps> = ({
           <ArrowLeft className="h-4 w-4" />
           Back
         </Button>
-        <h1 className="text-2xl font-bold">View Timetable</h1>
+        <h1 className="text-lg bg-white rounded-xl p-1 font-bold">View Timetable</h1>
       </div>
       
       <div className="flex items-center gap-2 print:hidden">

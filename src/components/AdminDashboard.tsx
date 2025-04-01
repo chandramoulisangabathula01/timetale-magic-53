@@ -85,9 +85,10 @@ const AdminDashboard: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+    <div className="space-y-6 " >
+      
+      <div className="flex justify-between items-center " >
+        <h1 className="text-2xl font-bold text-black bg-white p-4 rounded-full ">Admin Dashboard</h1>
         <Button onClick={navigateToCreateTimetable} className="flex items-center gap-2">
           <Plus className="h-4 w-4" />
           Create New Timetable
@@ -117,8 +118,8 @@ const AdminDashboard: React.FC = () => {
         </CardContent>
       </Card>
 
-      <div>
-        <h2 className="text-xl font-semibold mb-4">Available Timetables</h2>
+      <Card className='p-4 '>
+        <h2 className="text-xl font-semibold mb-4 ">Available Timetables</h2>
         
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <Select value={filterYear} onValueChange={setFilterYear}>
@@ -258,7 +259,7 @@ const AdminDashboard: React.FC = () => {
             ))}
           </div>
         )}
-      </div>
+      </Card>
     </div>
   );
 };

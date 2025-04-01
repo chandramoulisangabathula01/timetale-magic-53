@@ -36,7 +36,7 @@ const TimetableHeaderInfo: React.FC<TimetableHeaderInfoProps> = ({ timetable, pr
   }
   
   return (
-    <div className="mb-6 no-print">
+    <div className="mb-6 no-print bg-white">
       <h2 className="font-bold text-center text-xl mb-1">College of Engineering</h2>
       <h3 className="font-bold text-center text-lg">
         {timetable.formData.courseName} - {timetable.formData.year} - {timetable.formData.branch} - Semester {timetable.formData.semester}

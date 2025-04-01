@@ -33,7 +33,7 @@ const CreateTimetable = () => {
     <DashboardLayout>
       <div className="container mx-auto py-8 px-4">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Create Timetable</h1>
+          <h1 className="text-2xl bg-white p-4 rounded-full font-bold">Create Timetable</h1>
           <Button 
             variant="outline" 
             onClick={() => navigate('/dashboard')}
