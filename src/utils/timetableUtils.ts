@@ -1,4 +1,3 @@
-
 import { v4 as uuidv4 } from 'uuid';
 import { 
   Timetable, 
@@ -204,28 +203,10 @@ export const generateTimetable = (formData: TimetableFormData): Timetable => {
         const labGroupId1 = uuidv4();
         
         // Add morning lab entry for B1 on day 1
-        entries.push({
-          day: day1,
-          timeSlot: '9:30-1:00',
-          subjectName: pair.b1.subjectName,
-          teacherName: pair.b1.teacherName,
-          isLab: true,
-          batchNumber: 'B1',
-          isLabGroup: true,
-          labGroupId: labGroupId1
-        });
+        entries.push(createLabEntryForDay(day1, '9:30-1:00', pair.b1));
         
         // Add morning lab entry for B2 on day 1
-        entries.push({
-          day: day1,
-          timeSlot: '9:30-1:00',
-          subjectName: pair.b2.subjectName,
-          teacherName: pair.b2.teacherName,
-          isLab: true,
-          batchNumber: 'B2',
-          isLabGroup: true,
-          labGroupId: labGroupId1
-        });
+        entries.push(createLabEntryForDay(day1, '9:30-1:00', pair.b2));
         
         // Mark all morning slots as allocated for day 1
         morningLabSlots.forEach(slot => {
@@ -238,28 +219,10 @@ export const generateTimetable = (formData: TimetableFormData): Timetable => {
         const labGroupId2 = uuidv4();
         
         // Add morning lab entry for B2 on day 2
-        entries.push({
-          day: day2,
-          timeSlot: '9:30-1:00',
-          subjectName: pair.b1.subjectName,
-          teacherName: pair.b1.teacherName,
-          isLab: true,
-          batchNumber: 'B2',
-          isLabGroup: true,
-          labGroupId: labGroupId2
-        });
+        entries.push(createLabEntryForDay(day2, '9:30-1:00', pair.b1));
         
         // Add morning lab entry for B1 on day 2
-        entries.push({
-          day: day2,
-          timeSlot: '9:30-1:00',
-          subjectName: pair.b2.subjectName,
-          teacherName: pair.b2.teacherName,
-          isLab: true,
-          batchNumber: 'B1',
-          isLabGroup: true,
-          labGroupId: labGroupId2
-        });
+        entries.push(createLabEntryForDay(day2, '9:30-1:00', pair.b2));
         
         // Mark all morning slots as allocated for day 2
         morningLabSlots.forEach(slot => {
@@ -399,6 +362,25 @@ export const generateTimetable = (formData: TimetableFormData): Timetable => {
     formData,
     entries,
     createdAt: new Date().toISOString()
+  };
+};
+
+// Update the function that creates timetable entries for lab subjects to include multiple teachers
+export const createLabEntryForDay = (
+  day: Day,
+  timeSlot: TimeSlot,
+  pair: SubjectTeacherPair
+): TimetableEntry => {
+  return {
+    id: uuidv4(),
+    day,
+    timeSlot,
+    subjectName: pair.subjectName,
+    teacherName: pair.teacherName,
+    teacherNames: pair.teacherNames,
+    isLab: true,
+    batchNumber: pair.batchNumber,
+    mergeSlots: true
   };
 };
 

@@ -1,4 +1,3 @@
-
 export type Day = "Mon" | "Tue" | "Wed" | "Thu" | "Fri" | "Sat" | "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday" | "Saturday";
 export type TimeSlot =
   | "9:30-10:20"

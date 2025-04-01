@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { useNavigate } from 'react-router-dom';
@@ -10,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { AlertTriangle, AlertCircle, Plus, Trash2, Edit } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { 
   Tabs,
   TabsContent,
@@ -83,7 +83,9 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
   
   const [newSubject, setNewSubject] = useState('');
   const [newTeacher, setNewTeacher] = useState('');
+  const [newTeacher2, setNewTeacher2] = useState('');
   const [isLabSubject, setIsLabSubject] = useState(false);
+  const [multipleTeachers, setMultipleTeachers] = useState(false);
   const [batchNumber, setBatchNumber] = useState('');
   
   const [newFreeHourType, setNewFreeHourType] = useState<FreeHourType>('Library');
@@ -203,7 +205,15 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
       return;
     }
     
-    // Modified validation: Only check for duplicates if it's NOT a lab subject
+    if (isLabSubject && multipleTeachers && !newTeacher2.trim()) {
+      toast({
+        title: "Missing second teacher",
+        description: "Please select a second teacher for the lab",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     if (!isLabSubject && subjectTeacherPairExists(newSubject, newTeacher, formData.subjectTeacherPairs)) {
       toast({
         title: "Duplicate pair",
@@ -218,10 +228,13 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
       finalSubjectName = `${finalSubjectName} lab`;
     }
     
+    const teacherNames = multipleTeachers ? [newTeacher, newTeacher2] : [newTeacher];
+    
     const newPair: SubjectTeacherPair = {
       id: uuidv4(),
       subjectName: finalSubjectName,
       teacherName: newTeacher,
+      teacherNames: teacherNames,
       isLab: isLabSubject,
       batchNumber: isLabSubject ? batchNumber : undefined
     };
@@ -233,7 +246,9 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
     
     setNewSubject('');
     setNewTeacher('');
+    setNewTeacher2('');
     setIsLabSubject(false);
+    setMultipleTeachers(false);
     setBatchNumber('');
   };
 
@@ -662,11 +677,14 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
                         <li>
                           To use batch rotation for labs, create lab subjects with matching names but different batch numbers (B1/B2).
                         </li>
+                        <li>
+                          Lab subjects can have up to 2 teachers assigned to them.
+                        </li>
                       </ul>
                     </AlertDescription>
                   </Alert>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div className="space-y-2">
                       <Label htmlFor="newSubject">Subject</Label>
                       <Select
@@ -697,14 +715,68 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
                       )}
                     </div>
                     
+                    <div className="space-y-4">
+                      <div className="flex items-center space-x-2 pt-7">
+                        <Checkbox 
+                          id="isLabSubject" 
+                          checked={isLabSubject} 
+                          onCheckedChange={(checked) => {
+                            setIsLabSubject(checked === true);
+                            if (checked !== true) {
+                              setMultipleTeachers(false);
+                            }
+                          }}
+                        />
+                        <Label htmlFor="isLabSubject">This is a lab subject</Label>
+                      </div>
+                      
+                      {isLabSubject && (
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="batchNumber">Batch Number</Label>
+                            <Select
+                              value={batchNumber}
+                              onValueChange={setBatchNumber}
+                            >
+                              <SelectTrigger id="batchNumber">
+                                <SelectValue placeholder="Select Batch" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="B1">B1</SelectItem>
+                                <SelectItem value="B2">B2</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label>Number of Teachers</Label>
+                            <RadioGroup 
+                              value={multipleTeachers ? "2" : "1"} 
+                              onValueChange={(value) => setMultipleTeachers(value === "2")}
+                              className="flex flex-row gap-4"
+                            >
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="1" id="single-teacher" />
+                                <Label htmlFor="single-teacher">Single Teacher</Label>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="2" id="two-teachers" />
+                                <Label htmlFor="two-teachers">Two Teachers</Label>
+                              </div>
+                            </RadioGroup>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
                     <div className="space-y-2">
-                      <Label htmlFor="newTeacher">Teacher</Label>
+                      <Label htmlFor="newTeacher">{multipleTeachers ? "Teacher 1" : "Teacher"}</Label>
                       <Select
                         value={newTeacher}
                         onValueChange={setNewTeacher}
                       >
                         <SelectTrigger id="newTeacher">
-                          <SelectValue placeholder="Select Teacher" />
+                          <SelectValue placeholder={multipleTeachers ? "Select First Teacher" : "Select Teacher"} />
                         </SelectTrigger>
                         <SelectContent>
                           {availableFaculty.length === 0 ? (
@@ -727,34 +799,32 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
                       )}
                     </div>
                     
-                    <div className="space-y-4">
-                      <div className="flex items-center space-x-2 pt-7">
-                        <Checkbox 
-                          id="isLabSubject" 
-                          checked={isLabSubject} 
-                          onCheckedChange={(checked) => setIsLabSubject(checked === true)}
-                        />
-                        <Label htmlFor="isLabSubject">This is a lab subject</Label>
+                    {multipleTeachers && (
+                      <div className="space-y-2">
+                        <Label htmlFor="newTeacher2">Teacher 2</Label>
+                        <Select
+                          value={newTeacher2}
+                          onValueChange={setNewTeacher2}
+                        >
+                          <SelectTrigger id="newTeacher2">
+                            <SelectValue placeholder="Select Second Teacher" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableFaculty.length === 0 ? (
+                              <SelectItem value="no-faculty-available" disabled>
+                                No faculty available - create faculty first
+                              </SelectItem>
+                            ) : (
+                              availableFaculty.map(faculty => (
+                                <SelectItem key={faculty.id} value={faculty.name}>
+                                  {faculty.name} ({faculty.shortName})
+                                </SelectItem>
+                              ))
+                            )}
+                          </SelectContent>
+                        </Select>
                       </div>
-                      
-                      {isLabSubject && (
-                        <div className="space-y-2 mt-2">
-                          <Label htmlFor="batchNumber">Batch Number</Label>
-                          <Select
-                            value={batchNumber}
-                            onValueChange={setBatchNumber}
-                          >
-                            <SelectTrigger id="batchNumber">
-                              <SelectValue placeholder="Select Batch" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="B1">B1</SelectItem>
-                              <SelectItem value="B2">B2</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      )}
-                    </div>
+                    )}
                   </div>
                   
                   <div className="flex justify-end">
@@ -785,7 +855,11 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
                             <div>
                               <div className="font-medium">{pair.subjectName}</div>
                               <div className="text-sm text-muted-foreground">
-                                Teacher: {pair.teacherName}
+                                {pair.teacherNames && pair.teacherNames.length > 1 ? (
+                                  <span>Teachers: {pair.teacherNames.join(', ')}</span>
+                                ) : (
+                                  <span>Teacher: {pair.teacherName}</span>
+                                )}
                                 {pair.isLab && pair.batchNumber && ` (${pair.batchNumber})`}
                                 {pair.isLab && <span className="ml-2 text-primary">Lab</span>}
                               </div>
