@@ -1,4 +1,3 @@
-
 import { v4 as uuidv4 } from 'uuid';
 import { YearType, BranchType, Subject } from './types';
 
@@ -65,13 +64,15 @@ export const getFilteredSubjects = (year: YearType, branch: BranchType, customBr
 };
 
 // Check if a subject-teacher pair already exists
+// Now this only checks for regular subjects, lab subjects can have duplicate teachers
 export const subjectTeacherPairExists = (
   subjectName: string, 
   teacherName: string, 
-  existingPairs: { subjectName: string, teacherName: string }[]
+  existingPairs: { subjectName: string, teacherName: string, isLab?: boolean }[]
 ) => {
+  // Only check non-lab subjects for duplicates
   return existingPairs.some(
-    pair => pair.subjectName === subjectName && pair.teacherName === teacherName
+    pair => !pair.isLab && pair.subjectName === subjectName && pair.teacherName === teacherName
   );
 };
 

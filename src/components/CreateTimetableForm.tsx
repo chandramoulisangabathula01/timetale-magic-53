@@ -203,7 +203,8 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
       return;
     }
     
-    if (subjectTeacherPairExists(newSubject, newTeacher, formData.subjectTeacherPairs)) {
+    // Modified validation: Only check for duplicates if it's NOT a lab subject
+    if (!isLabSubject && subjectTeacherPairExists(newSubject, newTeacher, formData.subjectTeacherPairs)) {
       toast({
         title: "Duplicate pair",
         description: "This subject-teacher pair already exists",
