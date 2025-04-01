@@ -1,112 +1,66 @@
+export type Day = "Mon" | "Tue" | "Wed" | "Thu" | "Fri" | "Sat";
+export type TimeSlot =
+  | "9:30-10:20"
+  | "10:20-11:10"
+  | "11:20-12:10"
+  | "12:10-1:00"
+  | "2:00-2:50"
+  | "2:50-3:40"
+  | "3:40-4:30"
+  | "4:30-5:20";
 
-// Define basic types for the timetable system
-
-export type YearType = '1st Year' | '2nd Year' | '3rd Year' | '4th Year';
-export type SemesterType = 'I' | 'II';
-export type BranchType = 'CSE' | 'IT' | 'ECE' | 'EEE' | 'CSD' | 'AI & ML' | 'Other';
-export type Day = 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday';
-export type TimeSlot = '9:30-10:20' | '10:20-11:10' | '11:10-11:20' | '11:20-12:10' | '12:10-1:00' | '1:00-2:00' | '2:00-2:50' | '2:50-3:40' | '3:40-4:30' | '9:30-1:00' | '10:20-1:00' | '2:00-4:30';
-export type FreeHourType = 'Library' | 'Sports' | 'Project' | 'Others' | string;
-export type UserRole = 'admin' | 'faculty' | 'student';
-export type BatchType = 'B1' | 'B2';
-
-// Subject definitions
-export interface Subject {
-  id: string;
-  name: string;
-  year: YearType;
-  branch: BranchType | 'All';
-  customBranch?: string; // For "Other" branch
-  isLab: boolean;
-  creditHours: number;
-}
-
-// Faculty definitions
-export interface Faculty {
-  id: string;
-  name: string;
-  shortName: string;
-  department: string;
-  email: string;
-  maxHours?: number;
-}
-
-// Pair of subject and teacher for timetable
-export interface SubjectTeacherPair {
-  id: string;
-  subjectName: string;
-  teacherName: string;
-  isLab: boolean;
-  batchNumber?: string;
-}
-
-// Lab pairing for batch rotation
-export interface LabBatchPair {
-  day: Day;
-  timeSlot: TimeSlot;
-  batch1: {
-    subjectName: string;
-    teacherName: string;
-    batchNumber: string;
-  };
-  batch2: {
-    subjectName: string;
-    teacherName: string;
-    batchNumber: string;
-  };
-  labGroupId: string;
-}
-
-// Timetable entries - individual cells in the timetable
 export interface TimetableEntry {
+  id?: string;
   day: Day;
   timeSlot: TimeSlot;
   subjectName?: string;
-  teacherName?: string;
+  teacherName?: string; // We'll keep this for backward compatibility
+  teacherNames?: string[]; // New field for multiple teachers
   isLab?: boolean;
   batchNumber?: string;
   isFree?: boolean;
-  freeType?: FreeHourType;
-  customFreeType?: string; // Add the missing property
-  mergeSlots?: boolean;    // Add this property as well
+  freeType?: string;
   isBreak?: boolean;
   isLunch?: boolean;
   isLabGroup?: boolean;
   labGroupId?: string;
-  // For batch rotation labs
-  isBatchRotationLab?: boolean;
-  batch1Subject?: string;
-  batch1Teacher?: string;
-  batch2Subject?: string;
-  batch2Teacher?: string;
 }
 
-// Form data for creating a timetable
-export interface TimetableFormData {
-  year: YearType;
-  semester: SemesterType;
-  branch: BranchType;
-  customBranch: string;
-  courseName: string;
-  roomNumber: string;
-  academicYear: string;
-  classInchargeName: string;
-  mobileNumber: string;
-  date: string;
-  subjectTeacherPairs: SubjectTeacherPair[];
-  freeHours: { type: FreeHourType, customType?: string, mergeSlots?: boolean }[];
-  dayOptions: { 
-    fourContinuousDays: boolean;
-    useCustomDays: boolean;
-    selectedDays: Day[];
-  };
-  enableBatchRotation?: boolean;
-}
-
-// Complete timetable definition
 export interface Timetable {
   id: string;
   formData: TimetableFormData;
   entries: TimetableEntry[];
   createdAt: string;
+}
+
+export interface SubjectTeacherPair {
+  id: string;
+  subjectName: string;
+  teacherName: string; // We'll keep this for backward compatibility
+  teacherNames?: string[]; // New field for multiple teachers
+  isLab: boolean;
+  batchNumber?: string;
+}
+
+export interface TimetableFormData {
+  year: string;
+  branch: string;
+  semester: string;
+  department: string;
+  startDate: string;
+  endDate: string;
+  subjectTeacherPairs: SubjectTeacherPair[];
+  freeHours: FreeHour[];
+  fourthYearSixDays: boolean;
+}
+
+export interface FreeHour {
+  id: string;
+  name: string;
+}
+
+export interface Faculty {
+  id: string;
+  name: string;
+  department: string;
 }
