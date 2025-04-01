@@ -211,24 +211,61 @@ export const generateTimetable = (formData: TimetableFormData): Timetable => {
         // Mark all morning slots as allocated for day 1
         morningLabSlots.forEach(slot => {
           allocatedSlots.push({ day: day1, timeSlot: slot });
-          allocatedTeacherSlots.push({ day: day1, timeSlot: slot, teacherName: pair.b1.teacherName });
-          allocatedTeacherSlots.push({ day: day1, timeSlot: slot, teacherName: pair.b2.teacherName });
+          if (pair.b1.teacherName) {
+            allocatedTeacherSlots.push({ day: day1, timeSlot: slot, teacherName: pair.b1.teacherName });
+          }
+          if (pair.b2.teacherName) {
+            allocatedTeacherSlots.push({ day: day1, timeSlot: slot, teacherName: pair.b2.teacherName });
+          }
+          // Add teacherNames to allocated slots too
+          if (pair.b1.teacherNames) {
+            pair.b1.teacherNames.forEach(teacher => {
+              allocatedTeacherSlots.push({ day: day1, timeSlot: slot, teacherName: teacher });
+            });
+          }
+          if (pair.b2.teacherNames) {
+            pair.b2.teacherNames.forEach(teacher => {
+              allocatedTeacherSlots.push({ day: day1, timeSlot: slot, teacherName: teacher });
+            });
+          }
         });
         
         // Day 2: B2 lab in morning, B1 lab in afternoon if available
         const labGroupId2 = uuidv4();
         
-        // Add morning lab entry for B2 on day 2
-        entries.push(createLabEntryForDay(day2, '9:30-1:00', pair.b1));
+        // FIXED: Swap the batch assignments for the second day to implement proper rotation
+        // Add morning lab entry for B2's lab with B1 batch on day 2
+        entries.push(createLabEntryForDay(day2, '9:30-1:00', {
+          ...pair.b2,
+          batchNumber: 'B1' // Swap batch number for rotation
+        }));
         
-        // Add morning lab entry for B1 on day 2
-        entries.push(createLabEntryForDay(day2, '9:30-1:00', pair.b2));
+        // Add morning lab entry for B1's lab with B2 batch on day 2
+        entries.push(createLabEntryForDay(day2, '9:30-1:00', {
+          ...pair.b1,
+          batchNumber: 'B2' // Swap batch number for rotation
+        }));
         
         // Mark all morning slots as allocated for day 2
         morningLabSlots.forEach(slot => {
           allocatedSlots.push({ day: day2, timeSlot: slot });
-          allocatedTeacherSlots.push({ day: day2, timeSlot: slot, teacherName: pair.b1.teacherName });
-          allocatedTeacherSlots.push({ day: day2, timeSlot: slot, teacherName: pair.b2.teacherName });
+          if (pair.b1.teacherName) {
+            allocatedTeacherSlots.push({ day: day2, timeSlot: slot, teacherName: pair.b1.teacherName });
+          }
+          if (pair.b2.teacherName) {
+            allocatedTeacherSlots.push({ day: day2, timeSlot: slot, teacherName: pair.b2.teacherName });
+          }
+          // Add teacherNames to allocated slots too
+          if (pair.b1.teacherNames) {
+            pair.b1.teacherNames.forEach(teacher => {
+              allocatedTeacherSlots.push({ day: day2, timeSlot: slot, teacherName: teacher });
+            });
+          }
+          if (pair.b2.teacherNames) {
+            pair.b2.teacherNames.forEach(teacher => {
+              allocatedTeacherSlots.push({ day: day2, timeSlot: slot, teacherName: teacher });
+            });
+          }
         });
       }
     }
