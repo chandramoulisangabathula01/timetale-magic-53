@@ -4,8 +4,8 @@ import React from 'react';
 import App from './App.tsx';
 import './index.css';
 
-createRoot(document.getElementById("root")!).render(
-  <React.StrictMode >
-    <App />
-  </React.StrictMode>
-);
+// Create root element without any router here - the router is defined in App.tsx
+const root = createRoot(document.getElementById("root")!);
+
+// Render the app without StrictMode to avoid any potential issues with React Router
+root.render(<App />);

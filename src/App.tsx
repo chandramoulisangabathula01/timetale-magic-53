@@ -15,30 +15,34 @@ import ManageSubjects from "./pages/ManageSubjects";
 import ManageFaculty from "./pages/ManageFaculty";
 import AdminSettingsPage from "./pages/AdminSettingsPage";
 
+// Create a new QueryClient instance
 const queryClient = new QueryClient();
 
-const App = () => (
-  <BrowserRouter>
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/create-timetable" element={<CreateTimetable />} />
-            <Route path="/edit-timetable/:id" element={<EditTimetable />} />
-            <Route path="/view-timetable/:id" element={<ViewTimetablePage />} />
-            <Route path="/manage-subjects" element={<ManageSubjects />} />
-            <Route path="/manage-faculty" element={<ManageFaculty />} />
-            <Route path="/admin-settings" element={<AdminSettingsPage />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </TooltipProvider>
-      </AuthProvider>
-    </QueryClientProvider>
-  </BrowserRouter>
-);
+const App = () => {
+  return (
+    // BrowserRouter needs to be the outermost router component
+    <BrowserRouter>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <TooltipProvider>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/create-timetable" element={<CreateTimetable />} />
+              <Route path="/edit-timetable/:id" element={<EditTimetable />} />
+              <Route path="/view-timetable/:id" element={<ViewTimetablePage />} />
+              <Route path="/manage-subjects" element={<ManageSubjects />} />
+              <Route path="/manage-faculty" element={<ManageFaculty />} />
+              <Route path="/admin-settings" element={<AdminSettingsPage />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            <Toaster />
+            <Sonner />
+          </TooltipProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </BrowserRouter>
+  );
+};
 
 export default App;
