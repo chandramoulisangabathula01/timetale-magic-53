@@ -1,5 +1,6 @@
+
 import React from "react";
-import { LabFacultySelector } from "./LabFacultySelector";
+import LabFacultySelector from "./LabFacultySelector";
 
 // This is a helper component to be used as a reference for patching ManualSchedulingGrid
 const ManualSchedulingGridPatch = () => {

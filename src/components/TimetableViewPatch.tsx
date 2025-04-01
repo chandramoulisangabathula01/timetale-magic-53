@@ -1,6 +1,6 @@
 
 import React from "react";
-import { MultiTeacherDisplay } from "./MultiTeacherDisplay";
+import MultiTeacherDisplay from "./MultiTeacherDisplay";
 import { normalizeTeacherData } from "../utils/facultyLabUtils";
 
 // This is a helper component to be used as a reference for patching TimetableView

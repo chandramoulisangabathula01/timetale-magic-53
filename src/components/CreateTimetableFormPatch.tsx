@@ -1,6 +1,6 @@
 
 import React from "react";
-import { LabFacultySelector } from "./LabFacultySelector";
+import LabFacultySelector from "./LabFacultySelector";
 
 // This is a helper component to be used in conjunction with CreateTimetableForm
 // It provides the functionality for multiple faculty selection for labs
