@@ -1,6 +1,8 @@
 
 import React from 'react';
 import { Timetable, TimetableEntry, Day, TimeSlot } from '@/utils/types';
+import { formatTeacherNames, normalizeTeacherData } from '@/utils/facultyLabUtils';
+import MultiTeacherDisplay from './MultiTeacherDisplay';
 
 interface TimetableViewProps {
   timetable: Timetable;
@@ -94,14 +96,17 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
               const groupEntries = getLabEntries(groupId!);
               return (
                 <React.Fragment key={groupId}>
-                  {groupEntries.map((lab, idx) => (
-                    <React.Fragment key={idx}>
-                      {idx > 0 && <div className="my-1 border-t border-dashed" />}
-                      <div className="font-medium">{lab.subjectName}</div>
-                      <div className="text-xs text-muted-foreground">{lab.teacherName}</div>
-                      {lab.batchNumber && <div className="text-xs text-primary">({lab.batchNumber})</div>}
-                    </React.Fragment>
-                  ))}
+                  {groupEntries.map((lab, idx) => {
+                    const normalizedEntry = normalizeTeacherData(lab);
+                    return (
+                      <React.Fragment key={idx}>
+                        {idx > 0 && <div className="my-1 border-t border-dashed" />}
+                        <div className="font-medium">{lab.subjectName}</div>
+                        <MultiTeacherDisplay entry={normalizedEntry} />
+                        {lab.batchNumber && <div className="text-xs text-primary">({lab.batchNumber})</div>}
+                      </React.Fragment>
+                    );
+                  })}
                 </React.Fragment>
               );
             })}
@@ -111,14 +116,17 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
         // Display individual lab entries
         return (
           <div className="text-sm bg-green-100 p-1 rounded">
-            {labEntries.map((lab, idx) => (
-              <React.Fragment key={idx}>
-                {idx > 0 && <div className="my-1 border-t border-dashed" />}
-                <div className="font-medium">{lab.subjectName}</div>
-                <div className="text-xs text-muted-foreground">{lab.teacherName}</div>
-                {lab.batchNumber && <div className="text-xs text-primary">({lab.batchNumber})</div>}
-              </React.Fragment>
-            ))}
+            {labEntries.map((lab, idx) => {
+              const normalizedEntry = normalizeTeacherData(lab);
+              return (
+                <React.Fragment key={idx}>
+                  {idx > 0 && <div className="my-1 border-t border-dashed" />}
+                  <div className="font-medium">{lab.subjectName}</div>
+                  <MultiTeacherDisplay entry={normalizedEntry} />
+                  {lab.batchNumber && <div className="text-xs text-primary">({lab.batchNumber})</div>}
+                </React.Fragment>
+              );
+            })}
           </div>
         );
       }
@@ -131,7 +139,6 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
     
     if (entry.isFree) {
       let freeType = entry.freeType;
-      // Fix the customFreeType property access
       if (entry.freeType === 'Others' && entry.customFreeType) {
         freeType = entry.customFreeType;
       }
@@ -139,11 +146,12 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
     }
     
     // For regular subjects
-    if (entry.subjectName && entry.teacherName) {
+    if (entry.subjectName) {
+      const normalizedEntry = normalizeTeacherData(entry);
       return (
         <div>
           <div className="font-medium">{entry.subjectName}</div>
-          <div className="text-xs text-muted-foreground">{entry.teacherName}</div>
+          <MultiTeacherDisplay entry={normalizedEntry} />
           {entry.batchNumber && (
             <div className="text-xs text-primary">({entry.batchNumber})</div>
           )}

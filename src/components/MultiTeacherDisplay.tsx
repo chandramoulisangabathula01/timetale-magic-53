@@ -11,9 +11,9 @@ const MultiTeacherDisplay: React.FC<MultiTeacherDisplayProps> = ({ entry }) => {
   const teacherText = formatTeacherNames(entry);
   
   return (
-    <span className="text-xs text-gray-600 block">
+    <div className="text-xs text-muted-foreground">
       {teacherText}
-    </span>
+    </div>
   );
 };
 

@@ -21,7 +21,7 @@ const ViewTimetable: React.FC = () => {
   }
   
   return (
-    <div className="space-y-6 b">
+    <div className="space-y-6">
       <TimetableActions 
         timetable={timetable}
         printRef={printRef}
@@ -39,8 +39,8 @@ const ViewTimetable: React.FC = () => {
           printMode={false}
         />
 
-        {/* Faculty details shown only in the printable view */}
-        <TimetableFacultyDetails timetable={timetable} printMode={true} />
+        {/* Faculty details shown in both print and normal view */}
+        <TimetableFacultyDetails timetable={timetable} printMode={false} />
       </div>
     </div>
   );
