@@ -20,9 +20,8 @@ const queryClient = new QueryClient();
 
 const App = () => {
   return (
-    // BrowserRouter needs to be the outermost router component
-    <BrowserRouter>
-      <QueryClientProvider client={queryClient}>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
         <AuthProvider>
           <TooltipProvider>
             <Routes>
@@ -40,8 +39,8 @@ const App = () => {
             <Sonner />
           </TooltipProvider>
         </AuthProvider>
-      </QueryClientProvider>
-    </BrowserRouter>
+      </BrowserRouter>
+    </QueryClientProvider>
   );
 };
 
