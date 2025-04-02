@@ -11,6 +11,8 @@ A comprehensive web application for creating and managing academic timetables fo
 - Conflict detection for faculty scheduling
 - PDF export
 - Multiple user roles (Admin, Faculty, Student)
+- Mobile-responsive design
+- Batch rotation for lab sessions
 
 ## Getting Started
 
@@ -21,7 +23,18 @@ A comprehensive web application for creating and managing academic timetables fo
 
 ## Documentation
 
-For detailed documentation about the system, please see [the documentation](/public/documentation.md).
+For detailed documentation about the system, please see:
+- [Main Documentation](/public/documentation.md) - Overview of features and usage
+- [Project Structure](/public/project-structure.md) - Details about code organization and logic
+
+## Mobile Responsiveness
+
+This application is fully responsive and works on:
+- Desktop computers
+- Tablets
+- Mobile phones
+
+The UI automatically adapts to different screen sizes while maintaining full functionality.
 
 ## Technologies
 

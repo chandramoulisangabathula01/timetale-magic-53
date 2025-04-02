@@ -102,11 +102,26 @@
 /* Timetable specific styles */
 .timetable-grid {
   display: grid;
-  grid-template-columns: 100px repeat(6, 1fr);
+  grid-template-columns: 80px repeat(6, 1fr);
   gap: 1px;
   border: 1px solid hsl(var(--border));
   border-radius: var(--radius);
   overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .timetable-grid {
+    grid-template-columns: 60px repeat(6, minmax(80px, 1fr));
+    overflow-x: auto;
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .timetable-grid {
+    grid-template-columns: 50px repeat(6, minmax(70px, 1fr));
+    font-size: 0.75rem;
+  }
 }
 
 .timetable-header,
@@ -115,6 +130,14 @@
   padding: 0.75rem;
   text-align: center;
   border: 1px solid hsl(var(--border));
+}
+
+@media (max-width: 640px) {
+  .timetable-header,
+  .timetable-time,
+  .timetable-cell {
+    padding: 0.5rem 0.25rem;
+  }
 }
 
 .timetable-header {
@@ -132,6 +155,12 @@
   background-color: hsl(var(--background));
   min-height: 80px;
   transition: background-color 0.2s;
+}
+
+@media (max-width: 640px) {
+  .timetable-cell {
+    min-height: 60px;
+  }
 }
 
 .timetable-cell:hover {
@@ -159,6 +188,13 @@
   color: hsl(var(--muted-foreground));
 }
 
+/* Mobile responsive styles */
+.mobile-timetable-container {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+}
+
 /* Print styles */
 @media print {
   .no-print {
@@ -182,4 +218,25 @@
 
 .print-only {
   display: none;
+}
+
+/* Mobile responsive enhancements */
+@media (max-width: 768px) {
+  .responsive-card {
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .responsive-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .responsive-flex {
+    flex-direction: column;
+  }
+  
+  /* Ensure inputs are properly sized on mobile */
+  input, select, textarea {
+    max-width: 100%;
+  }
 }
