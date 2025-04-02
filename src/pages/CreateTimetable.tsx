@@ -9,20 +9,32 @@ import { initializeDefaultSubjects } from '@/utils/subjectsUtils';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 
+/**
+ * CreateTimetable Component
+ * 
+ * This page component allows administrators to create new timetables.
+ * It handles authentication checks, initializes default subjects if needed,
+ * and provides a form interface for timetable creation.
+ */
 const CreateTimetable = () => {
+  // Authentication and navigation hooks
   const { isAuthenticated, userRole } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   
   useEffect(() => {
     // Initialize default subjects if none exist
+    // This ensures that new timetables have a set of standard subjects available
     initializeDefaultSubjects();
     
+    // Redirect unauthenticated users to home page
     if (!isAuthenticated) {
       navigate('/');
       return;
     }
     
+    // Restrict access to admin users only
+    // Only administrators can create new timetables
     if (userRole !== 'admin') {
       navigate('/dashboard');
       return;
@@ -32,6 +44,7 @@ const CreateTimetable = () => {
   return (
     <DashboardLayout>
       <div className="container mx-auto py-8 px-4">
+        {/* Header with title and back button */}
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl bg-white p-4 rounded-full font-bold">Create Timetable</h1>
           <Button 
@@ -43,6 +56,7 @@ const CreateTimetable = () => {
             Back to Dashboard
           </Button>
         </div>
+        {/* Render the timetable creation form */}
         <CreateTimetableForm />
       </div>
     </DashboardLayout>

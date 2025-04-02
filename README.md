@@ -6,7 +6,6 @@ A comprehensive web application for creating and managing academic timetables fo
 ## Features
 
 - Automatic timetable generation
-- Manual timetable scheduling
 - Faculty and student views
 - Conflict detection for faculty scheduling
 - PDF export

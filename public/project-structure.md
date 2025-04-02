@@ -136,12 +136,6 @@ These components assemble the various smaller components into complete pages:
 3. Algorithm processes inputs and generates a set of timetable entries
 4. Output is stored in localStorage and/or passed to `TimetableView` for display
 
-## Data Flow for Manual Scheduling
-
-1. User interacts with `ManualSchedulingGrid`
-2. Changes are processed by utility functions in `timetableUtils.ts`
-3. Updated timetable is stored and displayed
-
 ## Mobile Responsiveness Implementation
 
 The application has been made responsive with:

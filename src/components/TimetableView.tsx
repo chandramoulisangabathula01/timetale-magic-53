@@ -4,13 +4,34 @@ import { Timetable, TimetableEntry, Day, TimeSlot } from '@/utils/types';
 import { formatTeacherNames, normalizeTeacherData } from '@/utils/facultyLabUtils';
 import MultiTeacherDisplay from './MultiTeacherDisplay';
 
+/**
+ * Interface defining the props required by the TimetableView component
+ * @property {Timetable} timetable - The timetable data to be displayed
+ * @property {string} facultyFilter - Optional filter to show only entries for a specific faculty member
+ * @property {boolean} printMode - Optional flag to adjust styling for print layout
+ */
 interface TimetableViewProps {
   timetable: Timetable;
   facultyFilter?: string;
   printMode?: boolean;
 }
 
+/**
+ * TimetableView Component
+ * 
+ * This component renders a complete timetable grid with days as columns and time slots as rows.
+ * It handles various display scenarios including:
+ * - Regular subject entries
+ * - Lab sessions (which may span multiple time slots)
+ * - Break and lunch periods
+ * - Free periods
+ * - Faculty-specific filtered views
+ * 
+ * The component intelligently determines which days to display based on the year and configuration,
+ * and properly formats entries with teacher information and batch details when applicable.
+ */
 const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter, printMode }) => {
+  // Define standard days and time slots for the timetable grid
   const days: Day[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const timeSlots: TimeSlot[] = [
     '9:30-10:20', 
@@ -44,17 +65,33 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
     ? timetable.entries.filter(entry => entry.teacherName === facultyFilter)
     : timetable.entries;
   
-  // Helper function to get entry for a specific day and time
+  /**
+   * Helper function to get a specific timetable entry for a day and time slot
+   * @param day - The day to check
+   * @param timeSlot - The time slot to check
+   * @returns The matching timetable entry or undefined if none exists
+   */
   const getEntry = (day: Day, timeSlot: TimeSlot): TimetableEntry | undefined => {
     return entries.find(entry => entry.day === day && entry.timeSlot === timeSlot);
   };
 
-  // Function to get lab entries by labGroupId
+  /**
+   * Function to get all lab entries with the same lab group ID
+   * Used for displaying related lab sessions (e.g., for batch rotations)
+   * @param labGroupId - The lab group identifier
+   * @returns Array of timetable entries in the same lab group
+   */
   const getLabEntries = (labGroupId: string): TimetableEntry[] => {
     return entries.filter(entry => entry.labGroupId === labGroupId);
   };
 
-  // Special helper to check if a time slot contains lab entries (for lab time slots like 9:30-1:00)
+  /**
+   * Special helper to check if a time slot contains lab entries
+   * Handles lab time slots that span multiple regular slots (e.g., 9:30-1:00)
+   * @param day - The day to check
+   * @param timeSlot - The specific time slot to check
+   * @returns Array of lab entries that include this time slot
+   */
   const getLabsForTimeSlot = (day: Day, timeSlot: TimeSlot): TimetableEntry[] => {
     // First check for lab entries that span multiple slots (like 9:30-1:00)
     const labEntries = entries.filter(entry => 
@@ -71,7 +108,13 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
     return labEntries;
   };
   
-  // Function to render cell content
+  /**
+   * Function to render the content for each timetable cell
+   * Handles different types of entries (regular subjects, labs, breaks, etc.)
+   * @param day - The day for this cell
+   * @param timeSlot - The time slot for this cell
+   * @returns JSX for the cell content
+   */
   const renderCellContent = (day: Day, timeSlot: TimeSlot) => {
     // First check for breaks and lunch
     if (timeSlot === '11:10-11:20') {
@@ -137,6 +180,7 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
     
     if (!entry) return null;
     
+    // Handle free periods with custom types
     if (entry.isFree) {
       let freeType = entry.freeType;
       if (entry.freeType === 'Others' && entry.customFreeType) {
@@ -169,11 +213,12 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
     console.log('Lab entries found:', labEntries.length, labEntries);
   };
   
-  // Call the debug function
+  // Call the debug function on component mount
   React.useEffect(() => {
     debugLabEntries();
   }, [entries]);
 
+  // Render the timetable grid with days as columns and time slots as rows
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full border-collapse border">
@@ -199,26 +244,14 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
                 <td className="border p-2 text-sm font-medium whitespace-nowrap">
                   {timeSlot}
                 </td>
-                {visibleDays.map(day => {
-                  const entry = getEntry(day, timeSlot);
-                  const labEntries = getLabsForTimeSlot(day, timeSlot);
-                  const hasLabEntries = labEntries.length > 0;
-                  
-                  return (
-                    <td 
-                      key={`${day}-${timeSlot}`} 
-                      className={`
-                        border p-2 text-center 
-                        ${hasLabEntries ? 'bg-green-50' : ''}
-                        ${entry?.isLab ? 'bg-green-50' : ''}
-                        ${entry?.isLabGroup ? 'bg-green-50' : ''}
-                        ${entry?.isFree ? 'bg-blue-50' : ''}
-                      `}
-                    >
-                      {renderCellContent(day, timeSlot)}
-                    </td>
-                  );
-                })}
+                {visibleDays.map(day => (
+                  <td 
+                    key={`${day}-${timeSlot}`} 
+                    className={`border p-2 text-center ${isBreakOrLunch ? 'bg-gray-100' : ''}`}
+                  >
+                    {renderCellContent(day, timeSlot)}
+                  </td>
+                ))}
               </tr>
             );
           })}

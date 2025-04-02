@@ -34,6 +34,7 @@ export interface TimetableEntry {
 }
 
 export interface Timetable {
+  facultyDetails: any;
   id: string;
   formData: TimetableFormData;
   entries: TimetableEntry[];

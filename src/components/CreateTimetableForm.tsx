@@ -1092,11 +1092,11 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
                           onClick={() => setSchedulingMode('auto')}
                         >
                           <div className="flex flex-col items-start">
-                            <span className="font-medium">Auto Scheduling</span>
-                            <span className="text-xs text-muted-foreground">System will automatically generate the timetable</span>
+                            <span className="font-medium text-lg">Auto Scheduling (System will automatically generate the timetable)</span>
+                            {/* <span className="text-xs text-white">System will automatically generate the timetable</span> */}
                           </div>
                         </Button>
-                        <Button 
+                        {/* <Button 
                           type="button"
                           variant={schedulingMode === 'manual' ? 'default' : 'outline'}
                           className="justify-start" 
@@ -1106,12 +1106,12 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
                             <span className="font-medium">Manual Scheduling</span>
                             <span className="text-xs text-muted-foreground">Manually place subjects in specific time slots</span>
                           </div>
-                        </Button>
+                        </Button> */}
                       </div>
                     </div>
                   </div>
                   
-                  {schedulingMode === 'manual' && (
+                  {/* {schedulingMode === 'manual' && (
                     <div className="mt-4">
                       <Card>
                         <CardHeader>
@@ -1133,7 +1133,7 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
                         </CardContent>
                       </Card>
                     </div>
-                  )}
+                  )} */}
                 </div>
               </CardContent>
             </Card>

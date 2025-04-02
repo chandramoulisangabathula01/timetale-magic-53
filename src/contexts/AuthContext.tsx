@@ -75,7 +75,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const loginAdmin = (username: string, password: string): boolean => {
+
     // Mock admin authentication
+    
     if (username === 'admin' && password === 'admin123') {
       login('admin', username);
       return true;

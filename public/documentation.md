@@ -21,7 +21,7 @@ The College Timetable Management System is a comprehensive web application desig
 ## Features
 
 - **Automated Timetable Generation**: Generate complete timetables with a single click
-- **Manual Scheduling**: Fine-tune timetables with a user-friendly interface
+
 - **Lab Session Management**: Handle lab sessions that span multiple periods
 - **Conflict Detection**: Automatically detect and prevent faculty scheduling conflicts
 - **Multiple User Roles**: Admin, Faculty, and Student views with appropriate permissions
@@ -120,12 +120,7 @@ The system can automatically generate a complete timetable following these rules
 - Free periods are distributed appropriately
 - Breaks and lunch periods are scheduled
 
-### Manual Scheduling
-For fine-tuning, the system provides a grid interface where administrators can:
-- Drag and drop subjects into time slots
-- Assign free periods (library, sports, etc.)
-- Manually resolve conflicts
-- Clear individual slots
+
 
 ### Printing and Exporting
 Each user role has access to specialized printing functionality:
@@ -239,7 +234,7 @@ interface TimetableEntry {
 3. **Basic Information**: Add timetable metadata (year, branch, etc.)
 4. **Subject-Teacher Mapping**: Assign teachers to subjects
 5. **Free Hour Configuration**: Set up free periods
-6. **Generate/Schedule**: Either auto-generate or manually schedule
+6. **Generate/Schedule**: auto-generate
 7. **Review and Adjust**: Fine-tune the timetable as needed
 8. **Save Timetable**: Store the completed timetable
 9. **Student/Faculty Access**: Users can view and print relevant timetables

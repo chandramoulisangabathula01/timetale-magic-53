@@ -1,4 +1,5 @@
 
+// Import necessary libraries and components
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,10 +14,13 @@ import { Timetable, YearType, BranchType, SemesterType } from '@/utils/types';
 import { useToast } from '@/hooks/use-toast';
 import TimetableDownloadButton from './timetable/TimetableDownloadButton';
 
+// Define the AdminDashboard component
 const AdminDashboard: React.FC = () => {
+  // Initialize navigation and toast hooks
   const navigate = useNavigate();
   const { toast } = useToast();
   
+  // State variables for managing timetables and filters
   const [timetables, setTimetables] = useState<Timetable[]>([]);
   const [filterYear, setFilterYear] = useState<string>('all');
   const [filterBranch, setFilterBranch] = useState<string>('all');
@@ -24,28 +28,32 @@ const AdminDashboard: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [filteredTimetables, setFilteredTimetables] = useState<Timetable[]>([]);
   
+  // Load timetables on component mount
   useEffect(() => {
-    // Load timetables
     const loadedTimetables = getTimetables();
     setTimetables(loadedTimetables);
   }, []);
   
+  // Apply filters and search query to timetables
   useEffect(() => {
-    // Apply filters
     let filtered = [...timetables];
     
+    // Filter by year
     if (filterYear !== 'all') {
       filtered = filtered.filter(t => t.formData.year === filterYear);
     }
     
+    // Filter by branch
     if (filterBranch !== 'all') {
       filtered = filtered.filter(t => t.formData.branch === filterBranch);
     }
     
+    // Filter by semester
     if (filterSemester !== 'all') {
       filtered = filtered.filter(t => t.formData.semester === filterSemester);
     }
     
+    // Apply search query
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(t => 
@@ -56,12 +64,13 @@ const AdminDashboard: React.FC = () => {
       );
     }
     
-    // Sort by creation date (newest first)
+    // Sort timetables by creation date (newest first)
     filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     
     setFilteredTimetables(filtered);
   }, [timetables, filterYear, filterBranch, filterSemester, searchQuery]);
   
+  // Handle timetable deletion
   const handleDeleteTimetable = (id: string) => {
     deleteTimetable(id);
     setTimetables(getTimetables());
@@ -72,6 +81,7 @@ const AdminDashboard: React.FC = () => {
     });
   };
   
+  // Navigation functions
   const navigateToCreateTimetable = () => {
     navigate('/create-timetable');
   };
@@ -84,6 +94,7 @@ const AdminDashboard: React.FC = () => {
     navigate(`/view-timetable/${id}`);
   };
 
+  // Render the Admin Dashboard UI
   return (
     <div className="space-y-6 " >
       

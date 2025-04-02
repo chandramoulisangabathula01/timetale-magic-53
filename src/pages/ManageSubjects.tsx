@@ -1,4 +1,9 @@
 
+// Import necessary dependencies and components for managing subjects
+// UI components from shadcn/ui library
+// Navigation and state management hooks
+// Utility functions for subject operations
+// Types and interfaces
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,11 +22,19 @@ import { Subject, YearType, BranchType } from '@/utils/types';
 import DashboardLayout from '@/components/DashboardLayout';
 import { v4 as uuidv4 } from 'uuid';
 
+// ManageSubjects Component: Handles the management of academic subjects
+// Provides functionality to add, edit, delete, and filter subjects
+// Displays a list of subjects with search and filter capabilities
 const ManageSubjects: React.FC = () => {
+  // Navigation hook for routing
   const navigate = useNavigate();
+  // Toast hook for displaying notifications
   const { toast } = useToast();
   
+  // State Management
+  // Store list of all subjects
   const [subjects, setSubjects] = useState<Subject[]>([]);
+  // State for new subject form
   const [newSubject, setNewSubject] = useState<Subject>({
     id: '',
     name: '',
@@ -32,22 +45,28 @@ const ManageSubjects: React.FC = () => {
     creditHours: 3
   });
   
+  // State for editing existing subjects
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   
+  // Filter and search states
   const [filterYear, setFilterYear] = useState<string>('all');
   const [filterBranch, setFilterBranch] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   
+  // Load subjects when component mounts
   useEffect(() => {
     loadSubjects();
   }, []);
   
+  // Fetch subjects from storage and update state
   const loadSubjects = () => {
     const loadedSubjects = getSubjects();
     setSubjects(loadedSubjects);
   };
   
+  // Handle input changes for form fields
+  // Updates either the editing subject or new subject state
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     
@@ -64,6 +83,8 @@ const ManageSubjects: React.FC = () => {
     }
   };
   
+  // Handle select dropdown changes
+  // Updates year, branch, or other select fields
   const handleSelectChange = (name: string, value: string) => {
     if (isEditing && editingSubject) {
       setEditingSubject({
@@ -78,6 +99,8 @@ const ManageSubjects: React.FC = () => {
     }
   };
   
+  // Handle checkbox changes
+  // Updates boolean values like isLab
   const handleCheckboxChange = (name: string, checked: boolean) => {
     if (isEditing && editingSubject) {
       setEditingSubject({
@@ -92,6 +115,8 @@ const ManageSubjects: React.FC = () => {
     }
   };
   
+  // Save or update subject
+  // Validates input, saves to storage, and shows confirmation
   const handleSaveSubject = () => {
     try {
       const subjectToSave = isEditing ? editingSubject : newSubject;
@@ -165,16 +190,19 @@ const ManageSubjects: React.FC = () => {
     }
   };
   
+  // Start editing an existing subject
   const handleEditSubject = (subject: Subject) => {
     setIsEditing(true);
     setEditingSubject({...subject});
   };
   
+  // Cancel editing and reset form
   const handleCancelEdit = () => {
     setIsEditing(false);
     setEditingSubject(null);
   };
   
+  // Delete a subject and show confirmation
   const handleDeleteSubject = (id: string) => {
     try {
       deleteSubject(id);
@@ -197,13 +225,18 @@ const ManageSubjects: React.FC = () => {
   };
   
   // Filter subjects based on selected filters and search query
+  // Applies year, branch, and search filters in sequence
+  // Returns sorted list by year, branch, and name
   const filteredSubjects = subjects
+    // Filter by selected year or show all
     .filter(subject => filterYear === 'all' || subject.year === filterYear)
+    // Filter by selected branch, handling "All" and "Other" cases
     .filter(subject => {
       if (filterBranch === 'all') return true;
       if (filterBranch === 'Other') return subject.branch === 'Other';
       return subject.branch === filterBranch || subject.branch === 'All';
     })
+    // Apply search query to name, year, branch, and custom branch
     .filter(subject => {
       if (!searchQuery) return true;
       const query = searchQuery.toLowerCase();
@@ -214,6 +247,7 @@ const ManageSubjects: React.FC = () => {
         (subject.customBranch && subject.customBranch.toLowerCase().includes(query))
       );
     })
+    // Sort subjects for consistent display order
     .sort((a, b) => {
       // Sort by year, then by branch, then by name
       if (a.year !== b.year) {
@@ -225,9 +259,12 @@ const ManageSubjects: React.FC = () => {
       return a.name.localeCompare(b.name);
     });
   
+  // Render the component UI
   return (
     <DashboardLayout>
+      {/* Main container with spacing between elements */}
       <div className="space-y-6">
+        {/* Header section with title and back button */}
         <div className="flex justify-between items-center">
           <h1 className="text-2xl bg-white p-4 rounded-full font-bold">Manage Subjects</h1>
           <Button 
@@ -240,6 +277,7 @@ const ManageSubjects: React.FC = () => {
           </Button>
         </div>
         
+        {/* Add/Edit Subject Form Card */}
         <Card>
           <CardHeader>
             <CardTitle>{isEditing ? 'Edit Subject' : 'Add New Subject'}</CardTitle>
@@ -250,7 +288,9 @@ const ManageSubjects: React.FC = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {/* Form Grid Layout */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Subject Name Input */}
               <div className="space-y-2">
                 <Label htmlFor="name">Subject Name</Label>
                 <Input
@@ -262,6 +302,7 @@ const ManageSubjects: React.FC = () => {
                 />
               </div>
               
+              {/* Year Selection Dropdown */}
               <div className="space-y-2">
                 <Label htmlFor="year">Year</Label>
                 <Select 
@@ -280,6 +321,7 @@ const ManageSubjects: React.FC = () => {
                 </Select>
               </div>
               
+              {/* Branch Selection Dropdown */}
               <div className="space-y-2">
                 <Label htmlFor="branch">Branch</Label>
                 <Select 
@@ -302,6 +344,7 @@ const ManageSubjects: React.FC = () => {
                 </Select>
               </div>
               
+              {/* Custom Branch Input - Shown only when "Other" is selected */}
               {((isEditing && editingSubject && editingSubject.branch === 'Other') || 
                 (!isEditing && newSubject.branch === 'Other')) && (
                 <div className="space-y-2">
@@ -316,6 +359,7 @@ const ManageSubjects: React.FC = () => {
                 </div>
               )}
               
+              {/* Credit Hours Input */}
               <div className="space-y-2">
                 <Label htmlFor="creditHours">Credit Hours</Label>
                 <Input

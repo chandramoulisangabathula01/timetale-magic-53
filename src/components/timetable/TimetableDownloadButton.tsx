@@ -1,4 +1,5 @@
 
+// Main React imports and component dependencies
 import React, { useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { FileDown, Printer } from 'lucide-react';
@@ -13,14 +14,17 @@ interface TimetableDownloadButtonProps {
   timetable: Timetable;
 }
 
+// Main component that handles timetable download and print functionality
 const TimetableDownloadButton: React.FC<TimetableDownloadButtonProps> = ({ timetable }) => {
   const { toast } = useToast();
   
-  const handlePrint = () => {
+  // Function to handle direct printing of the current page
+const handlePrint = () => {
     window.print();
   };
   
-  const handleDownloadPDF = () => {
+  // Function to handle PDF download by creating a new print-optimized window
+const handleDownloadPDF = () => {
     // Create a new window for printing only the timetable
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
@@ -175,7 +179,8 @@ const TimetableDownloadButton: React.FC<TimetableDownloadButtonProps> = ({ timet
   };
   
   // Helper function to generate time slot headers
-  const generateTimeSlotHeaders = (timetable: Timetable) => {
+  // Helper function to generate table headers for timetable time slots
+const generateTimeSlotHeaders = (timetable: Timetable) => {
     const timeSlots = new Set<string>();
     timetable.entries.forEach(entry => timeSlots.add(entry.timeSlot));
     
@@ -192,7 +197,8 @@ const TimetableDownloadButton: React.FC<TimetableDownloadButtonProps> = ({ timet
   };
   
   // Helper function to generate timetable rows
-  const generateTimetableRows = (timetable: Timetable) => {
+  // Helper function to generate timetable rows with proper formatting and styling
+const generateTimetableRows = (timetable: Timetable) => {
     const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const timeSlots = new Set<string>();
     timetable.entries.forEach(entry => timeSlots.add(entry.timeSlot));
@@ -253,7 +259,8 @@ const TimetableDownloadButton: React.FC<TimetableDownloadButtonProps> = ({ timet
   };
   
   // Helper function to generate faculty details
-  const generateFacultyDetails = (timetable: Timetable) => {
+  // Helper function to generate faculty details section for the timetable
+const generateFacultyDetails = (timetable: Timetable) => {
     return timetable.formData.subjectTeacherPairs.map(pair => {
       return `
         <div style="margin-bottom: 5px;">
