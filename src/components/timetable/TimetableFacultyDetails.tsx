@@ -18,7 +18,7 @@ const TimetableFacultyDetails: React.FC<TimetableFacultyDetailsProps> = ({ timet
       <h3 className="font-bold text-lg mb-2">FACULTY DETAILS:</h3> 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2"> 
         {timetable.formData.subjectTeacherPairs.map((pair) => ( // Map over subject-teacher pairs
-          <div key={pair.id} className="text-sm bg-white/50 p-2 rounded-md border border-gray-100 shadow-sm hover:shadow-md transition-shadow"> // Card for each pair
+          <div key={pair.id} className="text-sm bg-white/50 p-2 rounded-md border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
             <span className="font-medium">{pair.subjectName}</span> 
             {pair.isLab && <span className="text-xs ml-1">(Lab)</span>}
             <span> - </span>
