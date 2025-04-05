@@ -4,6 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Timetable } from '@/utils/types';
 import { FileDown } from 'lucide-react';
 import { Button } from "@/components/ui/button";
+import { formatDateToDDMMYYYY } from './TimetableHeaderInfoDateFix';
 
 /**
  * Interface defining the props required by the TimetablePDFExport component
