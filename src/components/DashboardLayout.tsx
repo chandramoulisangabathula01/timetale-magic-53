@@ -75,7 +75,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         </header>
         
         {/* Main content area */}
-        <main className="container mx-auto py-8 px-4">
+        <main className="container mx-auto py-8 px-4 text-left">
           {children} {/* Render children components */}
         </main>
         

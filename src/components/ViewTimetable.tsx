@@ -39,7 +39,7 @@ const ViewTimetable: React.FC = () => {
   }
   
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-left">
       {/* Action buttons for navigation, editing and printing */}
       <TimetableActions 
         timetable={timetable}

@@ -18,9 +18,11 @@ const Dashboard: React.FC = () => {
   // Return the appropriate dashboard based on user role
   return (
     <DashboardLayout>
-      {userRole === 'admin' && <AdminDashboard />}
-      {userRole === 'faculty' && <FacultyDashboard />}
-      {userRole === 'student' && <StudentDashboard />}
+      <div className="text-left w-full">
+        {userRole === 'admin' && <AdminDashboard />}
+        {userRole === 'faculty' && <FacultyDashboard />}
+        {userRole === 'student' && <StudentDashboard />}
+      </div>
     </DashboardLayout>
   );
 };

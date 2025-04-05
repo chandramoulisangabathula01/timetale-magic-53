@@ -45,14 +45,16 @@ const TimetableHeaderInfo: React.FC<TimetableHeaderInfoProps> = ({ timetable, pr
   // Render the header information for normal view
   return (
     <div className="mb-6 no-print bg-white p-4">
-      <h2 style={{ marginBottom: "5px", fontSize: "16px" }} className="font-bold text-center">University College of Engineering & Technology for Women</h2>
-      <p style={{ marginTop: 0, marginBottom: "8px", fontSize: "12px" }} className="text-center">Kakatiya University Campus, Warangal (T.S) - 506009</p>
-      <h3 style={{ marginTop: 0, marginBottom: "5px", textDecoration: "underline", fontSize: "14px" }} className="font-bold text-center">
-        {timetable.formData.courseName}.{timetable.formData.branch} ({timetable.formData.semester}) SEMESTER TIME TABLE STATEMENT {timetable.formData.academicYear}
-      </h3>
-      <p style={{ marginTop: 0, marginBottom: "15px", fontSize: "12px" }} className="text-center">
-        {timetable.formData.year} {timetable.formData.branch} - {timetable.formData.academicYear}
-      </p>
+      <div className="text-center">
+        <h2 style={{ marginBottom: "5px", fontSize: "16px" }} className="font-bold">University College of Engineering & Technology for Women</h2>
+        <p style={{ marginTop: 0, marginBottom: "8px", fontSize: "12px" }}>Kakatiya University Campus, Warangal (T.S) - 506009</p>
+        <h3 style={{ marginTop: 0, marginBottom: "5px", textDecoration: "underline", fontSize: "14px" }} className="font-bold">
+          {timetable.formData.courseName}.{timetable.formData.branch} ({timetable.formData.semester}) SEMESTER TIME TABLE STATEMENT {timetable.formData.academicYear}
+        </h3>
+        <p style={{ marginTop: 0, marginBottom: "15px", fontSize: "12px" }}>
+          {timetable.formData.year} {timetable.formData.branch} - {timetable.formData.academicYear}
+        </p>
+      </div>
       
       <div className="flex justify-between items-center mb-2 px-2">
         <div><span className="font-semibold">Class In-Charge:</span> {timetable.formData.classInchargeName}</div>
