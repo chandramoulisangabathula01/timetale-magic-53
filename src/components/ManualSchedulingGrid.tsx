@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -351,7 +352,7 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
                           <SelectValue placeholder="Assign subject" />
                         </SelectTrigger>
                         <SelectContent>
-                          {subjectTeacherPairs.map((pair) => (
+                          {subjectTeacherPairs && subjectTeacherPairs.map((pair) => (
                             <SelectItem key={pair.id} value={`${pair.id}|${pair.teacherName}`}>
                               {pair.subjectName} ({pair.teacherName})
                               {pair.isLab && pair.batchNumber && ` (${pair.batchNumber})`}

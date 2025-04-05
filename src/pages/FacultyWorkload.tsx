@@ -5,7 +5,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Info } from 'lucide-react';
 import { getFacultyWorkloadInfo } from '@/utils/facultyWorkloadUtils';
 import { 
   Table, 
@@ -17,6 +17,7 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useEffect, useState } from 'react';
 
 interface FacultyWorkloadProps {}
@@ -53,12 +54,21 @@ const FacultyWorkload: React.FC<FacultyWorkloadProps> = () => {
           </Button>
         </div>
         
+        <Alert className="mb-6 bg-blue-50 border-blue-200">
+          <Info className="h-4 w-4 text-blue-700" />
+          <AlertTitle className="text-blue-700">Workload Counting Rules</AlertTitle>
+          <AlertDescription className="text-blue-700">
+            Each faculty is limited to teaching a maximum of 3 non-lab subjects across all timetables.
+            Lab subjects are not counted towards this limit.
+          </AlertDescription>
+        </Alert>
+        
         <Card>
           <CardHeader className="pb-3">
             <CardTitle>Faculty Subject Assignment</CardTitle>
             <CardDescription>
-              Each faculty member can be assigned a maximum of 3 subjects across all timetables.
-              This overview helps you quickly identify which faculty members are available for new assignments.
+              Each faculty member can be assigned a maximum of 3 non-lab subjects across all timetables.
+              Lab subjects are not counted towards this limit. This overview helps you quickly identify which faculty members are available for new assignments.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -68,7 +78,7 @@ const FacultyWorkload: React.FC<FacultyWorkloadProps> = () => {
                 <TableRow>
                   <TableHead>Faculty Name</TableHead>
                   <TableHead>Short Name</TableHead>
-                  <TableHead className="text-center">Assigned Subjects</TableHead>
+                  <TableHead className="text-center">Assigned Non-Lab Subjects</TableHead>
                   <TableHead className="text-center">Remaining Capacity</TableHead>
                   <TableHead className="text-center">Status</TableHead>
                 </TableRow>

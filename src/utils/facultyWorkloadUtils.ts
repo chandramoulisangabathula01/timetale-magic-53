@@ -4,7 +4,7 @@ import { getFaculty } from './facultyUtils';
 import { SubjectTeacherPair } from './types';
 
 /**
- * Count how many unique subjects a faculty is teaching across all timetables
+ * Count how many unique non-lab subjects a faculty is teaching across all timetables
  */
 export const countGlobalFacultySubjects = (facultyName: string): number => {
   const timetables = getTimetables();
@@ -14,17 +14,23 @@ export const countGlobalFacultySubjects = (facultyName: string): number => {
   timetables.forEach(timetable => {
     timetable.entries.forEach(entry => {
       // Skip non-subject entries like breaks and free hours
-      if (entry.teacherName === facultyName && entry.subjectName && !entry.isBreak && !entry.isLunch && !entry.isFree) {
+      // Also skip lab subjects per new requirement
+      if (entry.teacherName === facultyName && 
+          entry.subjectName && 
+          !entry.isBreak && 
+          !entry.isLunch && 
+          !entry.isFree && 
+          !entry.isLab) {
         // Create a unique key for each subject to avoid counting the same subject multiple times
         // within the same timetable
-        const subjectKey = `${timetable.id}-${entry.subjectName}-${entry.isLab || false}`;
+        const subjectKey = `${timetable.id}-${entry.subjectName}`;
         uniqueSubjects.add(subjectKey);
       }
       
       // Check if this faculty is part of multiple teachers for a lab
       if (entry.teacherNames && entry.teacherNames.includes(facultyName) && 
-          entry.subjectName && !entry.isBreak && !entry.isLunch && !entry.isFree) {
-        const subjectKey = `${timetable.id}-${entry.subjectName}-${entry.isLab || false}`;
+          entry.subjectName && !entry.isBreak && !entry.isLunch && !entry.isFree && !entry.isLab) {
+        const subjectKey = `${timetable.id}-${entry.subjectName}`;
         uniqueSubjects.add(subjectKey);
       }
     });
@@ -87,8 +93,11 @@ export const validateSubjectTeacherPairs = (
   const facultySubjectCounts: Record<string, number> = {};
   const overloadedFaculty: Array<{ name: string; count: number }> = [];
   
-  // Check all pairs (new and existing) to find current counts
-  [...existingPairs, ...pairs].forEach(pair => {
+  // Filter out lab subjects from pairs
+  const nonLabPairs = [...pairs, ...existingPairs].filter(pair => !pair.isLab);
+  
+  // Check all non-lab pairs to find current counts
+  nonLabPairs.forEach(pair => {
     // Handle single teacher
     if (pair.teacherName) {
       const currentGlobalCount = countGlobalFacultySubjects(pair.teacherName);
