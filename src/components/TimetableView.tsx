@@ -19,16 +19,13 @@ interface TimetableViewProps {
 /**
  * TimetableView Component
  * 
- * This component renders a complete timetable grid with days as columns and time slots as rows.
+ * This component renders a complete timetable grid with time slots as rows and days as columns.
  * It handles various display scenarios including:
  * - Regular subject entries
  * - Lab sessions (which may span multiple time slots)
  * - Break and lunch periods
  * - Free periods
  * - Faculty-specific filtered views
- * 
- * The component intelligently determines which days to display based on the year and configuration,
- * and properly formats entries with teacher information and batch details when applicable.
  */
 const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter, printMode }) => {
   // Define standard days and time slots for the timetable grid
@@ -46,7 +43,7 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
   ];
   
   // Determine which days to show based on year and dayOptions
-  let visibleDays: Day[];
+  let visibleDays: Day[] = [];
   
   if (timetable.formData.year === '4th Year') {
     // For 4th year, use the selected day options
@@ -62,7 +59,12 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
   
   // Filter entries for faculty view if needed
   const entries = facultyFilter
-    ? timetable.entries.filter(entry => entry.teacherName === facultyFilter)
+    ? timetable.entries.filter(entry => {
+        // Check both teacherName and teacherNames array
+        if (entry.teacherName === facultyFilter) return true;
+        if (entry.teacherNames?.includes(facultyFilter)) return true;
+        return false;
+      })
     : timetable.entries;
   
   /**
@@ -186,7 +188,7 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
       if (entry.freeType === 'Others' && entry.customFreeType) {
         freeType = entry.customFreeType;
       }
-      return <div className="italic text-blue-600">{freeType}</div>;
+      return <div className="italic text-blue-600 font-medium uppercase">{freeType}</div>;
     }
     
     // For regular subjects
@@ -194,7 +196,7 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
       const normalizedEntry = normalizeTeacherData(entry);
       return (
         <div>
-          <div className="font-medium">{entry.subjectName}</div>
+          <div className="font-medium uppercase">{entry.subjectName}</div>
           <MultiTeacherDisplay entry={normalizedEntry} />
           {entry.batchNumber && (
             <div className="text-xs text-primary">({entry.batchNumber})</div>
@@ -224,34 +226,32 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
       <table className="min-w-full border-collapse border">
         <thead>
           <tr className={`${printMode ? 'bg-gray-100' : 'bg-muted'}`}>
-            <th className="border p-2 text-sm font-medium">Time / Day</th>
-            {visibleDays.map(day => (
-              <th key={day} className="border p-2 text-sm font-medium">
-                {day}
+            <th className="border p-2 text-sm font-medium">DAY / TIME</th>
+            {timeSlots.map(slot => (
+              <th key={slot} className="border p-2 text-sm font-medium">
+                {slot}
               </th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {timeSlots.map((timeSlot) => {
-            const isBreakOrLunch = timeSlot === '11:10-11:20' || timeSlot === '1:00-2:00';
-            
+          {visibleDays.map((day) => {
             return (
-              <tr 
-                key={timeSlot} 
-                className={isBreakOrLunch ? 'bg-gray-100' : ''}
-              >
-                <td className="border p-2 text-sm font-medium whitespace-nowrap">
-                  {timeSlot}
+              <tr key={day}>
+                <td className="border p-2 text-sm font-medium whitespace-nowrap uppercase">
+                  {day.substring(0, 3)}
                 </td>
-                {visibleDays.map(day => (
-                  <td 
-                    key={`${day}-${timeSlot}`} 
-                    className={`border p-2 text-center ${isBreakOrLunch ? 'bg-gray-100' : ''}`}
-                  >
-                    {renderCellContent(day, timeSlot)}
-                  </td>
-                ))}
+                {timeSlots.map(timeSlot => {
+                  const isBreakOrLunch = timeSlot === '11:10-11:20' || timeSlot === '1:00-2:00';
+                  return (
+                    <td 
+                      key={`${day}-${timeSlot}`} 
+                      className={`border p-2 text-center ${isBreakOrLunch ? 'bg-gray-100' : ''}`}
+                    >
+                      {renderCellContent(day, timeSlot)}
+                    </td>
+                  );
+                })}
               </tr>
             );
           })}

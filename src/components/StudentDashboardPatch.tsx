@@ -1,12 +1,21 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import TimetableList from './TimetableList';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Calendar } from 'lucide-react';
+import { getAllBranches } from '@/utils/subjectsUtils';
+import { BranchType } from '@/utils/types';
 
 const StudentDashboard = () => {
-  const { username, studentFilters } = useAuth();
+  const { username, studentFilters, updateStudentFilters } = useAuth();
+  const [availableBranches, setAvailableBranches] = useState<(BranchType | string)[]>([]);
+  
+  // Load all branches including custom ones
+  useEffect(() => {
+    const branches = getAllBranches();
+    setAvailableBranches(branches);
+  }, []);
   
   return (
     <div className="space-y-6">
@@ -35,6 +44,7 @@ const StudentDashboard = () => {
               branch: studentFilters?.branch,
               semester: studentFilters?.semester
             }} 
+            availableBranches={availableBranches}
           />
         </CardContent>
       </Card>

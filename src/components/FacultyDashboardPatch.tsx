@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import TimetableList from './TimetableList';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
@@ -28,7 +28,7 @@ const FacultyDashboard = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <TimetableList role="faculty" username={username} />
+          <TimetableList role="faculty" username={username} facultySpecific={true} />
         </CardContent>
       </Card>
     </div>

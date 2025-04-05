@@ -62,7 +62,7 @@ const TimetablePDFExport: React.FC<TimetablePDFExportProps> = ({ timetable, prin
               padding: 15px;
               margin: 0 auto;
               font-size: 14px;
-              max-width: 50%;
+              max-width: 90%;
             }
             .print-header {
               text-align: center;
@@ -71,10 +71,17 @@ const TimetablePDFExport: React.FC<TimetablePDFExportProps> = ({ timetable, prin
             .logo-container {
               text-align: center;
               margin-bottom: 8px;
+              float: left;
+              width: 80px;
             }
             .logo {
               width: 60px;
               height: 60px;
+            }
+            .header-text {
+              text-align: center;
+              width: calc(100% - 80px);
+              float: right;
             }
             table {
               width: 100%;
@@ -109,11 +116,23 @@ const TimetablePDFExport: React.FC<TimetablePDFExportProps> = ({ timetable, prin
               display: flex;
               justify-content: space-between;
               margin-bottom: 10px;
+              clear: both;
+            }
+            .details-left {
+              float: left;
+              text-align: left;
+              width: 50%;
+            }
+            .details-right {
+              float: right;
+              text-align: right;
+              width: 50%;
             }
             .faculty-details {
               margin-top: 20px;
               border-top: 1px solid #ddd;
               padding-top: 10px;
+              clear: both;
             }
             .subject-item {
               margin-bottom: 5px;
@@ -127,6 +146,14 @@ const TimetablePDFExport: React.FC<TimetablePDFExportProps> = ({ timetable, prin
               border: none;
               border-radius: 4px;
               cursor: pointer;
+              clear: both;
+            }
+            .header-container {
+              overflow: hidden;
+              margin-bottom: 15px;
+            }
+            .uppercase {
+              text-transform: uppercase;
             }
             @media print {
               .print-button {
@@ -137,34 +164,41 @@ const TimetablePDFExport: React.FC<TimetablePDFExportProps> = ({ timetable, prin
         </head>
         <body>
           <!-- College header with logo and institution details -->
-          <div class="print-header">
+          <div class="header-container">
             <div class="logo-container">
-                          <img src="/images/college logo.jpg" class="logo" alt="College Logo">
-
+              <img src="/images/college logo.jpg" class="logo" alt="College Logo">
             </div>
-            <h2 style="margin-bottom: 5px; font-size: 16px;">University College of Engineering & Technology for Women</h2>
-            <p style="margin-top: 0; margin-bottom: 8px; font-size: 12px;">Kakatiya University Campus, Warangal (T.S) - 506009</p>
-            <h3 style="margin-top: 0; margin-bottom: 5px; text-decoration: underline; font-size: 14px;">
-              ${timetable?.formData.courseName}.${timetable?.formData.branch} (${timetable?.formData.semester}) SEMESTER TIME TABLE STATEMENT ${timetable?.formData.academicYear}
-            </h3>
-            <p style="margin-top: 0; margin-bottom: 10px; font-size: 12px;">
-              ${timetable?.formData.year} ${timetable?.formData.branch} - ${timetable?.formData.academicYear}
-            </p>
-           
+            <div class="header-text">
+              <h2 style="margin-bottom: 5px; font-size: 16px; text-decoration: underline;">University College of Engineering & Technology for Women</h2>
+              <p style="margin-top: 0; margin-bottom: 8px; font-size: 12px;">Kakatiya University Campus, Warangal (T.S) - 506009</p>
+              <h3 style="margin-top: 0; margin-bottom: 5px; text-decoration: underline; font-size: 14px;">
+                ${timetable?.formData.courseName}.${timetable?.formData.branch} (${timetable?.formData.semester}) SEMESTER TIME TABLE STATEMENT ${timetable?.formData.academicYear}
+              </h3>
+              <p style="margin-top: 0; margin-bottom: 10px; font-size: 12px;">
+                ${timetable?.formData.year} ${timetable?.formData.branch} - ${timetable?.formData.academicYear}
+              </p>
+            </div>
           </div>
 
           <!-- Class details section with incharge and room info -->
           <div class="details-row">
-            <div><strong>Class In-Charge:</strong> ${timetable?.formData.classInchargeName}</div>
-            <div><strong>Room No:</strong> ${timetable?.formData.roomNumber}</div>
+            <div class="details-left"><strong>Class In-Charge:</strong> ${timetable?.formData.classInchargeName}</div>
+            <div class="details-right"><strong>Room No:</strong> ${timetable?.formData.roomNumber}</div>
           </div>
           <div class="details-row">
-            <div><strong>Mobile Number:</strong> ${timetable?.formData.mobileNumber}</div>
-            <div><strong>W.E.F:</strong> ${timetable?.formData.date || new Date().toISOString().split('T')[0]}</div>
+            <div class="details-left"><strong>Mobile Number:</strong> ${timetable?.formData.mobileNumber}</div>
+            <div class="details-right"><strong>W.E.F:</strong> ${timetable?.formData.date || new Date().toISOString().split('T')[0]}</div>
           </div>
 
-          <!-- Insert the actual timetable HTML from the reference -->
-          ${content.querySelector('table')?.outerHTML || ''}
+          <!-- Convert the table to put time slots on top row and days on first column -->
+          ${(() => {
+            // Extract the table HTML
+            const table = content.querySelector('table')?.cloneNode(true);
+            if (!table) return '';
+            
+            // The table is already in the correct format after our TimetableView changes
+            return table.outerHTML;
+          })()}
           
           <!-- Faculty details section with subject-teacher mappings -->
           <div class="faculty-details">
