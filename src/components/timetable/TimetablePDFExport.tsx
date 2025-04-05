@@ -47,6 +47,9 @@ const TimetablePDFExport: React.FC<TimetablePDFExportProps> = ({ timetable, prin
       return;
     }
     
+    // Format the date in DD/MM/YYYY format
+    const formattedDate = formatDateToDDMMYYYY(timetable?.formData.date || new Date().toISOString().split('T')[0]);
+    
     // Add necessary styles for a clean print layout
     printWindow.document.write(`
       <html>
@@ -187,7 +190,7 @@ const TimetablePDFExport: React.FC<TimetablePDFExportProps> = ({ timetable, prin
           </div>
           <div class="details-row">
             <div class="details-left"><strong>Mobile Number:</strong> ${timetable?.formData.mobileNumber}</div>
-            <div class="details-right"><strong>W.E.F:</strong> ${timetable?.formData.date || new Date().toISOString().split('T')[0]}</div>
+            <div class="details-right"><strong>W.E.F:</strong> ${formattedDate}</div>
           </div>
 
           <!-- Convert the table to put time slots on top row and days on first column -->
@@ -203,25 +206,30 @@ const TimetablePDFExport: React.FC<TimetablePDFExportProps> = ({ timetable, prin
             return tableElement.outerHTML;
           })()}
           
-          <!-- Faculty details section with subject-teacher mappings -->
+          <!-- Faculty details section with subject-teacher mappings and short names -->
           <div class="faculty-details">
             <h3 style="font-weight: bold; font-size: 14px; margin-bottom: 10px;">FACULTY DETAILS:</h3>
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
-              ${timetable.formData.subjectTeacherPairs.map(pair => `
+              ${timetable.formData.subjectTeacherPairs.map(pair => {
+                // Get short name for display
+                const getShortName = (name) => name.split(' ').map(part => part.charAt(0)).join('');
+                
+                return `
                 <div style="font-size: 12px; background-color: #ffffff80; padding: 8px; border-radius: 6px; border: 1px solid #f0f0f0;">
                   <span style="font-weight: 500;">${pair.subjectName}</span>
                   ${pair.isLab ? '<span style="font-size: 10px; margin-left: 4px;">(Lab)</span>' : ''}
                   <span> - </span>
                   ${pair.teacherNames && pair.teacherNames.length > 0 ? 
-                    `<span>${pair.teacherNames.join(' & ')}</span>` : 
-                    `<span>${pair.teacherName}</span>`
+                    `<span>${pair.teacherNames.join(' & ')} <span style="font-size: 10px;">(${pair.teacherNames.map(name => getShortName(name)).join('/')})</span></span>` : 
+                    `<span>${pair.teacherName} <span style="font-size: 10px;">(${getShortName(pair.teacherName)})</span></span>`
                   }
                   ${pair.batchNumber ? 
                     `<span style="font-size: 10px; margin-left: 4px;">(${pair.batchNumber})</span>` : 
                     ''
                   }
                 </div>
-              `).join('')}
+              `;
+              }).join('')}
             </div>
           </div>
 

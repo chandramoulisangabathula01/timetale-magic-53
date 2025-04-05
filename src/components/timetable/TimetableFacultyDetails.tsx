@@ -3,6 +3,7 @@
 import React from 'react';
 import { Timetable } from '@/utils/types';
 import { formatTeacherNames } from '@/utils/facultyLabUtils';
+import { getShortName } from '@/utils/timetableSystemPatch';
 
 // Define the props interface for the TimetableFacultyDetails component
 interface TimetableFacultyDetailsProps {
@@ -34,9 +35,17 @@ const TimetableFacultyDetails: React.FC<TimetableFacultyDetailsProps> = ({ timet
             {pair.isLab && <span className="text-xs ml-1">(Lab)</span>}
             <span> - </span>
             {pair.teacherNames && pair.teacherNames.length > 0 ? ( // Check if multiple teacher names exist
-              <span>{pair.teacherNames.join(' & ')}</span> // Join multiple teacher names with '&'
+              <span>
+                {pair.teacherNames.join(' & ')}
+                <span className="text-xs ml-1">
+                  ({pair.teacherNames.map(name => getShortName(name)).join('/')})
+                </span>
+              </span>
             ) : (
-              <span>{pair.teacherName}</span> // Display single teacher name
+              <span>
+                {pair.teacherName}
+                <span className="text-xs ml-1">({getShortName(pair.teacherName)})</span>
+              </span>
             )}
             {pair.batchNumber && ( // Conditional display for batch number
               <span className="text-xs ml-1">({pair.batchNumber})</span>

@@ -1,19 +1,11 @@
 
 import React from 'react';
 import { SubjectTeacherPair } from '../../utils/types';
+import { getShortName } from '../../utils/timetableSystemPatch';
 
 interface TimetableFacultyDetailsShortProps {
   subjectTeacherPairs: SubjectTeacherPair[];
 }
-
-// Helper function to extract initials/short name
-const getShortName = (fullName: string): string => {
-  // Split by spaces and get first letter of each part
-  return fullName
-    .split(' ')
-    .map(part => part.charAt(0))
-    .join('');
-};
 
 const TimetableFacultyDetailsShort: React.FC<TimetableFacultyDetailsShortProps> = ({
   subjectTeacherPairs,
