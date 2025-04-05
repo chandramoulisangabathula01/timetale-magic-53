@@ -35,6 +35,9 @@ const TimetableList: React.FC<TimetableListProps> = ({ role, username, filters }
       // Get timetables from local storage
       const storedTimetables = localStorage.getItem('timetables');
       let parsedTimetables: Timetable[] = storedTimetables ? JSON.parse(storedTimetables) : [];
+      
+      // Log the timetables for debugging
+      console.log('All timetables:', parsedTimetables);
 
       // Filter based on role
       if (role === 'faculty' && username) {
@@ -54,6 +57,9 @@ const TimetableList: React.FC<TimetableListProps> = ({ role, username, filters }
           );
         });
       }
+
+      // Log filtered timetables
+      console.log(`Filtered timetables for ${role}:`, parsedTimetables);
 
       // Sort timetables by creation date (newest first)
       parsedTimetables.sort((a, b) => {
@@ -136,7 +142,7 @@ const TimetableList: React.FC<TimetableListProps> = ({ role, username, filters }
             <div className="flex justify-between items-start">
               <div>
                 <CardTitle className="text-lg">
-                  {timetable.formData?.className || 'Untitled Timetable'}
+                  {timetable.formData?.courseName || 'Untitled Timetable'}
                 </CardTitle>
                 <CardDescription>
                   {timetable.formData?.year} Year • {timetable.formData?.branch} • Sem {timetable.formData?.semester}
@@ -149,8 +155,8 @@ const TimetableList: React.FC<TimetableListProps> = ({ role, username, filters }
           </CardHeader>
           <CardContent className="flex-grow">
             <div className="text-sm">
-              <p><span className="font-medium">Room:</span> {timetable.formData?.room || 'Not specified'}</p>
-              <p><span className="font-medium">Class Incharge:</span> {timetable.formData?.incharge || 'Not specified'}</p>
+              <p><span className="font-medium">Room:</span> {timetable.formData?.roomNumber || 'Not specified'}</p>
+              <p><span className="font-medium">Class Incharge:</span> {timetable.formData?.classInchargeName || 'Not specified'}</p>
             </div>
           </CardContent>
           <CardFooter className="flex justify-between border-t pt-4">

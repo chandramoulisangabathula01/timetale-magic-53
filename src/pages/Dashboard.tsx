@@ -1,9 +1,9 @@
 
 import React from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
-import AdminDashboard from '@/components/AdminDashboard';
-import FacultyDashboard from '@/components/FacultyDashboard';
-import StudentDashboard from '@/components/StudentDashboard';
+import AdminDashboard from '@/components/AdminDashboardPatch';
+import FacultyDashboard from '@/components/FacultyDashboardPatch';
+import StudentDashboard from '@/components/StudentDashboardPatch';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 

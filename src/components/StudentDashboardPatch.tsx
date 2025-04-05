@@ -6,14 +6,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Calendar } from 'lucide-react';
 
 const StudentDashboard = () => {
-  const { user } = useAuth();
+  const { username, studentFilters } = useAuth();
   
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Student Dashboard</h1>
         <p className="text-muted-foreground">
-          Welcome, {user?.username}. View your class timetable.
+          Welcome, {username}. View your class timetable.
         </p>
       </div>
 
@@ -24,16 +24,16 @@ const StudentDashboard = () => {
             <CardTitle>Your Class Timetable</CardTitle>
           </div>
           <CardDescription>
-            Timetables for {user?.studentFilters?.year} Year, {user?.studentFilters?.branch}, Semester {user?.studentFilters?.semester}
+            Timetables for {studentFilters?.year} Year, {studentFilters?.branch}, Semester {studentFilters?.semester}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <TimetableList 
             role="student" 
             filters={{
-              year: user?.studentFilters?.year,
-              branch: user?.studentFilters?.branch,
-              semester: user?.studentFilters?.semester
+              year: studentFilters?.year,
+              branch: studentFilters?.branch,
+              semester: studentFilters?.semester
             }} 
           />
         </CardContent>

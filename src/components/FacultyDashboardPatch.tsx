@@ -6,14 +6,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { ClipboardList } from 'lucide-react';
 
 const FacultyDashboard = () => {
-  const { user } = useAuth();
+  const { username } = useAuth();
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Faculty Dashboard</h1>
         <p className="text-muted-foreground">
-          Welcome, {user?.username}. View your assigned classes and schedules.
+          Welcome, {username}. View your assigned classes and schedules.
         </p>
       </div>
 
@@ -28,7 +28,7 @@ const FacultyDashboard = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <TimetableList role="faculty" username={user?.username} />
+          <TimetableList role="faculty" username={username} />
         </CardContent>
       </Card>
     </div>
