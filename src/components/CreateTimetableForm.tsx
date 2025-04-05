@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { useNavigate } from 'react-router-dom';
@@ -1041,7 +1040,7 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
                               <Label htmlFor="newFreeHourType">Free Hour Type</Label>
                               <Select
                                 value={newFreeHourType}
-                                onValueChange={setNewFreeHourType}
+                                onValueChange={(value) => setNewFreeHourType(value as FreeHourType)}
                               >
                                 <SelectTrigger id="newFreeHourType">
                                   <SelectValue placeholder="Select Type" />
@@ -1202,7 +1201,12 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
                         <CardContent className="p-4 pt-0">
                           <ManualSchedulingGrid
                             subjectTeacherPairs={formData.subjectTeacherPairs}
+                            freeHours={formData.freeHours}
+                            dayOptions={formData.dayOptions}
                             year={formData.year}
+                            branch={formData.branch}
+                            onSave={onSave}
+                            existingEntries={existingTimetable?.entries}
                             initialEntries={manualTimetableEntries}
                             onEntriesChange={handleManualEntriesChange}
                           />
