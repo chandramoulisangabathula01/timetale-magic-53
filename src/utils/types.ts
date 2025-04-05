@@ -1,4 +1,3 @@
-
 export type Day = "Mon" | "Tue" | "Wed" | "Thu" | "Fri" | "Sat" | "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday" | "Saturday";
 export type TimeSlot =
   | "9:30-10:20"
@@ -13,7 +12,9 @@ export type TimeSlot =
   | "1:00-2:00"    // Lunch
   | "9:30-1:00"    // Morning lab block
   | "2:00-4:30"    // Afternoon lab block
-  | "10:20-1:00";  // Another lab block
+  | "10:20-2:50"   // Mid-morning lab block
+  | "11:20-3:40"   // Mid-day lab block
+  | "12:10-4:30";  // Late morning lab block
 
 export interface TimetableEntry {
   id?: string;

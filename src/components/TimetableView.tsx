@@ -1,9 +1,11 @@
+
 import React from 'react';
 import { Timetable, TimetableEntry, Day, TimeSlot } from '@/utils/types';
 import { formatTeacherNames, normalizeTeacherData } from '@/utils/facultyLabUtils';
 import MultiTeacherDisplay from './MultiTeacherDisplay';
 import { Alert, AlertDescription } from './ui/alert';
 import { Info } from 'lucide-react';
+import { labTimeSlotCombinations } from '@/utils/labTimeSlotFix';
 
 /**
  * Interface defining the props required by the TimetableView component
@@ -90,25 +92,33 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
 
   /**
    * Special helper to check if a time slot contains lab entries
-   * Handles lab time slots that span multiple regular slots (e.g., 9:30-1:00)
+   * Handles lab time slots that span multiple regular slots
    * @param day - The day to check
    * @param timeSlot - The specific time slot to check
    * @returns Array of lab entries that include this time slot
    */
   const getLabsForTimeSlot = (day: Day, timeSlot: TimeSlot): TimetableEntry[] => {
-    // First check for lab entries that span multiple slots (like 9:30-1:00)
-    const labEntries = entries.filter(entry => 
-      entry.day === day && 
-      (entry.timeSlot === '9:30-1:00' || entry.timeSlot === '2:00-4:30') &&
-      (entry.isLab || entry.isLabGroup) &&
-      // Check if the current timeSlot falls within the lab's time range
-      ((entry.timeSlot === '9:30-1:00' && 
-        ['9:30-10:20', '10:20-11:10', '11:20-12:10', '12:10-1:00'].includes(timeSlot)) ||
-       (entry.timeSlot === '2:00-4:30' && 
-        ['2:00-2:50', '2:50-3:40', '3:40-4:30'].includes(timeSlot)))
-    );
-    
-    return labEntries;
+    // Check for lab entries that span multiple slots using all defined lab slot combinations
+    return entries.filter(entry => {
+      if (entry.day !== day || !entry.isLab) return false;
+      
+      // Check against each lab time slot combination
+      for (const combination of labTimeSlotCombinations) {
+        if (entry.timeSlot === combination.display && combination.slots.includes(timeSlot)) {
+          return true;
+        }
+      }
+      
+      // Check against legacy lab time slots for backward compatibility
+      if ((entry.timeSlot === '9:30-1:00' && 
+          ['9:30-10:20', '10:20-11:10', '11:20-12:10', '12:10-1:00'].includes(timeSlot)) ||
+         (entry.timeSlot === '2:00-4:30' && 
+          ['2:00-2:50', '2:50-3:40', '3:40-4:30'].includes(timeSlot))) {
+        return true;
+      }
+      
+      return false;
+    });
   };
   
   /**
