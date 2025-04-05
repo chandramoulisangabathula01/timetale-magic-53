@@ -1,11 +1,23 @@
 
-import { createRoot } from 'react-dom/client';
-import React from 'react';
-import App from './App.tsx';
-import './index.css';
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import App from './App.tsx'
+import './index.css'
+import { BrowserRouter } from 'react-router-dom'
+import { Toaster } from './components/ui/sonner.tsx'
+import { AuthProvider } from './contexts/AuthContext.tsx'
+import initializePatches from './initialization.ts'
 
-const rootElement = document.getElementById("root");
-if (!rootElement) throw new Error('Root element not found');
+// Initialize the patches
+initializePatches();
 
-const root = createRoot(rootElement);
-root.render(<App />);
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <BrowserRouter>
+      <AuthProvider>
+        <App />
+        <Toaster />
+      </AuthProvider>
+    </BrowserRouter>
+  </React.StrictMode>,
+)
