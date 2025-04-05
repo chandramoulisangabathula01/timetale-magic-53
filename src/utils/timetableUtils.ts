@@ -398,8 +398,7 @@ export const generateTimetable = (formData: TimetableFormData): Timetable => {
     id: uuidv4(),
     formData,
     entries,
-    createdAt: new Date().toISOString(),
-    facultyDetails: {} // Add the missing facultyDetails property
+    createdAt: new Date().toISOString()
   };
 };
 
