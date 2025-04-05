@@ -32,9 +32,13 @@ export const allocateLabsInProperTimeSlots = (
   
   // Process each lab subject-teacher pair
   labPairs.forEach(pair => {
+    // Get available days from dayOptions if they exist, or use a default set of days
+    const availableDays = formData.dayOptions?.selectedDays || 
+      ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    
     // Try to find a day and time slot where the lab can be allocated
     const availableDayAndSlot = findAvailableDayAndTimeSlotForLab(
-      formData.days,
+      availableDays,
       pair.teacherName,
       updatedEntries
     );
