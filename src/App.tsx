@@ -5,7 +5,7 @@ import Index from './pages/Index';
 import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
 import NotFound from './pages/NotFound';
-import AuthProvider from './contexts/AuthContext';
+import { AuthProvider } from './contexts/AuthContext';
 import CreateTimetable from './pages/CreateTimetable';
 import ViewTimetablePage from './pages/ViewTimetablePage';
 import ManageFaculty from './pages/ManageFaculty';

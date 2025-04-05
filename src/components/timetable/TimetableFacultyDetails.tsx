@@ -45,7 +45,7 @@ const TimetableFacultyDetails: React.FC<TimetableFacultyDetailsProps> = ({ timet
               <div className="flex items-center">
                 <span> - </span>
                 {pair.teacherNames && pair.teacherNames.length > 0 ? (
-                  <span>{formatTeacherNames(pair.teacherNames)}</span>
+                  <span>{formatTeacherNames({ teacherNames: pair.teacherNames })}</span>
                 ) : (
                   <span>{pair.teacherName}</span>
                 )}
