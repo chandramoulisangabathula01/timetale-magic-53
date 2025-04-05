@@ -193,11 +193,14 @@ const TimetablePDFExport: React.FC<TimetablePDFExportProps> = ({ timetable, prin
           <!-- Convert the table to put time slots on top row and days on first column -->
           ${(() => {
             // Extract the table HTML
-            const table = content.querySelector('table')?.cloneNode(true);
+            const table = content.querySelector('table');
             if (!table) return '';
             
+            // Type assertion since we know table is an HTMLElement
+            const tableElement = table as HTMLElement;
+            
             // The table is already in the correct format after our TimetableView changes
-            return table.outerHTML;
+            return tableElement.outerHTML;
           })()}
           
           <!-- Faculty details section with subject-teacher mappings -->

@@ -1,3 +1,4 @@
+
 export type Day = "Mon" | "Tue" | "Wed" | "Thu" | "Fri" | "Sat" | "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday" | "Saturday";
 export type TimeSlot =
   | "9:30-10:20"
@@ -82,7 +83,7 @@ export interface TimetableFormData {
 }
 
 export type YearType = "1st Year" | "2nd Year" | "3rd Year" | "4th Year";
-export type BranchType = "CSE" | "IT" | "ECE" | "EEE" | "CSD" | "AI & ML" | "Other" | "All";
+export type BranchType = "CSE" | "IT" | "ECE" | "EEE" | "CSD" | "AI & ML" | "MECH" | "CIVIL" | "Other" | "All";
 export type SemesterType = "I" | "II";
 export type UserRole = "admin" | "faculty" | "student" | "guest";
 
