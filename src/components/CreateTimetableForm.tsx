@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { useNavigate } from 'react-router-dom';
@@ -544,7 +545,7 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
   return (
     <div className="space-y-6 ">
       {!isEditMode && (
-        <div >
+        <div>
           <p className="text-muted-foreground">
           </p>
         </div>
@@ -906,3 +907,323 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
                   </div>
                   
                   <div className="flex justify-end">
+                    <Button 
+                      onClick={handleAddSubjectTeacherPair} 
+                      className="flex items-center gap-2"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add Subject-Teacher Pair
+                    </Button>
+                  </div>
+                  
+                  {formData.subjectTeacherPairs.length > 0 && (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-medium">Added Subjects</h3>
+                      <div className="space-y-2">
+                        {formData.subjectTeacherPairs.map(pair => (
+                          <div 
+                            key={pair.id} 
+                            className="flex items-center justify-between p-3 bg-secondary/20 rounded-md"
+                          >
+                            <div>
+                              <span className="font-medium">{pair.subjectName}</span>
+                              <div className="text-sm text-muted-foreground">
+                                {pair.isLab 
+                                  ? `Lab (Batch ${pair.batchNumber}) - ${pair.teacherNames?.join(' & ') || pair.teacherName}`
+                                  : `Teacher: ${pair.teacherName}`
+                                }
+                              </div>
+                            </div>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => handleRemoveSubjectTeacherPair(pair.id)}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {errors.subjectTeacherPairs && (
+                    <p className="text-sm text-destructive">{errors.subjectTeacherPairs}</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+            
+            <div className="flex justify-between mt-4">
+              <Button variant="outline" onClick={handlePrevStep}>
+                Previous Step
+              </Button>
+              <Button onClick={handleNextStep}>
+                Next Step
+              </Button>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="2" className="pt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Scheduling Options</CardTitle>
+                <CardDescription>
+                  Configure how the timetable will be scheduled
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-medium">Scheduling Method</h3>
+                    <RadioGroup 
+                      value={schedulingMode} 
+                      onValueChange={(value) => setSchedulingMode(value as 'auto' | 'manual')}
+                      className="flex flex-col space-y-3"
+                    >
+                      <div className="flex items-start space-x-3">
+                        <RadioGroupItem value="auto" id="scheduling-auto" />
+                        <div>
+                          <Label htmlFor="scheduling-auto" className="font-medium">
+                            Automatic Scheduling
+                          </Label>
+                          <p className="text-sm text-muted-foreground">
+                            The system will automatically generate an optimized timetable.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-start space-x-3">
+                        <RadioGroupItem value="manual" id="scheduling-manual" />
+                        <div>
+                          <Label htmlFor="scheduling-manual" className="font-medium">
+                            Manual Scheduling
+                          </Label>
+                          <p className="text-sm text-muted-foreground">
+                            Create the timetable by manually placing subjects in time slots.
+                          </p>
+                        </div>
+                      </div>
+                    </RadioGroup>
+                  </div>
+                  
+                  {schedulingMode === 'auto' && (
+                    <>
+                      <Separator />
+                      
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-medium">Free Hours</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="newFreeHourType">Free Hour Type</Label>
+                            <Select
+                              value={newFreeHourType}
+                              onValueChange={setNewFreeHourType}
+                            >
+                              <SelectTrigger id="newFreeHourType">
+                                <SelectValue placeholder="Select Free Hour Type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Library">Library</SelectItem>
+                                <SelectItem value="Sports">Sports</SelectItem>
+                                <SelectItem value="Counseling">Counseling</SelectItem>
+                                <SelectItem value="Free">Free</SelectItem>
+                                <SelectItem value="Others">Others (Custom)</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          
+                          {newFreeHourType === 'Others' && (
+                            <div className="space-y-2">
+                              <Label htmlFor="customFreeHourType">Custom Free Hour Name</Label>
+                              <Input
+                                id="customFreeHourType"
+                                value={customFreeHourType}
+                                onChange={(e) => setCustomFreeHourType(e.target.value)}
+                                placeholder="e.g., Seminar"
+                              />
+                            </div>
+                          )}
+                          
+                          <div className="flex items-center space-x-2">
+                            <Checkbox 
+                              id="mergeFreeSlots" 
+                              checked={mergeFreeSlots} 
+                              onCheckedChange={(checked) => setMergeFreeSlots(checked === true)}
+                            />
+                            <Label htmlFor="mergeFreeSlots">Merge consecutive free slots</Label>
+                          </div>
+                        </div>
+                        
+                        <div className="flex justify-end">
+                          <Button 
+                            onClick={handleAddFreeHour} 
+                            className="flex items-center gap-2"
+                          >
+                            <Plus className="h-4 w-4" />
+                            Add Free Hour Type
+                          </Button>
+                        </div>
+                        
+                        {formData.freeHours.length > 0 && (
+                          <div className="space-y-2">
+                            <h4 className="font-medium">Added Free Hour Types</h4>
+                            <div className="space-y-2">
+                              {formData.freeHours.map((freeHour, index) => (
+                                <div 
+                                  key={index} 
+                                  className="flex items-center justify-between p-2 bg-secondary/20 rounded-md"
+                                >
+                                  <div>
+                                    {freeHour.type === 'Others' 
+                                      ? freeHour.customType 
+                                      : freeHour.type
+                                    }
+                                    {freeHour.mergeSlots && " (Merge consecutive slots)"}
+                                  </div>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    onClick={() => handleRemoveFreeHour(index)}
+                                  >
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {errors.freeHours && (
+                          <p className="text-sm text-destructive">{errors.freeHours}</p>
+                        )}
+                      </div>
+                      
+                      <Separator />
+                      
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-medium">Day Options</h3>
+                        
+                        <div className="space-y-3">
+                          {formData.year === '4th Year' && (
+                            <>
+                              <div className="flex items-center space-x-2">
+                                <Checkbox 
+                                  id="fourthYearSixDays" 
+                                  checked={formData.fourthYearSixDays} 
+                                  onCheckedChange={(checked) => {
+                                    setFormData(prev => ({
+                                      ...prev,
+                                      fourthYearSixDays: checked === true
+                                    }));
+                                  }}
+                                />
+                                <Label htmlFor="fourthYearSixDays">
+                                  Use 6-day week for 4th Year
+                                </Label>
+                              </div>
+                              
+                              <div className="flex items-center space-x-2">
+                                <Checkbox 
+                                  id="fourContinuousDays" 
+                                  checked={formData.dayOptions.fourContinuousDays} 
+                                  onCheckedChange={(checked) => 
+                                    handleDayOptionChange('fourContinuousDays', checked === true)
+                                  }
+                                />
+                                <Label htmlFor="fourContinuousDays">
+                                  Schedule classes for 4 continuous days
+                                </Label>
+                              </div>
+                              
+                              <div className="flex items-center space-x-2">
+                                <Checkbox 
+                                  id="useCustomDays" 
+                                  checked={formData.dayOptions.useCustomDays} 
+                                  onCheckedChange={(checked) => 
+                                    handleDayOptionChange('useCustomDays', checked === true)
+                                  }
+                                />
+                                <Label htmlFor="useCustomDays">
+                                  Use custom day selection
+                                </Label>
+                              </div>
+                              
+                              {formData.dayOptions.useCustomDays && (
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-2 pl-6">
+                                  {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((day) => (
+                                    <div key={day} className="flex items-center space-x-2">
+                                      <Checkbox 
+                                        id={`day-${day}`} 
+                                        checked={formData.dayOptions.selectedDays.includes(day as Day)} 
+                                        onCheckedChange={() => toggleCustomDay(day as Day)}
+                                      />
+                                      <Label htmlFor={`day-${day}`}>{day}</Label>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              
+                              {errors.selectedDays && formData.dayOptions.useCustomDays && (
+                                <p className="text-sm text-destructive pl-6">{errors.selectedDays}</p>
+                              )}
+                            </>
+                          )}
+                          
+                          <div className="flex items-center space-x-2">
+                            <Checkbox 
+                              id="enableBatchRotation" 
+                              checked={formData.enableBatchRotation} 
+                              onCheckedChange={(checked) => {
+                                setFormData(prev => ({
+                                  ...prev,
+                                  enableBatchRotation: checked === true
+                                }));
+                              }}
+                            />
+                            <Label htmlFor="enableBatchRotation">
+                              Enable batch rotation for lab subjects
+                            </Label>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                  
+                  {schedulingMode === 'manual' && (
+                    <div className="space-y-4">
+                      <Alert>
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertTitle>Manual Scheduling</AlertTitle>
+                        <AlertDescription>
+                          Use the grid below to manually assign subjects to time slots.
+                          Make sure to assign all subjects and maintain the required distribution.
+                        </AlertDescription>
+                      </Alert>
+                      
+                      <ManualSchedulingGrid 
+                        formData={formData} 
+                        entries={manualTimetableEntries} 
+                        onEntriesChange={setManualTimetableEntries}
+                      />
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+            
+            <div className="flex justify-between mt-4">
+              <Button variant="outline" onClick={handlePrevStep}>
+                Previous Step
+              </Button>
+              <Button onClick={handleGenerateTimetable}>
+                {isEditMode ? 'Update Timetable' : schedulingMode === 'auto' ? 'Generate Timetable' : 'Save Timetable'}
+              </Button>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
+  );
+};
+
+export default CreateTimetableForm;
