@@ -6,6 +6,7 @@ import { formatDateToDDMMYYYY } from '../components/timetable/TimetableHeaderInf
 // Helper function to extract initials/short name
 export const getShortName = (fullName: string): string => {
   if (!fullName) return '';
+  
   // Split by spaces and get first letter of each part
   return fullName
     .split(' ')

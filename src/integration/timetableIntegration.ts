@@ -1,68 +1,27 @@
 
-import { getShortName } from '../utils/timetableSystemPatch';
+// Import the necessary functions from the patch files
+import { getShortName, applyTimetableSystemPatches, formatWefDate, patchLoadedTimetable } from '../utils/timetableSystemPatch';
 import { formatDateToDDMMYYYY } from '../components/timetable/TimetableHeaderInfoDateFix';
-import { morningLabTimeSlots, afternoonLabTimeSlots } from '../utils/labTimeSlotFix';
-import { TimeSlot, Day, TimetableEntry } from '../utils/types';
+import { TimeSlot, Day, TimetableFormData, TimetableEntry, SubjectTeacherPair, Timetable } from '../utils/types';
 
-// Integration functions to patch the existing system
-
-// Function to patch the timetable view with short names
+// Function to patch the TimetableView with short names
 export const patchTimetableViewWithShortNames = () => {
-  // This function will be called from the existing TimetableView component
-  // to modify how teacher names are displayed in cells
-  return {
-    getShortName
-  };
+  console.log('Patching TimetableView with short names');
+  // This function is just a marker, the actual implementation is in 
+  // TimetableView.tsx by using the MultiTeacherDisplay with useShortName=true
 };
 
-// Function to patch the date formatting in the header
+// Function to patch date formatting
 export const patchDateFormatting = () => {
-  return {
-    formatDate: formatDateToDDMMYYYY
-  };
+  console.log('Patching date formatting to DD/MM/YYYY');
+  // The actual implementation is in formatWefDate and formatDateToDDMMYYYY
 };
 
-// Function to patch the lab allocation logic
-export const patchLabAllocation = () => {
-  return {
-    morningLabTimeSlots,
-    afternoonLabTimeSlots,
-    // Function to check if a time slot is part of a lab block
-    isLabTimeSlot: (timeSlot: TimeSlot): boolean => {
-      return morningLabTimeSlots.includes(timeSlot) || afternoonLabTimeSlots.includes(timeSlot);
-    },
-    // Function to get the corresponding lab block for a time slot
-    getLabBlockForTimeSlot: (timeSlot: TimeSlot): TimeSlot[] => {
-      if (morningLabTimeSlots.includes(timeSlot)) {
-        return morningLabTimeSlots;
-      }
-      if (afternoonLabTimeSlots.includes(timeSlot)) {
-        return afternoonLabTimeSlots;
-      }
-      return [];
-    }
-  };
+// Function to patch lab allocation
+export const patchLabAllocation = (formData: TimetableFormData, entries: TimetableEntry[]): TimetableEntry[] => {
+  console.log('Patching lab allocation to use proper time slots');
+  return applyTimetableSystemPatches(formData, entries);
 };
 
-// Function to determine if an entry should be processed as a lab
-export const shouldProcessAsLab = (
-  entries: TimetableEntry[],
-  day: Day,
-  timeSlot: TimeSlot
-): boolean => {
-  // Check if this time slot is part of a lab block
-  const isLabSlot = patchLabAllocation().isLabTimeSlot(timeSlot);
-  if (!isLabSlot) return false;
-  
-  // Get the lab block for this time slot
-  const labBlock = patchLabAllocation().getLabBlockForTimeSlot(timeSlot);
-  
-  // Check if any entry in this lab block is marked as a lab
-  return labBlock.some(slot => 
-    entries.some(entry => 
-      entry.day === day && 
-      entry.timeSlot === slot && 
-      entry.isLab
-    )
-  );
-};
+// Export the short name function so it can be used throughout the application
+export { getShortName, formatDateToDDMMYYYY };

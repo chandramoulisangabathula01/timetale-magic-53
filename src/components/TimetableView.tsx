@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Timetable, TimetableEntry, Day, TimeSlot } from '@/utils/types';
 import { formatTeacherNames, normalizeTeacherData } from '@/utils/facultyLabUtils';
@@ -149,7 +148,7 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
                       <React.Fragment key={idx}>
                         {idx > 0 && <div className="my-1 border-t border-dashed" />}
                         <div className="font-medium">{lab.subjectName}</div>
-                        <MultiTeacherDisplay entry={normalizedEntry} />
+                        <MultiTeacherDisplay entry={normalizedEntry} useShortName={true} />
                         {lab.batchNumber && <div className="text-xs text-primary">({lab.batchNumber})</div>}
                       </React.Fragment>
                     );
@@ -169,7 +168,7 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
                 <React.Fragment key={idx}>
                   {idx > 0 && <div className="my-1 border-t border-dashed" />}
                   <div className="font-medium">{lab.subjectName}</div>
-                  <MultiTeacherDisplay entry={normalizedEntry} />
+                  <MultiTeacherDisplay entry={normalizedEntry} useShortName={true} />
                   {lab.batchNumber && <div className="text-xs text-primary">({lab.batchNumber})</div>}
                 </React.Fragment>
               );
@@ -199,7 +198,7 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
       return (
         <div>
           <div className="font-medium uppercase">{entry.subjectName}</div>
-          <MultiTeacherDisplay entry={normalizedEntry} />
+          <MultiTeacherDisplay entry={normalizedEntry} useShortName={true} />
           {entry.batchNumber && (
             <div className="text-xs text-primary">({entry.batchNumber})</div>
           )}
