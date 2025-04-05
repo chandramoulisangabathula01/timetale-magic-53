@@ -8,16 +8,27 @@ import { formatTeacherNames } from '@/utils/facultyLabUtils';
 interface TimetableFacultyDetailsProps {
   timetable: Timetable; // The timetable data to be displayed
   printMode?: boolean; // Optional flag to adjust styling for print layout
+  facultyFilter?: string; // Optional faculty filter to show only relevant entries
 }
 
 // TimetableFacultyDetails Component
 // This component renders the faculty details section of the timetable
-const TimetableFacultyDetails: React.FC<TimetableFacultyDetailsProps> = ({ timetable, printMode = false }) => {
+const TimetableFacultyDetails: React.FC<TimetableFacultyDetailsProps> = ({ timetable, printMode = false, facultyFilter }) => {
+  // Filter subject-teacher pairs if a faculty filter is provided
+  const filteredPairs = facultyFilter 
+    ? timetable.formData.subjectTeacherPairs.filter(pair => 
+        pair.teacherName === facultyFilter || 
+        (pair.teacherNames && pair.teacherNames.includes(facultyFilter))
+      )
+    : timetable.formData.subjectTeacherPairs;
+
   return (
     <div className={`mt-6 ${printMode ? 'print-only' : ''}`}> 
-      <h3 className="font-bold text-lg mb-2">FACULTY DETAILS:</h3> 
+      <h3 className="font-bold text-lg mb-2">
+        {facultyFilter ? 'MY TEACHING ASSIGNMENTS:' : 'FACULTY DETAILS:'}
+      </h3> 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2"> 
-        {timetable.formData.subjectTeacherPairs.map((pair) => ( // Map over subject-teacher pairs
+        {filteredPairs.map((pair) => ( // Map over filtered subject-teacher pairs
           <div key={pair.id} className="text-sm text-left bg-white/50 p-2 rounded-md border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
             <span className="font-medium">{pair.subjectName}</span> 
             {pair.isLab && <span className="text-xs ml-1">(Lab)</span>}

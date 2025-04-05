@@ -3,6 +3,8 @@ import React from 'react';
 import { Timetable, TimetableEntry, Day, TimeSlot } from '@/utils/types';
 import { formatTeacherNames, normalizeTeacherData } from '@/utils/facultyLabUtils';
 import MultiTeacherDisplay from './MultiTeacherDisplay';
+import { Alert, AlertDescription } from './ui/alert';
+import { Info } from 'lucide-react';
 
 /**
  * Interface defining the props required by the TimetableView component
@@ -215,14 +217,42 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
     console.log('Lab entries found:', labEntries.length, labEntries);
   };
   
+  // Count how many cells will have content when filtered
+  const hasCellContent = facultyFilter ? 
+    visibleDays.some(day => 
+      timeSlots.some(timeSlot => 
+        getEntry(day, timeSlot) || getLabsForTimeSlot(day, timeSlot).length > 0
+      )
+    ) : true;
+  
   // Call the debug function on component mount
   React.useEffect(() => {
     debugLabEntries();
   }, [entries]);
 
+  // Show message if faculty filter is provided but no classes found
+  if (facultyFilter && !hasCellContent) {
+    return (
+      <Alert className="bg-yellow-50 border-yellow-200">
+        <Info className="h-5 w-5 text-yellow-600" />
+        <AlertDescription className="text-yellow-800">
+          No classes found for faculty: <strong>{facultyFilter}</strong>. You don't have any assigned classes in this timetable.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
   // Render the timetable grid with days as columns and time slots as rows
   return (
     <div className="overflow-x-auto">
+      {facultyFilter && (
+        <Alert className="mb-4 bg-blue-50 border-blue-200">
+          <Info className="h-5 w-5 text-blue-600" />
+          <AlertDescription className="text-blue-800">
+            Showing classes for faculty: <strong>{facultyFilter}</strong>. Only your assigned classes are displayed.
+          </AlertDescription>
+        </Alert>
+      )}
       <table className="min-w-full border-collapse border">
         <thead>
           <tr className={`${printMode ? 'bg-gray-100' : 'bg-muted'}`}>
@@ -236,6 +266,14 @@ const TimetableView: React.FC<TimetableViewProps> = ({ timetable, facultyFilter,
         </thead>
         <tbody>
           {visibleDays.map((day) => {
+            // Skip days with no content when filtered
+            const dayHasContent = !facultyFilter || 
+              timeSlots.some(slot => 
+                getEntry(day, slot) || getLabsForTimeSlot(day, slot).length > 0
+              );
+            
+            if (facultyFilter && !dayHasContent) return null;
+            
             return (
               <tr key={day}>
                 <td className="border p-2 text-sm font-medium whitespace-nowrap uppercase">

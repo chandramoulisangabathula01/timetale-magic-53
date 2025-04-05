@@ -25,8 +25,8 @@ import TimetableFacultyDetails from './timetable/TimetableFacultyDetails';
 const ViewTimetable: React.FC = () => {
   // Get timetable ID from URL parameters
   const { id } = useParams<{ id: string }>();
-  // Get current user role for permission-based UI
-  const { userRole } = useAuth();
+  // Get current user role and username for permission-based UI
+  const { userRole, username } = useAuth();
   // Reference to the printable content for PDF export
   const printRef = useRef<HTMLDivElement>(null);
   
@@ -37,6 +37,10 @@ const ViewTimetable: React.FC = () => {
   if (!timetable) {
     return <TimetableNotFound />;
   }
+
+  // If user is a faculty, filter timetable to only show their classes
+  const shouldFilterForFaculty = userRole === 'faculty' && username;
+  const facultyFilter = shouldFilterForFaculty ? username : undefined;
   
   return (
     <div className="space-y-6 text-left">
@@ -59,10 +63,15 @@ const ViewTimetable: React.FC = () => {
         <TimetableView 
           timetable={timetable} 
           printMode={false}
+          facultyFilter={facultyFilter}
         />
 
         {/* Faculty details shown in both print and normal view */}
-        <TimetableFacultyDetails timetable={timetable} printMode={false} />
+        <TimetableFacultyDetails 
+          timetable={timetable} 
+          printMode={false} 
+          facultyFilter={facultyFilter}
+        />
       </div>
     </div>
   );
