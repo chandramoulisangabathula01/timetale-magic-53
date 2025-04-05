@@ -28,7 +28,7 @@ const FacultyDashboard = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <TimetableList role="faculty" username={username} facultySpecific={true} />
+          <TimetableList role="faculty" username={username} />
         </CardContent>
       </Card>
     </div>

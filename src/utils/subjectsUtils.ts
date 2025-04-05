@@ -1,3 +1,4 @@
+
 import { v4 as uuidv4 } from 'uuid';
 import { YearType, BranchType, Subject } from './types';
 
@@ -143,4 +144,21 @@ export const initializeDefaultSubjects = () => {
     
     defaultSubjects.forEach(subject => saveSubject(subject));
   }
+};
+
+// Get all branches including custom ones
+export const getAllBranches = (): (BranchType | string)[] => {
+  const subjects = getSubjects();
+  const standardBranches: BranchType[] = ['CSE', 'ECE', 'EEE', 'MECH', 'CIVIL', 'All', 'Other'];
+  
+  // Get custom branches from subjects with branch type "Other"
+  const customBranches = subjects
+    .filter(subject => subject.branch === 'Other' && subject.customBranch)
+    .map(subject => subject.customBranch as string);
+  
+  // Remove duplicates
+  const uniqueCustomBranches = [...new Set(customBranches)];
+  
+  // Combine standard and custom branches
+  return [...standardBranches, ...uniqueCustomBranches];
 };

@@ -8,7 +8,7 @@ import { getAllBranches } from '@/utils/subjectsUtils';
 import { BranchType } from '@/utils/types';
 
 const StudentDashboard = () => {
-  const { username, studentFilters, updateStudentFilters } = useAuth();
+  const { username, studentFilters } = useAuth();
   const [availableBranches, setAvailableBranches] = useState<(BranchType | string)[]>([]);
   
   // Load all branches including custom ones
@@ -44,7 +44,6 @@ const StudentDashboard = () => {
               branch: studentFilters?.branch,
               semester: studentFilters?.semester
             }} 
-            availableBranches={availableBranches}
           />
         </CardContent>
       </Card>
