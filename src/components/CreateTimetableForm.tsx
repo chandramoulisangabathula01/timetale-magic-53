@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { AlertTriangle, AlertCircle, Plus, Trash2, Edit } from 'lucide-react';
+import { AlertTriangle, AlertCircle, Plus, Trash2, InfoIcon } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { 
   Tabs,
@@ -21,6 +21,12 @@ import {
   AlertDescription,
   AlertTitle,
 } from "@/components/ui/alert";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useToast } from '@/hooks/use-toast';
 import { 
   YearType, 
@@ -35,6 +41,7 @@ import {
 import { generateTimetable, saveTimetable, countNonLabSubjectsForTeacher, doesTimetableExist } from '@/utils/timetableUtils';
 import { getFaculty } from '@/utils/facultyUtils';
 import { getFilteredSubjects, subjectTeacherPairExists } from '@/utils/subjectsUtils';
+import { isFacultyAvailableForSubjects, validateSubjectTeacherPairs } from '@/utils/facultyWorkloadUtils';
 import ManualSchedulingGrid from '@/components/ManualSchedulingGrid';
 
 interface CreateTimetableFormProps {
@@ -99,8 +106,24 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
   
   const [manualEntriesInitialized, setManualEntriesInitialized] = useState(false);
   
+  const [facultyWorkload, setFacultyWorkload] = useState({});
+  
   useEffect(() => {
-    setAvailableFaculty(getFaculty());
+    const faculty = getFaculty();
+    
+    // Get workload information for each faculty
+    const workloadInfo = {};
+    faculty.forEach(f => {
+      const { isAvailable, currentCount } = isFacultyAvailableForSubjects(f.name);
+      workloadInfo[f.name] = {
+        currentCount,
+        isAvailable,
+        remainingCapacity: Math.max(0, 3 - currentCount)
+      };
+    });
+    
+    setFacultyWorkload(workloadInfo);
+    setAvailableFaculty(faculty);
   }, []);
 
   useEffect(() => {
@@ -190,7 +213,7 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
     if (!isLabSubject && countNonLabSubjectsForTeacher(newTeacher, formData.subjectTeacherPairs) >= 3) {
       toast({
         title: "Teacher limit reached",
-        description: "This teacher is already allotted for 3 non-lab subjects",
+        description: "This teacher is already allotted for 3 non-lab subjects in this timetable",
         variant: "destructive",
       });
       return;
@@ -223,6 +246,27 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
       return;
     }
     
+    // Check global faculty workload limit
+    const teachersToCheck = multipleTeachers ? [newTeacher, newTeacher2] : [newTeacher];
+    const overloadedFaculty = [];
+    
+    for (const teacher of teachersToCheck) {
+      const { isAvailable, currentCount } = isFacultyAvailableForSubjects(teacher);
+      if (!isAvailable) {
+        overloadedFaculty.push({ name: teacher, count: currentCount });
+      }
+    }
+    
+    if (overloadedFaculty.length > 0) {
+      const facultyNames = overloadedFaculty.map(f => f.name).join(', ');
+      toast({
+        title: "Faculty workload limit reached",
+        description: `${facultyNames} has already been assigned the maximum of 3 subjects across all timetables.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    
     let finalSubjectName = newSubject;
     if (isLabSubject && !finalSubjectName.toLowerCase().includes('lab')) {
       finalSubjectName = `${finalSubjectName} lab`;
@@ -243,6 +287,17 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
       ...prev,
       subjectTeacherPairs: [...prev.subjectTeacherPairs, newPair]
     }));
+    
+    // Update faculty workload in state
+    const updatedWorkload = {...facultyWorkload};
+    teacherNames.forEach(teacher => {
+      if (updatedWorkload[teacher]) {
+        updatedWorkload[teacher].currentCount += 1;
+        updatedWorkload[teacher].remainingCapacity = Math.max(0, 3 - updatedWorkload[teacher].currentCount);
+        updatedWorkload[teacher].isAvailable = updatedWorkload[teacher].remainingCapacity > 0;
+      }
+    });
+    setFacultyWorkload(updatedWorkload);
     
     setNewSubject('');
     setNewTeacher('');
@@ -435,15 +490,62 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
     }
   };
 
+  const renderFacultyDropdown = (value, onChange, label, id) => {
+    return (
+      <div className="space-y-2">
+        <Label htmlFor={id}>{label}</Label>
+        <Select
+          value={value}
+          onValueChange={onChange}
+        >
+          <SelectTrigger id={id}>
+            <SelectValue placeholder={multipleTeachers ? "Select First Teacher" : "Select Teacher"} />
+          </SelectTrigger>
+          <SelectContent>
+            {availableFaculty.length === 0 ? (
+              <SelectItem value="no-faculty-available" disabled>
+                No faculty available - create faculty first
+              </SelectItem>
+            ) : (
+              availableFaculty.map(faculty => {
+                const workload = facultyWorkload[faculty.name];
+                const isAvailable = workload?.isAvailable ?? true;
+                const remainingCapacity = workload?.remainingCapacity ?? 3;
+                
+                return (
+                  <SelectItem 
+                    key={faculty.id} 
+                    value={faculty.name}
+                    disabled={!isAvailable}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <span>{faculty.name} ({faculty.shortName})</span>
+                      <span className={`text-xs ${isAvailable ? 'text-green-600' : 'text-red-600'}`}>
+                        {isAvailable 
+                          ? `${remainingCapacity} subject${remainingCapacity !== 1 ? 's' : ''} left` 
+                          : 'Fully assigned'}
+                      </span>
+                    </div>
+                  </SelectItem>
+                );
+              })
+            )}
+          </SelectContent>
+        </Select>
+        {availableFaculty.length === 0 && (
+          <p className="text-xs text-destructive">
+            Please add faculty in Manage Faculty page first
+          </p>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6 ">
       {!isEditMode && (
         <div >
-          {/* <h1 className="text-2xl font-bold">
-            Create New Timetable
-          </h1> */}
           <p className="text-muted-foreground">
-            {/* Fill in the required information to generate a new timetable */}
           </p>
         </div>
       )}
@@ -465,7 +567,6 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
           <TabsContent value="0" className="pt-4">
             <Card>
               <CardHeader>
-                {/* <CardTitle>Academic Titailt</CardTitle> */}
                 <CardTitle>Academic Details</CardTitle>
                 <CardDescription>
                   Enter the basic information for this timetable
@@ -672,7 +773,7 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
                           Lab subjects will be scheduled in merged time slots: 9:30-1:00, 10:20-1:00, or 2:00-4:30.
                         </li>
                         <li>
-                          Each teacher can be assigned a maximum of 3 non-lab subjects.
+                          Each teacher can be assigned a maximum of 3 non-lab subjects <strong>across all timetables</strong>.
                         </li>
                         <li>
                           To use batch rotation for labs, create lab subjects with matching names but different batch numbers (B1/B2).
@@ -681,6 +782,24 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
                           Lab subjects can have up to 2 teachers assigned to them.
                         </li>
                       </ul>
+                    </AlertDescription>
+                  </Alert>
+                  
+                  <Alert variant="default" className="bg-blue-50 border-blue-200">
+                    <InfoIcon className="h-4 w-4 text-blue-700" />
+                    <AlertTitle className="text-blue-700">Faculty Workload Limit</AlertTitle>
+                    <AlertDescription className="text-blue-700">
+                      Each faculty can teach a maximum of 3 subjects across all timetables.
+                      <div className="mt-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="bg-white text-blue-700 border-blue-300 hover:bg-blue-50"
+                          onClick={() => navigate('/faculty-workload')}
+                        >
+                          View Faculty Workload
+                        </Button>
+                      </div>
                     </AlertDescription>
                   </Alert>
                   
@@ -769,387 +888,21 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
                       )}
                     </div>
                     
-                    <div className="space-y-2">
-                      <Label htmlFor="newTeacher">{multipleTeachers ? "Teacher 1" : "Teacher"}</Label>
-                      <Select
-                        value={newTeacher}
-                        onValueChange={setNewTeacher}
-                      >
-                        <SelectTrigger id="newTeacher">
-                          <SelectValue placeholder={multipleTeachers ? "Select First Teacher" : "Select Teacher"} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {availableFaculty.length === 0 ? (
-                            <SelectItem value="no-faculty-available" disabled>
-                              No faculty available - create faculty first
-                            </SelectItem>
-                          ) : (
-                            availableFaculty.map(faculty => (
-                              <SelectItem key={faculty.id} value={faculty.name}>
-                                {faculty.name} ({faculty.shortName})
-                              </SelectItem>
-                            ))
-                          )}
-                        </SelectContent>
-                      </Select>
-                      {availableFaculty.length === 0 && (
-                        <p className="text-xs text-destructive">
-                          Please add faculty in Manage Faculty page first
-                        </p>
-                      )}
-                    </div>
+                    {renderFacultyDropdown(
+                      newTeacher, 
+                      setNewTeacher, 
+                      multipleTeachers ? "Teacher 1" : "Teacher", 
+                      "newTeacher"
+                    )}
                     
                     {multipleTeachers && (
-                      <div className="space-y-2">
-                        <Label htmlFor="newTeacher2">Teacher 2</Label>
-                        <Select
-                          value={newTeacher2}
-                          onValueChange={setNewTeacher2}
-                        >
-                          <SelectTrigger id="newTeacher2">
-                            <SelectValue placeholder="Select Second Teacher" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {availableFaculty.length === 0 ? (
-                              <SelectItem value="no-faculty-available" disabled>
-                                No faculty available - create faculty first
-                              </SelectItem>
-                            ) : (
-                              availableFaculty.map(faculty => (
-                                <SelectItem key={faculty.id} value={faculty.name}>
-                                  {faculty.name} ({faculty.shortName})
-                                </SelectItem>
-                              ))
-                            )}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                      renderFacultyDropdown(
+                        newTeacher2,
+                        setNewTeacher2,
+                        "Teacher 2",
+                        "newTeacher2"
+                      )
                     )}
                   </div>
                   
                   <div className="flex justify-end">
-                    <Button
-                      onClick={handleAddSubjectTeacherPair}
-                      className="flex items-center gap-1"
-                    >
-                      <Plus className="h-4 w-4" />
-                      Add Subject
-                    </Button>
-                  </div>
-                  
-                  <Separator />
-                  
-                  <div>
-                    <h3 className="font-medium mb-2">Added Subjects</h3>
-                    {formData.subjectTeacherPairs.length === 0 ? (
-                      <div className="text-center py-6 text-muted-foreground">
-                        No subjects added yet. Use the form above to add subjects and teachers.
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        {formData.subjectTeacherPairs.map((pair) => (
-                          <div 
-                            key={pair.id} 
-                            className="flex items-center justify-between p-3 border rounded-md"
-                          >
-                            <div>
-                              <div className="font-medium">{pair.subjectName}</div>
-                              <div className="text-sm text-muted-foreground">
-                                {pair.teacherNames && pair.teacherNames.length > 1 ? (
-                                  <span>Teachers: {pair.teacherNames.join(', ')}</span>
-                                ) : (
-                                  <span>Teacher: {pair.teacherName}</span>
-                                )}
-                                {pair.isLab && pair.batchNumber && ` (${pair.batchNumber})`}
-                                {pair.isLab && <span className="ml-2 text-primary">Lab</span>}
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleRemoveSubjectTeacherPair(pair.id)}
-                                className="h-8 w-8 p-0"
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    
-                    {errors.subjectTeacherPairs && (
-                      <p className="text-sm text-destructive mt-2">{errors.subjectTeacherPairs}</p>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <div className="flex justify-between mt-4">
-              <Button variant="outline" onClick={handlePrevStep}>Previous Step</Button>
-              <Button onClick={handleNextStep}>Next Step</Button>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="2" className="pt-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Scheduling Options</CardTitle>
-                <CardDescription>
-                  Configure free hours and scheduling preferences
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="font-medium mb-3">Free Hours</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="freeHourType">Type</Label>
-                        <Select 
-                          value={newFreeHourType} 
-                          onValueChange={setNewFreeHourType as (value: string) => void}
-                        >
-                          <SelectTrigger id="freeHourType">
-                            <SelectValue placeholder="Select Type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Library">Library</SelectItem>
-                            <SelectItem value="Sports">Sports</SelectItem>
-                            <SelectItem value="Project">Project</SelectItem>
-                            <SelectItem value="Others">Others</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
-                      {newFreeHourType === 'Others' && (
-                        <div className="space-y-2">
-                          <Label htmlFor="customFreeHourType">Specify Type</Label>
-                          <Input
-                            id="customFreeHourType"
-                            placeholder="e.g., Seminar"
-                            value={customFreeHourType}
-                            onChange={(e) => setCustomFreeHourType(e.target.value)}
-                          />
-                        </div>
-                      )}
-                      
-                      <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="mergeFreeSlots" 
-                          checked={mergeFreeSlots} 
-                          onCheckedChange={(checked) => setMergeFreeSlots(checked === true)}
-                        />
-                        <Label htmlFor="mergeFreeSlots">Merge continuous slots</Label>
-                      </div>
-                    </div>
-                    
-                    <div className="flex justify-end mb-4">
-                      <Button
-                        onClick={handleAddFreeHour}
-                        className="flex items-center gap-1"
-                      >
-                        <Plus className="h-4 w-4" />
-                        Add Free Hour
-                      </Button>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      {formData.freeHours.map((freeHour, index) => (
-                        <div 
-                          key={index} 
-                          className="flex items-center justify-between p-3 border rounded-md"
-                        >
-                          <div>
-                            <div className="font-medium">
-                              {freeHour.type === 'Others' && freeHour.customType 
-                                ? freeHour.customType 
-                                : freeHour.type}
-                            </div>
-                            {freeHour.mergeSlots && (
-                              <div className="text-xs text-muted-foreground">
-                                Continuous slots will be merged
-                              </div>
-                            )}
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleRemoveFreeHour(index)}
-                            className="h-8 w-8 p-0"
-                            disabled={formData.freeHours.length <= 1}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                    
-                    {errors.freeHours && (
-                      <p className="text-sm text-destructive mt-2">{errors.freeHours}</p>
-                    )}
-                  </div>
-                  
-                  <Separator className="my-4" />
-                  
-                  <div>
-                    <h3 className="font-medium mb-3">Day Options</h3>
-                    
-                    {formData.year === '4th Year' ? (
-                      <div className="space-y-4">
-                        <Alert variant="default" className="bg-muted/50">
-                          <AlertTriangle className="h-4 w-4" />
-                          <AlertTitle>4th Year Scheduling</AlertTitle>
-                          <AlertDescription>
-                            For 4th year timetables, you can choose between different scheduling options.
-                          </AlertDescription>
-                        </Alert>
-                        
-                        <div className="space-y-2">
-                          <div className="flex items-center space-x-2">
-                            <Checkbox 
-                              id="fourContinuousDays" 
-                              checked={formData.dayOptions.fourContinuousDays} 
-                              onCheckedChange={(checked) => handleDayOptionChange('fourContinuousDays', checked === true)}
-                            />
-                            <Label htmlFor="fourContinuousDays">Use 4 continuous days (Mon-Thu)</Label>
-                          </div>
-                          
-                          <div className="flex items-center space-x-2">
-                            <Checkbox 
-                              id="useCustomDays" 
-                              checked={formData.dayOptions.useCustomDays} 
-                              onCheckedChange={(checked) => handleDayOptionChange('useCustomDays', checked === true)}
-                            />
-                            <Label htmlFor="useCustomDays">Use custom day selection</Label>
-                          </div>
-                        </div>
-                        
-                        {formData.dayOptions.useCustomDays && (
-                          <div className="space-y-2 p-3 border rounded-md">
-                            <Label>Select Days</Label>
-                            <div className="grid grid-cols-3 gap-2 mt-2">
-                              {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((day) => (
-                                <div key={day} className="flex items-center space-x-2">
-                                  <Checkbox 
-                                    id={`day-${day}`}
-                                    checked={formData.dayOptions.selectedDays.includes(day as Day)}
-                                    onCheckedChange={(checked) => toggleCustomDay(day as Day)}
-                                  />
-                                  <Label htmlFor={`day-${day}`}>{day}</Label>
-                                </div>
-                              ))}
-                            </div>
-                            {errors.selectedDays && (
-                              <p className="text-sm text-destructive mt-2">{errors.selectedDays}</p>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <p className="text-muted-foreground">
-                        Standard 6-day schedule (Monday to Saturday) will be used for {formData.year} timetables.
-                      </p>
-                    )}
-                  </div>
-                  
-                  <Separator />
-                  
-                  <div>
-                    <h3 className="font-medium mb-3">Lab Scheduling Options</h3>
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="enableBatchRotation" 
-                          checked={formData.enableBatchRotation} 
-                          onCheckedChange={(checked) => setFormData(prev => ({
-                            ...prev,
-                            enableBatchRotation: checked === true
-                          }))}
-                        />
-                        <Label htmlFor="enableBatchRotation">Enable Batch Rotation for Labs</Label>
-                      </div>
-                      <p className="text-sm text-muted-foreground pl-6">
-                        When enabled, labs with matching subjects but different batches (B1/B2) will be scheduled in 
-                        rotation, with both batches sharing the same lab slot. For example, Physics Lab (B1) and 
-                        Computer Lab (B2) would share the same timeslot on Monday, then swap on Wednesday.
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <Separator />
-                  
-                  <div>
-                    <h3 className="font-medium mb-3">Scheduling Mode</h3>
-                    <div className="space-y-2">
-                      <div className="grid grid-cols-2 gap-2">
-                        <Button 
-                          type="button"
-                          variant={schedulingMode === 'auto' ? 'default' : 'outline'}
-                          className="justify-start" 
-                          onClick={() => setSchedulingMode('auto')}
-                        >
-                          <div className="flex flex-col items-start">
-                            <span className="font-medium text-lg">Auto Scheduling (System will automatically generate the timetable)</span>
-                            {/* <span className="text-xs text-white">System will automatically generate the timetable</span> */}
-                          </div>
-                        </Button>
-                        {/* <Button 
-                          type="button"
-                          variant={schedulingMode === 'manual' ? 'default' : 'outline'}
-                          className="justify-start" 
-                          onClick={() => setSchedulingMode('manual')}
-                        >
-                          <div className="flex flex-col items-start">
-                            <span className="font-medium">Manual Scheduling</span>
-                            <span className="text-xs text-muted-foreground">Manually place subjects in specific time slots</span>
-                          </div>
-                        </Button> */}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* {schedulingMode === 'manual' && (
-                    <div className="mt-4">
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>Manual Scheduling</CardTitle>
-                          <CardDescription>
-                            Drag and drop subjects into the timetable grid
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <ManualSchedulingGrid 
-                            subjectTeacherPairs={formData.subjectTeacherPairs}
-                            year={formData.year}
-                            branch={formData.branch}
-                            freeHours={formData.freeHours}
-                            dayOptions={formData.dayOptions}
-                            onSave={setManualTimetableEntries}
-                            existingEntries={isEditMode && existingTimetable ? existingTimetable.entries : []}
-                          />
-                        </CardContent>
-                      </Card>
-                    </div>
-                  )} */}
-                </div>
-              </CardContent>
-            </Card>
-            
-            <div className="flex justify-between mt-4">
-              <Button variant="outline" onClick={handlePrevStep}>Previous Step</Button>
-              <Button onClick={handleGenerateTimetable}>
-                {isEditMode ? 'Update Timetable' : 'Generate Timetable'}
-              </Button>
-            </div>
-          </TabsContent>
-        </Tabs>
-      </div>
-  
-  </div>
-  );
-};
-
-export default CreateTimetableForm;
