@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { useNavigate } from 'react-router-dom';
@@ -892,4 +893,338 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
                                 <Label htmlFor="single-teacher">Single Teacher</Label>
                               </div>
                               <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="2" id="two-
+                                <RadioGroupItem value="2" id="two-teachers" />
+                                <Label htmlFor="two-teachers">Two Teachers</Label>
+                              </div>
+                            </RadioGroup>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {renderFacultyDropdown(
+                      newTeacher, 
+                      setNewTeacher, 
+                      multipleTeachers ? "Teacher 1" : "Teacher", 
+                      "newTeacher"
+                    )}
+                    
+                    {multipleTeachers && (
+                      renderFacultyDropdown(
+                        newTeacher2,
+                        setNewTeacher2,
+                        "Teacher 2",
+                        "newTeacher2"
+                      )
+                    )}
+                  </div>
+                  
+                  <div className="flex justify-end">
+                    <Button 
+                      onClick={handleAddSubjectTeacherPair}
+                      className="flex items-center gap-2"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add Subject-Teacher Pair
+                    </Button>
+                  </div>
+                  
+                  {formData.subjectTeacherPairs.length > 0 && (
+                    <div className="mt-6">
+                      <h3 className="text-lg font-medium mb-4">Added Subject-Teacher Pairs</h3>
+                      <div className="space-y-2">
+                        {formData.subjectTeacherPairs.map((pair) => (
+                          <div 
+                            key={pair.id} 
+                            className="flex items-center justify-between p-3 rounded-md bg-gray-50 border"
+                          >
+                            <div>
+                              <span className="font-medium">{pair.subjectName}</span>
+                              <span className="ml-2 text-sm text-gray-500">
+                                {pair.isLab ? (
+                                  <>
+                                    <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 text-xs mr-1">
+                                      LAB {pair.batchNumber}
+                                    </span>
+                                    {pair.teacherNames && pair.teacherNames.length > 1 ? (
+                                      <span className="text-sm text-gray-600">
+                                        {pair.teacherNames.join(', ')}
+                                      </span>
+                                    ) : (
+                                      <span className="text-sm text-gray-600">{pair.teacherName}</span>
+                                    )}
+                                  </>
+                                ) : (
+                                  <span className="text-sm text-gray-600">{pair.teacherName}</span>
+                                )}
+                              </span>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRemoveSubjectTeacherPair(pair.id)}
+                              className="text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {errors.subjectTeacherPairs && (
+                    <p className="text-sm text-destructive">{errors.subjectTeacherPairs}</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+            
+            <div className="flex justify-between mt-4">
+              <Button variant="outline" onClick={handlePrevStep}>Previous Step</Button>
+              <Button onClick={handleNextStep}>Next Step</Button>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="2" className="pt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Scheduling Options</CardTitle>
+                <CardDescription>
+                  Choose how you want to create this timetable
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  <RadioGroup 
+                    value={schedulingMode} 
+                    onValueChange={(value: 'auto' | 'manual') => setSchedulingMode(value)}
+                    className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                  >
+                    <div className="flex items-start space-x-3 p-4 border rounded-md">
+                      <RadioGroupItem value="auto" id="auto-scheduling" className="mt-1" />
+                      <div>
+                        <Label htmlFor="auto-scheduling" className="text-base font-medium">
+                          Automatic Scheduling
+                        </Label>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Let the system automatically generate a balanced timetable
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start space-x-3 p-4 border rounded-md">
+                      <RadioGroupItem value="manual" id="manual-scheduling" className="mt-1" />
+                      <div>
+                        <Label htmlFor="manual-scheduling" className="text-base font-medium">
+                          Manual Scheduling
+                        </Label>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Customize each time slot manually for complete control
+                        </p>
+                      </div>
+                    </div>
+                  </RadioGroup>
+                  
+                  {schedulingMode === 'auto' && (
+                    <div className="space-y-6">
+                      <Card className="border-dashed">
+                        <CardHeader className="p-4">
+                          <CardTitle className="text-base">Free Hours</CardTitle>
+                          <CardDescription>
+                            Add free hours to include in the timetable
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-4 pt-0">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="newFreeHourType">Free Hour Type</Label>
+                              <Select
+                                value={newFreeHourType}
+                                onValueChange={setNewFreeHourType}
+                              >
+                                <SelectTrigger id="newFreeHourType">
+                                  <SelectValue placeholder="Select Type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Library">Library</SelectItem>
+                                  <SelectItem value="Sports">Sports</SelectItem>
+                                  <SelectItem value="Project">Project</SelectItem>
+                                  <SelectItem value="Others">Others</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            
+                            {newFreeHourType === 'Others' && (
+                              <div className="space-y-2">
+                                <Label htmlFor="customFreeHourType">Custom Type</Label>
+                                <Input
+                                  id="customFreeHourType"
+                                  value={customFreeHourType}
+                                  onChange={(e) => setCustomFreeHourType(e.target.value)}
+                                  placeholder="e.g., Skill Development"
+                                />
+                              </div>
+                            )}
+                            
+                            <div className="flex items-center space-x-2 pt-7">
+                              <Checkbox 
+                                id="mergeFreeSlots" 
+                                checked={mergeFreeSlots} 
+                                onCheckedChange={(checked) => setMergeFreeSlots(checked === true)}
+                              />
+                              <Label htmlFor="mergeFreeSlots">Merge consecutive slots</Label>
+                            </div>
+                          </div>
+                          
+                          <div className="flex justify-end">
+                            <Button 
+                              onClick={handleAddFreeHour}
+                              className="flex items-center gap-2"
+                            >
+                              <Plus className="h-4 w-4" />
+                              Add Free Hour
+                            </Button>
+                          </div>
+                          
+                          {formData.freeHours.length > 0 && (
+                            <div className="mt-4">
+                              <h3 className="text-sm font-medium mb-2">Added Free Hours</h3>
+                              <div className="space-y-2">
+                                {formData.freeHours.map((freeHour, index) => (
+                                  <div 
+                                    key={index} 
+                                    className="flex items-center justify-between p-2 rounded-md bg-gray-50 border"
+                                  >
+                                    <div>
+                                      <span>{freeHour.type === 'Others' ? freeHour.customType : freeHour.type}</span>
+                                      {freeHour.mergeSlots && (
+                                        <span className="ml-2 px-2 py-0.5 rounded-full bg-green-100 text-green-800 text-xs">
+                                          Merged
+                                        </span>
+                                      )}
+                                    </div>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleRemoveFreeHour(index)}
+                                      className="text-destructive"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {errors.freeHours && (
+                            <p className="text-sm text-destructive mt-2">{errors.freeHours}</p>
+                          )}
+                        </CardContent>
+                      </Card>
+                      
+                      {formData.year === '4th Year' && (
+                        <Card className="border-dashed">
+                          <CardHeader className="p-4">
+                            <CardTitle className="text-base">Day Options for 4th Year</CardTitle>
+                            <CardDescription>
+                              Configure which days to include in the timetable
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="p-4 pt-0">
+                            <div className="space-y-4">
+                              <div className="flex items-center space-x-2">
+                                <Checkbox 
+                                  id="fourContinuousDays" 
+                                  checked={formData.dayOptions.fourContinuousDays} 
+                                  onCheckedChange={(checked) => 
+                                    handleDayOptionChange('fourContinuousDays', checked === true)
+                                  }
+                                  disabled={formData.dayOptions.useCustomDays}
+                                />
+                                <Label htmlFor="fourContinuousDays">
+                                  Use 4 continuous days (Mon-Thu)
+                                </Label>
+                              </div>
+                              
+                              <div className="flex items-center space-x-2">
+                                <Checkbox 
+                                  id="useCustomDays" 
+                                  checked={formData.dayOptions.useCustomDays} 
+                                  onCheckedChange={(checked) => 
+                                    handleDayOptionChange('useCustomDays', checked === true)
+                                  }
+                                  disabled={formData.dayOptions.fourContinuousDays}
+                                />
+                                <Label htmlFor="useCustomDays">
+                                  Use custom day selection
+                                </Label>
+                              </div>
+                              
+                              {formData.dayOptions.useCustomDays && (
+                                <div className="grid grid-cols-3 md:grid-cols-6 gap-2 mt-2">
+                                  {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((day) => (
+                                    <div 
+                                      key={day} 
+                                      className={`flex items-center justify-center p-2 rounded border cursor-pointer transition-colors ${
+                                        formData.dayOptions.selectedDays.includes(day as Day)
+                                          ? 'bg-primary text-primary-foreground'
+                                          : 'bg-background hover:bg-muted'
+                                      }`}
+                                      onClick={() => toggleCustomDay(day as Day)}
+                                    >
+                                      {day.substring(0, 3)}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              
+                              {errors.selectedDays && (
+                                <p className="text-sm text-destructive">{errors.selectedDays}</p>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+                    </div>
+                  )}
+                  
+                  {schedulingMode === 'manual' && (
+                    <div className="space-y-4">
+                      <Card className="border-dashed">
+                        <CardHeader className="p-4">
+                          <CardTitle className="text-base">Manual Scheduling Grid</CardTitle>
+                          <CardDescription>
+                            Drag and drop subjects to create your timetable
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-4 pt-0">
+                          <ManualSchedulingGrid
+                            subjectTeacherPairs={formData.subjectTeacherPairs}
+                            year={formData.year}
+                            initialEntries={manualTimetableEntries}
+                            onEntriesChange={handleManualEntriesChange}
+                          />
+                        </CardContent>
+                      </Card>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+            
+            <div className="flex justify-between mt-4">
+              <Button variant="outline" onClick={handlePrevStep}>Previous Step</Button>
+              <Button onClick={handleGenerateTimetable}>
+                {isEditMode ? "Update Timetable" : "Generate Timetable"}
+              </Button>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
+  );
+};
+
+export default CreateTimetableForm;
