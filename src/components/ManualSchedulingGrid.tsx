@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -105,8 +104,11 @@ const ManualSchedulingGrid: React.FC<ManualSchedulingGridProps> = ({
     '4:30-5:20': 9,
     // Special slots for lab sessions
     '9:30-1:00': 10,
-    '10:20-1:00': 11,
-    '2:00-4:30': 12
+    '2:00-4:30': 12,
+    // Additional lab time slots
+    '10:20-2:50': 13,
+    '11:20-3:40': 14,
+    '12:10-4:30': 15
   };
   
   // Initialize grid entries from existing data or create empty grid

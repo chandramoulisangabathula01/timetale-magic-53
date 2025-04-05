@@ -1,7 +1,7 @@
 
 import { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { routes } from './routes';
+import AppRoutes from './routes'; // Changed from importing 'routes'
 import { useAuth } from './contexts/AuthContext';
 import './App.css';
 import { Toaster } from "./components/ui/toaster";
@@ -19,22 +19,7 @@ function App() {
 
   return (
     <>
-      <Routes>
-        {routes.map((route) => (
-          <Route
-            key={route.path}
-            path={route.path}
-            element={
-              route.protected && !isAuthenticated ? (
-                <Navigate to="/" replace />
-              ) : (
-                route.element
-              )
-            }
-          />
-        ))}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+      <AppRoutes />
       <Toaster />
       <Sonner />
     </>
