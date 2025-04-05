@@ -475,31 +475,3 @@ export const isTeacherAvailable = (
     )
   );
 };
-
-// New function to count how many subjects are assigned to a faculty member across all timetables
-export const countFacultySubjectAssignments = (facultyName: string): number => {
-  const timetables = getTimetables();
-  
-  // Get unique subject assignments across all timetables
-  const uniqueSubjects = new Set<string>();
-  
-  timetables.forEach(timetable => {
-    timetable.formData.subjectTeacherPairs.forEach(pair => {
-      if (pair.teacherName === facultyName && !pair.isLab) {
-        uniqueSubjects.add(`${timetable.id}-${pair.subjectName}`);
-      }
-      // Also check teacherNames array for multiple teachers
-      if (pair.teacherNames && pair.teacherNames.includes(facultyName) && !pair.isLab) {
-        uniqueSubjects.add(`${timetable.id}-${pair.subjectName}`);
-      }
-    });
-  });
-  
-  return uniqueSubjects.size;
-};
-
-// Check if a faculty member can be assigned another subject
-export const canAssignSubjectToFaculty = (facultyName: string, maxSubjects: number = 3): boolean => {
-  const currentAssignments = countFacultySubjectAssignments(facultyName);
-  return currentAssignments < maxSubjects;
-};

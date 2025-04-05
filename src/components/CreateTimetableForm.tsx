@@ -32,11 +32,10 @@ import {
   TimetableFormData,
   Timetable
 } from '@/utils/types';
-import { generateTimetable, saveTimetable, countNonLabSubjectsForTeacher, doesTimetableExist, canAssignSubjectToFaculty } from '@/utils/timetableUtils';
+import { generateTimetable, saveTimetable, countNonLabSubjectsForTeacher, doesTimetableExist } from '@/utils/timetableUtils';
 import { getFaculty } from '@/utils/facultyUtils';
 import { getFilteredSubjects, subjectTeacherPairExists } from '@/utils/subjectsUtils';
 import ManualSchedulingGrid from '@/components/ManualSchedulingGrid';
-import FacultyWorkloadView from '@/components/FacultyWorkloadView';
 
 interface CreateTimetableFormProps {
   existingTimetable?: Timetable;
@@ -188,24 +187,13 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
       return;
     }
     
-    if (!isLabSubject) {
-      if (!canAssignSubjectToFaculty(newTeacher)) {
-        toast({
-          title: "Faculty workload limit reached",
-          description: `${newTeacher} has already been assigned the maximum of 3 subjects across timetables.`,
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      if (countNonLabSubjectsForTeacher(newTeacher, formData.subjectTeacherPairs) >= 3) {
-        toast({
-          title: "Teacher limit reached",
-          description: "This teacher is already allotted for 3 non-lab subjects in this timetable",
-          variant: "destructive",
-        });
-        return;
-      }
+    if (!isLabSubject && countNonLabSubjectsForTeacher(newTeacher, formData.subjectTeacherPairs) >= 3) {
+      toast({
+        title: "Teacher limit reached",
+        description: "This teacher is already allotted for 3 non-lab subjects",
+        variant: "destructive",
+      });
+      return;
     }
     
     if (isLabSubject && !batchNumber.trim()) {
@@ -221,15 +209,6 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
       toast({
         title: "Missing second teacher",
         description: "Please select a second teacher for the lab",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (isLabSubject && multipleTeachers && !canAssignSubjectToFaculty(newTeacher2)) {
-      toast({
-        title: "Faculty workload limit reached",
-        description: `${newTeacher2} has already been assigned the maximum of 3 subjects across timetables.`,
         variant: "destructive",
       });
       return;
@@ -471,7 +450,7 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
       
       <div className="space-y-8">
         <Tabs value={currentStep.toString()} onValueChange={(value) => setCurrentStep(parseInt(value))}>
-          <TabsList className="grid grid-cols-4 w-full max-w-md">
+          <TabsList className="grid grid-cols-3 w-full max-w-md">
             <TabsTrigger value="0" disabled={currentStep < 0}>
               Academic Details
             </TabsTrigger>
@@ -480,9 +459,6 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
             </TabsTrigger>
             <TabsTrigger value="2" disabled={currentStep < 2}>
               Scheduling
-            </TabsTrigger>
-            <TabsTrigger value="3" disabled={currentStep < 3}>
-              Faculty Workload
             </TabsTrigger>
           </TabsList>
           
@@ -1158,69 +1134,6 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
                       </Card>
                     </div>
                   )} */}
-                </div>
-              </CardContent>
-            </Card>
-            
-            <div className="flex justify-between mt-4">
-              <Button variant="outline" onClick={handlePrevStep}>Previous Step</Button>
-              <Button onClick={handleGenerateTimetable}>
-                {isEditMode ? 'Update Timetable' : 'Generate Timetable'}
-              </Button>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="3" className="pt-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Faculty Workload Status</CardTitle>
-                <CardDescription>
-                  View current workload status of all faculty members before finalizing the timetable
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="mb-4">
-                  <Alert>
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Faculty Subject Limit</AlertTitle>
-                    <AlertDescription>
-                      Each faculty member can be assigned a maximum of 3 subjects across all timetables.
-                      This limit helps maintain balanced workloads and ensures teaching quality.
-                    </AlertDescription>
-                  </Alert>
-                </div>
-                
-                <FacultyWorkloadView />
-                
-                <div className="mt-6">
-                  <h3 className="font-medium mb-2">Selected Faculty for This Timetable</h3>
-                  <div className="space-y-2">
-                    {formData.subjectTeacherPairs.map((pair) => (
-                      <div 
-                        key={pair.id} 
-                        className="flex items-center justify-between p-3 border rounded-md"
-                      >
-                        <div>
-                          <div className="font-medium">{pair.subjectName}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {pair.teacherNames && pair.teacherNames.length > 1 ? (
-                              <span>Teachers: {pair.teacherNames.join(', ')}</span>
-                            ) : (
-                              <span>Teacher: {pair.teacherName}</span>
-                            )}
-                            {pair.isLab && pair.batchNumber && ` (${pair.batchNumber})`}
-                            {pair.isLab && <span className="ml-2 text-primary">Lab</span>}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                    
-                    {formData.subjectTeacherPairs.length === 0 && (
-                      <div className="text-center py-4 text-muted-foreground border rounded-md">
-                        No faculty assigned to this timetable yet.
-                      </div>
-                    )}
-                  </div>
                 </div>
               </CardContent>
             </Card>
