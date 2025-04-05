@@ -111,7 +111,6 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
   useEffect(() => {
     const faculty = getFaculty();
     
-    // Get workload information for each faculty
     const workloadInfo = {};
     faculty.forEach(f => {
       const { isAvailable, currentCount } = isFacultyAvailableForSubjects(f.name);
@@ -246,7 +245,6 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
       return;
     }
     
-    // Check global faculty workload limit - only for non-lab subjects
     if (!isLabSubject) {
       const teachersToCheck = multipleTeachers ? [newTeacher, newTeacher2] : [newTeacher];
       const overloadedFaculty = [];
@@ -290,7 +288,6 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
       subjectTeacherPairs: [...prev.subjectTeacherPairs, newPair]
     }));
     
-    // Update faculty workload in state - only for non-lab subjects
     if (!isLabSubject) {
       const updatedWorkload = {...facultyWorkload};
       teacherNames.forEach(teacher => {
@@ -547,8 +544,11 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
     );
   };
 
-  // Function to handle manual timetable entries changes
   const handleManualEntriesChange = (entries) => {
+    setManualTimetableEntries(entries);
+  };
+
+  const handleSaveEntries = (entries) => {
     setManualTimetableEntries(entries);
   };
 
@@ -1205,7 +1205,7 @@ const CreateTimetableForm: React.FC<CreateTimetableFormProps> = ({ existingTimet
                             dayOptions={formData.dayOptions}
                             year={formData.year}
                             branch={formData.branch}
-                            onSave={onSave}
+                            onSave={handleSaveEntries}
                             existingEntries={existingTimetable?.entries}
                             initialEntries={manualTimetableEntries}
                             onEntriesChange={handleManualEntriesChange}
