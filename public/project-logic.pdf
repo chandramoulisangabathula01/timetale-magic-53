@@ -1,0 +1,607 @@
+# College Timetable Management System: Project Logic
+
+## Data Structures (src/utils/types.ts)
+
+### Core Data Types
+```typescript
+export type Day = "Mon" | "Tue" | "Wed" | "Thu" | "Fri" | "Sat" | "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday" | "Saturday";
+export type TimeSlot =
+  | "9:30-10:20"
+  | "10:20-11:10"
+  | "11:20-12:10"
+  | "12:10-1:00"
+  | "2:00-2:50"
+  | "2:50-3:40"
+  | "3:40-4:30"
+  | "4:30-5:20"
+  | "11:10-11:20"  // Break
+  | "1:00-2:00"    // Lunch
+  | "9:30-1:00"    // Morning lab block
+  | "2:00-4:30"    // Afternoon lab block
+  | "10:20-2:50"   // Mid-morning lab block
+  | "11:20-3:40"   // Mid-day lab block
+  | "12:10-4:30";  // Late morning lab block
+```
+
+**Key Concepts:**
+- Day types support both full names and abbreviations
+- TimeSlot includes individual periods and merged lab blocks
+- Special slots for break and lunch periods
+
+### Timetable Entry Structure
+```typescript
+export interface TimetableEntry {
+  id?: string;
+  day: Day;
+  timeSlot: TimeSlot;
+  subjectName?: string;
+  teacherName?: string; // For backward compatibility
+  teacherNames?: string[]; // New field for multiple teachers
+  isLab?: boolean;
+  batchNumber?: string;
+  isFree?: boolean;
+  freeType?: string;
+  customFreeType?: string;
+  isBreak?: boolean;
+  isLunch?: boolean;
+  isLabGroup?: boolean;
+  labGroupId?: string;
+  mergeSlots?: boolean;
+}
+```
+
+**Key Features:**
+- Flexible entry types (regular class, lab, break, lunch, free period)
+- Support for multiple teachers per entry
+- Batch information for lab sessions
+- Lab grouping for batch rotation
+
+## Non-Lab Subjects Logic (timetableUtils.ts)
+
+### Subject Allocation Algorithm
+```typescript
+// Allocate non-lab subjects (4 periods per week)
+nonLabSubjects.forEach(subject => {
+  let allocatedPeriodsCount = 0;
+  
+  // We need 4 periods per week for each subject
+  while (allocatedPeriodsCount < 4) {
+    // Get all available slots
+    const availableSlots = [];
+    
+    for (const day of days) {
+      for (const timeSlot of timeSlots) {
+        if (!isSlotAllocated(day, timeSlot) && 
+            !isTeacherAllocated(day, timeSlot, subject.teacherName)) {
+          availableSlots.push({ day, timeSlot });
+        }
+      }
+    }
+    
+    if (availableSlots.length === 0) {
+      // No more available slots
+      break;
+    }
+    
+    // Select a random available slot
+    const randomIndex = Math.floor(Math.random() * availableSlots.length);
+    const selectedSlot = availableSlots[randomIndex];
+    
+    // Add entry
+    entries.push({
+      day: selectedSlot.day,
+      timeSlot: selectedSlot.timeSlot,
+      subjectName: subject.subjectName,
+      teacherName: subject.teacherName,
+      isLab: false
+    });
+    
+    // Mark as allocated
+    allocatedSlots.push({ day: selectedSlot.day, timeSlot: selectedSlot.timeSlot });
+    allocatedTeacherSlots.push({ 
+      day: selectedSlot.day, 
+      timeSlot: selectedSlot.timeSlot, 
+      teacherName: subject.teacherName 
+    });
+    
+    allocatedPeriodsCount++;
+  }
+});
+```
+
+**Key Logic:**
+1. Each non-lab subject gets 4 periods per week
+2. Random slot selection from available time slots
+3. Double-booking prevention for both slots and teachers
+4. Allocation tracking to prevent conflicts
+
+### Conflict Prevention
+```typescript
+// Function to check if a slot is already allocated
+const isSlotAllocated = (day: Day, timeSlot: TimeSlot): boolean => {
+  return allocatedSlots.some(slot => slot.day === day && slot.timeSlot === timeSlot);
+};
+
+// Function to check if a teacher is already allocated for a specific day and timeslot
+const isTeacherAllocated = (day: Day, timeSlot: TimeSlot, teacherName: string): boolean => {
+  return allocatedTeacherSlots.some(
+    slot => slot.day === day && slot.timeSlot === timeSlot && slot.teacherName === teacherName
+  );
+};
+```
+
+**Functionality:**
+- Prevents double-booking of time slots
+- Ensures teachers aren't scheduled in two places at once
+- Used throughout the timetable generation process
+
+## Lab Subjects Logic
+
+### Time Slot Combinations (labTimeSlotFix.ts)
+```typescript
+export const labTimeSlotCombinations = [
+  {
+    name: 'Morning Lab (9:30-1:00)',
+    slots: ['9:30-10:20', '10:20-11:10', '11:20-12:10', '12:10-1:00'] as TimeSlot[],
+    display: '9:30-1:00' as TimeSlot
+  },
+  {
+    name: 'Mid-Morning Lab (10:20-2:50)',
+    slots: ['10:20-11:10', '11:20-12:10', '12:10-1:00', '2:00-2:50'] as TimeSlot[],
+    display: '10:20-2:50' as TimeSlot
+  },
+  {
+    name: 'Mid-Day Lab (11:20-3:40)',
+    slots: ['11:20-12:10', '12:10-1:00', '2:00-2:50', '2:50-3:40'] as TimeSlot[],
+    display: '11:20-3:40' as TimeSlot
+  },
+  {
+    name: 'Afternoon Lab (12:10-4:30)',
+    slots: ['12:10-1:00', '2:00-2:50', '2:50-3:40', '3:40-4:30'] as TimeSlot[],
+    display: '12:10-4:30' as TimeSlot
+  },
+  {
+    name: 'Late Lab (2:00-4:30)',
+    slots: ['2:00-2:50', '2:50-3:40', '3:40-4:30'] as TimeSlot[],
+    display: '2:00-4:30' as TimeSlot
+  }
+];
+```
+
+**Key Logic:**
+- Defines 5 different lab session templates with specific time slot groupings
+- Each template includes display name and exact time slot sequence
+- Ensures consistent lab session durations across different timetables
+
+### Lab Allocation Check (labTimeSlotFix.ts)
+```typescript
+export const isLabAllocatedInTimeSlot = (
+  entries: TimetableEntry[],
+  day: Day,
+  timeSlots: TimeSlot[],
+  teacherName: string
+): boolean => {
+  return timeSlots.some(timeSlot => 
+    entries.some(entry => 
+      entry.day === day && 
+      entry.timeSlot === timeSlot && 
+      ((entry.teacherName === teacherName) || 
+       (entry.teacherNames && entry.teacherNames.includes(teacherName)))
+    )
+  );
+};
+```
+
+**Functionality:**
+- Checks if a teacher is already assigned to any slot in a lab session
+- Prevents double-booking of faculty members
+- Works with both single-teacher and multi-teacher lab assignments
+
+### Lab Allocation Algorithm (labTimeSlotFix.ts)
+```typescript
+export const allocateLabsInProperTimeSlots = (
+  formData: TimetableFormData,
+  entries: TimetableEntry[],
+  labPairs: SubjectTeacherPair[]
+): TimetableEntry[] => {
+  // Make a copy of entries to avoid mutating the original
+  const updatedEntries = [...entries];
+  
+  // Process each lab subject-teacher pair
+  labPairs.forEach(pair => {
+    // Get available days from dayOptions if they exist, or use a default set of days
+    const availableDays = formData.dayOptions?.selectedDays || 
+      ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    
+    // Try to find a day and time slot combination where the lab can be allocated
+    const availableDayAndSlot = findAvailableLabTimeSlot(
+      availableDays,
+      pair.teacherName,
+      updatedEntries
+    );
+    
+    if (availableDayAndSlot) {
+      const { day, combination } = availableDayAndSlot;
+      
+      // Create a single entry with the display time slot
+      updatedEntries.push({
+        day,
+        timeSlot: combination.display,
+        subjectName: pair.subjectName,
+        teacherName: pair.teacherName,
+        teacherNames: pair.teacherNames,
+        isLab: true,
+        batchNumber: pair.batchNumber,
+        mergeSlots: true
+      });
+    }
+  });
+  
+  return updatedEntries;
+};
+```
+
+**Key Logic:**
+1. Processes each lab subject-teacher pair individually
+2. Finds available days and time slots for each lab
+3. Creates merged time slot entries for labs
+4. Supports multiple teachers per lab session
+
+### Batch Rotation for Labs (timetableUtils.ts)
+```typescript
+// Handle batch rotation for labs
+if (formData.enableBatchRotation && Object.keys(batchGroups).length >= 2) {
+  // Get B1 and B2 groups
+  const b1Labs = batchGroups['B1'] || [];
+  const b2Labs = batchGroups['B2'] || [];
+  
+  if (b1Labs.length > 0 && b2Labs.length > 0) {
+    // Create lab pairs for rotation
+    const labPairs: { b1: SubjectTeacherPair; b2: SubjectTeacherPair }[] = [];
+    
+    for (let i = 0; i < Math.min(b1Labs.length, b2Labs.length); i++) {
+      labPairs.push({
+        b1: b1Labs[i],
+        b2: b2Labs[i]
+      });
+    }
+    
+    // Allocate lab pairs to different days
+    const labDays = [...days].sort(() => Math.random() - 0.5).slice(0, labPairs.length * 2);
+    
+    for (let i = 0; i < labPairs.length && i * 2 + 1 < labDays.length; i++) {
+      const pair = labPairs[i];
+      const day1 = labDays[i * 2];
+      const day2 = labDays[i * 2 + 1];
+      
+      // Day 1: B1 lab in morning, B2 lab in afternoon if possible
+      const labGroupId1 = uuidv4();
+      
+      // Add morning lab entry for B1 on day 1
+      entries.push(createLabEntryForDay(day1, '9:30-1:00', pair.b1));
+      
+      // Add morning lab entry for B2 on day 1
+      entries.push(createLabEntryForDay(day1, '9:30-1:00', pair.b2));
+      
+      // Day 2: B2 lab in morning, B1 lab in afternoon if available
+      const labGroupId2 = uuidv4();
+      
+      // FIXED: Swap the batch assignments for the second day to implement proper rotation
+      // Add morning lab entry for B2's lab with B1 batch on day 2
+      entries.push(createLabEntryForDay(day2, '9:30-1:00', {
+        ...pair.b2,
+        batchNumber: 'B1' // Swap batch number for rotation
+      }));
+      
+      // Add morning lab entry for B1's lab with B2 batch on day 2
+      entries.push(createLabEntryForDay(day2, '9:30-1:00', {
+        ...pair.b1,
+        batchNumber: 'B2' // Swap batch number for rotation
+      }));
+    }
+  }
+}
+```
+
+**Key Logic:**
+1. Groups labs by batch (B1 and B2)
+2. Creates lab pairs for rotation
+3. Allocates lab pairs to different days
+4. Swaps batch assignments on the second day for proper rotation
+5. Handles teacher allocation to prevent conflicts
+
+## Teacher Management Logic
+
+### Faculty Data Structure (facultyUtils.ts)
+```typescript
+export interface FacultyData {
+  id: string;
+  name: string;
+  shortName: string;
+}
+```
+
+**Key Features:**
+- Simple faculty data structure with ID, name, and short name
+- Used for faculty selection in timetable creation
+
+### Faculty CRUD Operations (facultyUtils.ts)
+```typescript
+// Get all faculty from local storage
+export const getFaculty = (): FacultyData[] => {
+  const storedFaculty = localStorage.getItem(FACULTY_STORAGE_KEY);
+  return storedFaculty ? JSON.parse(storedFaculty) : [];
+};
+
+// Add a new faculty member
+export const addFaculty = (faculty: FacultyData): void => {
+  const facultyList = getFaculty();
+  facultyList.push(faculty);
+  localStorage.setItem(FACULTY_STORAGE_KEY, JSON.stringify(facultyList));
+};
+
+// Update an existing faculty member
+export const updateFaculty = (updatedFaculty: FacultyData): void => {
+  const facultyList = getFaculty();
+  const index = facultyList.findIndex(faculty => faculty.id === updatedFaculty.id);
+  
+  if (index !== -1) {
+    facultyList[index] = updatedFaculty;
+    localStorage.setItem(FACULTY_STORAGE_KEY, JSON.stringify(facultyList));
+  }
+};
+
+// Delete a faculty member
+export const deleteFaculty = (id: string): void => {
+  const facultyList = getFaculty();
+  const filteredFaculty = facultyList.filter(faculty => faculty.id !== id);
+  localStorage.setItem(FACULTY_STORAGE_KEY, JSON.stringify(filteredFaculty));
+};
+```
+
+**Key Logic:**
+1. CRUD operations for faculty management
+2. Uses localStorage for data persistence
+3. Simple and efficient data handling
+
+### Multiple Teacher Support (facultyLabUtils.ts)
+```typescript
+// Format teacher names for display in the timetable
+export const formatTeacherNames = (entry: TimetableEntry): string => {
+  if (entry.teacherNames && entry.teacherNames.length > 0) {
+    return entry.teacherNames.join(" & ");
+  }
+  return entry.teacherName || "";
+};
+
+// Convert old format (single teacherName) to new format (teacherNames array)
+export const normalizeTeacherData = (entry: TimetableEntry): TimetableEntry => {
+  const normalizedEntry = { ...entry };
+  
+  // If teacherNames doesn't exist but teacherName does, create teacherNames array
+  if (!normalizedEntry.teacherNames && normalizedEntry.teacherName) {
+    normalizedEntry.teacherNames = [normalizedEntry.teacherName];
+  }
+  
+  return normalizedEntry;
+};
+```
+
+**Key Logic:**
+1. Supports both single and multiple teachers per entry
+2. Normalizes data for consistent handling
+3. Formats teacher names for display
+
+## UI Rendering Logic
+
+### Timetable View Component (TimetableView.tsx)
+```typescript
+/**
+ * Function to render the content for each timetable cell
+ * Handles different types of entries (regular subjects, labs, breaks, etc.)
+ * @param day - The day for this cell
+ * @param timeSlot - The time slot for this cell
+ * @returns JSX for the cell content
+ */
+const renderCellContent = (day: Day, timeSlot: TimeSlot) => {
+  // First check for breaks and lunch
+  if (timeSlot === '11:10-11:20') {
+    return <div className="font-medium text-muted-foreground italic">Break</div>;
+  }
+  
+  if (timeSlot === '1:00-2:00') {
+    return <div className="font-medium text-muted-foreground italic">Lunch</div>;
+  }
+  
+  // Check for lab entries that span multiple time slots
+  const labEntries = getLabsForTimeSlot(day, timeSlot);
+  if (labEntries.length > 0) {
+    // Check if these are lab group entries (for batch rotation)
+    const labGroupIds = [...new Set(labEntries.map(entry => entry.labGroupId).filter(Boolean))];
+    
+    if (labGroupIds.length > 0) {
+      // Display lab rotation (multiple batches in the same slot)
+      return (
+        <div className="text-sm bg-green-100 p-1 rounded">
+          {labGroupIds.map(groupId => {
+            const groupEntries = getLabEntries(groupId!);
+            return (
+              <React.Fragment key={groupId}>
+                {groupEntries.map((lab, idx) => {
+                  const normalizedEntry = normalizeTeacherData(lab);
+                  return (
+                    <React.Fragment key={idx}>
+                      {idx > 0 && <div className="my-1 border-t border-dashed" />}
+                      <div className="font-medium">{lab.subjectName}</div>
+                      <MultiTeacherDisplay entry={normalizedEntry} useShortName={true} />
+                      {lab.batchNumber && <div className="text-xs text-primary">({lab.batchNumber})</div>}
+                    </React.Fragment>
+                  );
+                })}
+              </React.Fragment>
+            );
+          })}
+        </div>
+      );
+    } else {
+      // Display individual lab entries
+      return (
+        <div className="text-sm bg-green-100 p-1 rounded">
+          {labEntries.map((lab, idx) => {
+            const normalizedEntry = normalizeTeacherData(lab);
+            return (
+              <React.Fragment key={idx}>
+                {idx > 0 && <div className="my-1 border-t border-dashed" />}
+                <div className="font-medium">{lab.subjectName}</div>
+                <MultiTeacherDisplay entry={normalizedEntry} useShortName={true} />
+                {lab.batchNumber && <div className="text-xs text-primary">({lab.batchNumber})</div>}
+              </React.Fragment>
+            );
+          })}
+        </div>
+      );
+    }
+  }
+};
+```
+
+**Key Logic:**
+1. Handles different types of entries (regular subjects, labs, breaks, lunch)
+2. Special rendering for lab sessions with batch information
+3. Support for lab rotation display
+4. Multiple teacher display
+
+### Lab Time Slot Detection (TimetableView.tsx)
+```typescript
+/**
+ * Special helper to check if a time slot contains lab entries
+ * Handles lab time slots that span multiple regular slots
+ * @param day - The day to check
+ * @param timeSlot - The specific time slot to check
+ * @returns Array of lab entries that include this time slot
+ */
+const getLabsForTimeSlot = (day: Day, timeSlot: TimeSlot): TimetableEntry[] => {
+  // Check for lab entries that span multiple slots using all defined lab slot combinations
+  return entries.filter(entry => {
+    if (entry.day !== day || !entry.isLab) return false;
+    
+    // Check against each lab time slot combination
+    for (const combination of labTimeSlotCombinations) {
+      if (entry.timeSlot === combination.display && combination.slots.includes(timeSlot)) {
+        return true;
+      }
+    }
+    
+    // Check against legacy lab time slots for backward compatibility
+    if ((entry.timeSlot === '9:30-1:00' && 
+        ['9:30-10:20', '10:20-11:10', '11:20-12:10', '12:10-1:00'].includes(timeSlot)) ||
+       (entry.timeSlot === '2:00-4:30' && 
+        ['2:00-2:50', '2:50-3:40', '3:40-4:30'].includes(timeSlot))) {
+      return true;
+    }
+    
+    return false;
+  });
+};
+```
+
+**Key Logic:**
+1. Detects lab entries that span multiple time slots
+2. Uses lab time slot combinations for flexible lab scheduling
+3. Includes backward compatibility for legacy lab time slots
+
+## Student Dashboard Logic (StudentDashboard.tsx)
+```typescript
+const StudentDashboard: React.FC = () => {
+  // Access student filter settings from auth context
+  const { studentFilters } = useAuth();
+  const { toast } = useToast();
+  
+  // State for managing timetable data and loading status
+  const [timetable, setTimetable] = useState<Timetable | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  
+  // Reference for the printable timetable section
+  const printRef = useRef<HTMLDivElement>(null);
+
+  /**
+   * Effect hook to fetch and filter timetables based on student criteria
+   * Runs whenever student filters (year, branch, semester) change
+   */
+  useEffect(() => {
+    if (studentFilters.year && studentFilters.branch && studentFilters.semester) {
+      setLoading(true);
+      // Force a fresh fetch of timetables from localStorage
+      const filteredTimetables = filterTimetables(
+        studentFilters.year as YearType, 
+        studentFilters.branch as BranchType, 
+        studentFilters.semester as SemesterType
+      );
+
+      if (filteredTimetables.length > 0) {
+        setTimetable(filteredTimetables[0]);
+      } else {
+        setTimetable(null);
+      }
+      setLoading(false);
+    }
+  }, [studentFilters]);
+
+  /**
+   * Handles the print functionality for the timetable
+   * Creates a new window with formatted timetable content optimized for printing
+   */
+  const handlePrint = () => {
+    window.print();
+  };
+```
+
+**Key Features:**
+1. **Dynamic Filtering**: Uses student's academic details to load correct timetable
+2. **Print Optimization**: Special print styling and layout via CSS media queries
+3. **State Management**: Tracks loading status and timetable data
+4. **Error Handling**: Shows clear messages for missing timetables
+5. **UI Components**: Utilizes Card, Button, and Icon components from UI library
+
+## Free Period Logic (timetableUtils.ts)
+```typescript
+// Allocate free hours for remaining slots
+days.forEach(day => {
+  timeSlots.forEach(timeSlot => {
+    if (!isSlotAllocated(day, timeSlot)) {
+      // Select a random free hour type
+      const randomFreeHourIndex = Math.floor(Math.random() * formData.freeHours.length);
+      const freeHour = formData.freeHours[randomFreeHourIndex];
+      
+      entries.push({
+        day,
+        timeSlot,
+        isFree: true,
+        freeType: freeHour.type,
+        customFreeType: freeHour.type === 'Others' ? freeHour.customType : undefined,
+        mergeSlots: freeHour.mergeSlots
+      });
+    }
+  });
+});
+```
+
+**Key Logic:**
+1. Fills remaining unallocated slots with free periods
+2. Randomly selects from available free hour types
+3. Supports custom free period types
+4. Option to merge consecutive free slots
+
+## Conclusion
+
+The College Timetable Management System implements a sophisticated logic for creating and managing academic timetables. The key components include:
+
+1. **Data Structures**: Flexible and comprehensive data types for representing timetable entries
+2. **Non-Lab Subject Allocation**: Randomized allocation with conflict prevention
+3. **Lab Subject Handling**: Special time slot combinations and batch rotation
+4. **Teacher Management**: Support for multiple teachers per session
+5. **UI Rendering**: Specialized rendering for different entry types
+6. **Student Dashboard**: Filtered view based on academic details
+7. **Free Period Allocation**: Filling remaining slots with designated activities
+
+This system provides a complete solution for educational institutions to create, manage, and view timetables for different departments, years, and semesters.
